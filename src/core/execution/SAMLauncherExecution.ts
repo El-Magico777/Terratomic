@@ -107,6 +107,7 @@ export class SAMLauncherExecution implements Execution {
 
     if (this.player !== this.sam.owner()) {
       this.player = this.sam.owner();
+      this.sam.touch();
     }
 
     if (this.pseudoRandom === undefined) {

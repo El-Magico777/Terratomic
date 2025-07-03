@@ -279,7 +279,17 @@ export class StructureLayer implements Layer {
       this.clearCell(new Cell(this.game.x(tile), this.game.y(tile)));
     }
 
+    if (unitType === UnitType.SAMLauncher) {
+      const samRange = this.game.config().defaultSamRange();
+      this.clearSAMSearchRadius(unit, samRange);
+    }
+
     if (!unit.isActive()) return;
+
+    if (unitType === UnitType.SAMLauncher && unit.isActive()) {
+      const samRange = this.game.config().defaultSamRange();
+      this.drawSAMSearchRadius(unit, samRange);
+    }
 
     let borderColor = this.theme.borderColor(unit.owner());
     if (unitType === UnitType.SAMLauncher && unit.isCooldown()) {
@@ -427,5 +437,31 @@ export class StructureLayer implements Layer {
       this.selectedStructureUnit = null;
       this.handleUnitRendering(this.previouslySelected);
     }
+  }
+
+  private drawSAMSearchRadius(unit: UnitView, radius: number) {
+    const tile = unit.tile();
+    const x = this.game.x(tile) * 2;
+    const y = this.game.y(tile) * 2;
+    const context = this.context;
+    const color = this.theme.borderColor(unit.owner()).alpha(0.5);
+
+    context.save();
+    context.beginPath();
+    context.setLineDash([4, 16]);
+    context.strokeStyle = color.toRgbString();
+    context.lineWidth = 2.5;
+    context.arc(x, y, radius, 0, 2 * Math.PI);
+    context.stroke();
+    context.restore();
+  }
+
+  private clearSAMSearchRadius(unit: UnitView, radius: number) {
+    const tile = unit.tile();
+    const x = this.game.x(tile) * 2;
+    const y = this.game.y(tile) * 2;
+    const size = (radius + 2) * 2;
+
+    this.context.clearRect(x - radius - 2, y - radius - 2, size, size);
   }
 }
