@@ -299,7 +299,9 @@ export class DefaultConfig implements Config {
     return BigInt(Math.floor(Number(tradeShipGold) * 0.6));
   }
   cargoPlaneSpawnRate(numberOfAirfields: number): number {
-    return Math.min(50, Math.round(10 * Math.pow(numberOfAirfields, 0.6)));
+    // Turn Cargoplanes off for now.
+    //return Math.min(50, Math.round(10 * Math.pow(numberOfAirfields, 0.6)));
+    return Number.MAX_SAFE_INTEGER;
   }
 
   cargoPlaneMaxNumber(): number {
