@@ -927,7 +927,10 @@ export class PlayerImpl implements Player {
       case UnitType.Hospital:
       case UnitType.Academy:
       case UnitType.Construction:
+      case UnitType.Airfield:
         return this.landBasedStructureSpawn(targetTile, validTiles);
+      case UnitType.CargoPlane:
+        return this.cargoPlaneSpawn(targetTile);
       default:
         assertNever(unitType);
     }
@@ -1040,6 +1043,15 @@ export class PlayerImpl implements Player {
 
   tradeShipSpawn(targetTile: TileRef): TileRef | false {
     const spawns = this.units(UnitType.Port).filter(
+      (u) => u.tile() === targetTile,
+    );
+    if (spawns.length === 0) {
+      return false;
+    }
+    return spawns[0].tile();
+  }
+  cargoPlaneSpawn(targetTile: TileRef): TileRef | false {
+    const spawns = this.units(UnitType.Airfield).filter(
       (u) => u.tile() === targetTile,
     );
     if (spawns.length === 0) {
@@ -1193,5 +1205,39 @@ export class PlayerImpl implements Player {
       .forEach((p) => ports.push(p));
 
     return ports;
+  }
+
+  // It's a probability list, so if an element appears twice it's because it's
+  // twice more likely to be picked later.
+  airfields(airfield: Unit): Unit[] {
+    const airfields = this.mg
+      .players()
+      .filter((p) => p !== airfield.owner() && p.canTrade(airfield.owner()))
+      .flatMap((p) => p.units(UnitType.Airfield))
+      .sort((p1, p2) => {
+        return (
+          this.mg.manhattanDist(airfield.tile(), p1.tile()) -
+          this.mg.manhattanDist(airfield.tile(), p2.tile())
+        );
+      });
+
+    // Make close ports twice more likely by putting them again
+    for (
+      let i = 0;
+      i < this.mg.config().proximityBonusAirfieldsNumber(airfields.length);
+      i++
+    ) {
+      airfields.push(airfields[i]);
+    }
+
+    // Make ally ports twice more likely by putting them again
+    this.mg
+      .players()
+      .filter((p) => p !== airfield.owner() && p.canTrade(airfield.owner()))
+      .filter((p) => p.isAlliedWith(airfield.owner()))
+      .flatMap((p) => p.units(UnitType.Airfield))
+      .forEach((p) => airfields.push(p));
+
+    return airfields;
   }
 }

@@ -150,6 +150,8 @@ export enum UnitType {
   Construction = "Construction",
   Hospital = "Hospital",
   Academy = "Academy",
+  Airfield = "Air Field",
+  CargoPlane = "Cargo Plane",
 }
 
 const _structureTypes: ReadonlySet<UnitType> = new Set([
@@ -219,6 +221,12 @@ export interface UnitParamsMap {
   };
 
   [UnitType.Construction]: {};
+
+  [UnitType.Airfield]: Record<string, never>;
+
+  [UnitType.CargoPlane]: {
+    targetUnit: Unit;
+  };
 }
 
 // Type helper to get params type for a specific unit type
@@ -577,6 +585,7 @@ export interface Player {
   toUpdate(): PlayerUpdate;
   playerProfile(): PlayerProfile;
   tradingPorts(port: Unit): Unit[];
+  airfields(airfield: Unit): Unit[];
   // WARNING: this operation is expensive.
   bestTransportShipSpawn(tile: TileRef): TileRef | false;
 }
