@@ -586,6 +586,27 @@ export class GameImpl implements Game {
     });
   }
 
+  /**
+   * Trigger a small nuke‐style blast at `tile`, with a given radius and
+   * fraction‐scale.  Owner is used for credit/damage attribution.
+   */
+  public nukeExplosion(
+    tile: TileRef,
+    radius: number,
+    scale: number,
+    owner: Player,
+  ): void {
+    // **Minimal stub** (no visible effect yet):
+    const occupant = this.owner(tile);
+    if (occupant.isPlayer()) {
+      const cities = occupant.units(UnitType.City);
+      if (cities.length > 0) {
+        cities[0].delete(true, owner);
+      }
+    }
+    // you can expand this later to affect all units in radius
+  }
+
   sendEmojiUpdate(msg: EmojiMessage): void {
     this.addUpdate({
       type: GameUpdateType.Emoji,

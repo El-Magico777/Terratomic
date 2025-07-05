@@ -152,6 +152,7 @@ export enum UnitType {
   Academy = "Academy",
   Airfield = "Air Field",
   CargoPlane = "Cargo Plane",
+  Bomber = "Bomber",
 }
 
 const _structureTypes: ReadonlySet<UnitType> = new Set([
@@ -226,6 +227,10 @@ export interface UnitParamsMap {
 
   [UnitType.CargoPlane]: {
     targetUnit: Unit;
+  };
+
+  [UnitType.Bomber]: {
+    targetTile: TileRef;
   };
 }
 
@@ -662,6 +667,20 @@ export interface Game extends GameMap {
   numTilesWithFallout(): number;
   // Optional as it's not initialized before the end of spawn phase
   stats(): Stats;
+
+  /**
+   * Trigger a nuke‐style explosion at a given tile.
+   * @param tile        the epicenter of the blast
+   * @param radius      how many tiles out from center (euclidean radius)
+   * @param scale       fraction of normal nuke magnitude (e.g. 0.125 = 1/8th)
+   * @param owner       whose “ownership” counts for scoring/damage attribution
+   */
+  nukeExplosion(
+    tile: TileRef,
+    radius: number,
+    scale: number,
+    owner: Player,
+  ): void;
 }
 
 export interface PlayerActions {

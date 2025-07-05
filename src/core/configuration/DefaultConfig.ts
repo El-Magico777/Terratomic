@@ -308,6 +308,22 @@ export class DefaultConfig implements Config {
     return 3;
   }
 
+  //How many ticks a Bomber can stay airborne.
+  bomberFuelTicks(): number {
+    return 100;
+  }
+
+  // How many Bomber units can spawn per Airfield.
+  bomberSpawnRate(numberOfAirfields: number): number {
+    // for example, 5 Airfields => 2 Bombers per Airfield, lowers when more Airfields are present
+    return Math.min(5, Math.round(2 * Math.pow(numberOfAirfields, 0.5)));
+  }
+
+  // Maxaimum number of Bomber units that can be present at a single Airfield.
+  bomberMaxPerAirfield(): number {
+    return 2;
+  }
+
   unitInfo(type: UnitType): UnitInfo {
     switch (type) {
       case UnitType.TransportShip:
@@ -490,6 +506,11 @@ export class DefaultConfig implements Config {
           constructionDuration: this.instantBuild() ? 0 : 2 * 20,
         };
       case UnitType.CargoPlane:
+        return {
+          cost: () => 0n,
+          territoryBound: false,
+        };
+      case UnitType.Bomber:
         return {
           cost: () => 0n,
           territoryBound: false,

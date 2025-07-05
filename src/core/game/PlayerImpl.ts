@@ -930,6 +930,7 @@ export class PlayerImpl implements Player {
       case UnitType.Airfield:
         return this.landBasedStructureSpawn(targetTile, validTiles);
       case UnitType.CargoPlane:
+      case UnitType.Bomber:
         return this.cargoPlaneSpawn(targetTile);
       default:
         assertNever(unitType);

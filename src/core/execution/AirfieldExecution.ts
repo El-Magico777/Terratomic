@@ -1,6 +1,7 @@
 import { Execution, Game, Player, Unit, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
+import { BomberExecution } from "./BomberExecution";
 import { CargoPlaneExecution } from "./CargoPlaneExecution";
 
 export class AirfieldExecution implements Execution {
@@ -25,10 +26,11 @@ export class AirfieldExecution implements Execution {
     if (this.mg === null || this.random === null || this.checkOffset === null) {
       throw new Error("Not initialized");
     }
+
+    // 1) Build the Airfield if we haven't yet
     if (this.airfield === null) {
-      const tile = this.tile;
-      const spawn = this.player.canBuild(UnitType.Airfield, tile);
-      if (spawn === false) {
+      const spawn = this.player.canBuild(UnitType.Airfield, this.tile);
+      if (!spawn) {
         console.warn(
           `player ${this.player.id()} cannot build airfield at ${this.tile}`,
         );
@@ -38,38 +40,70 @@ export class AirfieldExecution implements Execution {
       this.airfield = this.player.buildUnit(UnitType.Airfield, spawn, {});
     }
 
+    // 2) If it ever goes inactive, kill this execution
     if (!this.airfield.isActive()) {
       this.active = false;
       return;
     }
 
+    // 3) Owner might’ve changed via conquest
     if (this.player.id() !== this.airfield.owner().id()) {
       this.player = this.airfield.owner();
     }
 
-    // Only check every 10 ticks for performance.
+    // 4) Only run every 10 ticks
     if ((this.mg.ticks() + this.checkOffset) % 10 !== 0) {
       return;
     }
 
-    const totalNumberOfAirfields = this.mg.units(UnitType.Airfield).length;
+    // ——> Capture non-null Airfield exactly once
+    const airfieldUnit = this.airfield;
+
+    // 3.3: Limit active Bombers per airfield
+    const existingBombers = this.mg
+      .nearbyUnits(airfieldUnit.tile(), 0, UnitType.Bomber)
+      .filter(({ unit }) => unit.owner().id() === this.player.id()).length;
+    if (existingBombers >= this.mg.config().bomberMaxPerAirfield()) {
+      return;
+    }
+
+    // Cargo-plane spawn
+    const totalAirfields = this.mg.units(UnitType.Airfield).length;
     if (
-      !this.random.chance(
-        this.mg.config().cargoPlaneSpawnRate(totalNumberOfAirfields),
-      )
+      this.random.chance(this.mg.config().cargoPlaneSpawnRate(totalAirfields))
     ) {
+      const possiblePorts = this.player.airfields(airfieldUnit);
+      if (possiblePorts.length > 0) {
+        const destField = this.random.randElement(possiblePorts);
+        this.mg.addExecution(
+          new CargoPlaneExecution(this.player, airfieldUnit, destField),
+        );
+      }
+    }
+
+    // 3.4: Bomber spawn chance
+    if (!this.random.chance(this.mg.config().bomberSpawnRate(totalAirfields))) {
       return;
     }
 
-    const airfields = this.player.airfields(this.airfield);
+    // 3.4a: Pick a valid target tile
+    const targets = this.mg
+      .nearbyUnits(airfieldUnit.tile(), 80, [
+        UnitType.Port,
+        UnitType.City,
+        UnitType.DefensePost,
+      ])
+      .map(({ unit }) => unit.tile())
+      .filter((t) => this.mg!.owner(t).id() !== this.player.id());
 
-    if (airfields.length === 0) {
+    if (targets.length === 0) {
       return;
     }
+    const targetTile = this.random.randElement(targets);
 
-    const airfield = this.random.randElement(airfields);
+    // 3.4b: Actually launch the Bomber
     this.mg.addExecution(
-      new CargoPlaneExecution(this.player, this.airfield, airfield),
+      new BomberExecution(this.player, airfieldUnit, targetTile),
     );
   }
 
