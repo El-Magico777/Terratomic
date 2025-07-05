@@ -130,8 +130,12 @@ export interface Config {
   cargoPlaneSpawnRate(numberOfAirplanes: number): number;
   cargoPlaneMaxNumber(): number;
   bomberFuelTicks(): number;
-  bomberSpawnRate(numberOfAirfields: number): number;
-  bomberMaxPerAirfield(): number;
+  bomberDropCadence(): number;
+  bomberPayload(): number;
+  bomberSpawnInterval(): number;
+  bomberTargetRange(): number;
+  bomberExplosionRadius(): number;
+  bomberExplosionScale(): number;
   safeFromPiratesCooldownMax(): number;
   defensePostRange(): number;
   SAMCooldown(): number;

@@ -590,21 +590,27 @@ export class GameImpl implements Game {
    * Trigger a small nuke‐style blast at `tile`, with a given radius and
    * fraction‐scale.  Owner is used for credit/damage attribution.
    */
-  public nukeExplosion(
-    tile: TileRef,
-    radius: number,
-    scale: number,
-    owner: Player,
-  ): void {
-    // **Minimal stub** (no visible effect yet):
-    const occupant = this.owner(tile);
-    if (occupant.isPlayer()) {
-      const cities = occupant.units(UnitType.City);
-      if (cities.length > 0) {
-        cities[0].delete(true, owner);
+  public nukeExplosion(tile: TileRef, radius: number, owner: Player): void {
+    // 1) collect all tiles within Euclidean radius
+    const r2 = radius * radius;
+    const toClear: TileRef[] = [];
+    this.forEachTile((t) => {
+      if (this.euclideanDistSquared(tile, t) <= r2) toClear.push(t);
+    });
+
+    // 2) for each tile, delete any structure and clear ownership
+    for (const t of toClear) {
+      const unitList = this.units(UnitType.City)
+        .concat(this.units(UnitType.Port))
+        .concat(this.units(UnitType.DefensePost))
+        .filter((u) => u.tile() === t);
+      for (const u of unitList) {
+        u.delete(true, owner);
       }
+      // optional: make it terra nullius
+      const occ = this.owner(t);
+      if (occ.isPlayer()) occ.relinquish(t);
     }
-    // you can expand this later to affect all units in radius
   }
 
   sendEmojiUpdate(msg: EmojiMessage): void {

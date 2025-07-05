@@ -292,9 +292,9 @@ export class DefaultConfig implements Config {
     return Math.round(10 * Math.pow(numberOfPorts, 0.37));
   }
 
+  // Cargoplanes (Turned off for now)
   cargoPlaneGold(distance: number): Gold {
     const tradeShipGold = this.tradeShipGold(distance);
-
     // Cargo planes are faster than trading ships and not blocked by land
     return BigInt(Math.floor(Number(tradeShipGold) * 0.6));
   }
@@ -303,25 +303,40 @@ export class DefaultConfig implements Config {
     //return Math.min(50, Math.round(10 * Math.pow(numberOfAirfields, 0.6)));
     return Number.MAX_SAFE_INTEGER;
   }
-
   cargoPlaneMaxNumber(): number {
     return 3;
   }
 
+  // Bombers
   //How many ticks a Bomber can stay airborne.
   bomberFuelTicks(): number {
-    return 100;
+    return 500;
+  }
+  // How many ticks between each bomber spawn attempt per airfield.
+  // // 30 × 10 = 300 ticks
+  bomberSpawnInterval(): number {
+    return 30;
   }
 
-  // How many Bomber units can spawn per Airfield.
-  bomberSpawnRate(numberOfAirfields: number): number {
-    // for example, 5 Airfields => 2 Bombers per Airfield, lowers when more Airfields are present
-    return Math.min(5, Math.round(2 * Math.pow(numberOfAirfields, 0.5)));
+  // A Bomber can carry x bombs.
+  bomberPayload(): number {
+    return 3;
   }
-
-  // Maxaimum number of Bomber units that can be present at a single Airfield.
-  bomberMaxPerAirfield(): number {
-    return 2;
+  // How many ticks it takes for a Bomber to drop a bomb.
+  bomberDropCadence(): number {
+    return 1;
+  }
+  // How far a Bomber can target.
+  bomberTargetRange(): number {
+    return 250;
+  }
+  /** How many tiles out from the bomb’s center the blast reaches */
+  bomberExplosionRadius(): number {
+    return 5;
+  }
+  /** Fraction of a full nuke’s magnitude to apply (e.g. 0.125 = 1/8th strength) */
+  bomberExplosionScale(): number {
+    return 0.125;
   }
 
   unitInfo(type: UnitType): UnitInfo {

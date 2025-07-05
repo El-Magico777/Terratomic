@@ -10,6 +10,7 @@ export class AirfieldExecution implements Execution {
   private airfield: Unit | null = null;
   private random: PseudoRandom | null = null;
   private checkOffset: number | null = null;
+  private spawnTicker = 0;
 
   constructor(
     private player: Player,
@@ -58,17 +59,16 @@ export class AirfieldExecution implements Execution {
 
     // ——> Capture non-null Airfield exactly once
     const airfieldUnit = this.airfield;
+    const totalAirfields = this.mg.units(UnitType.Airfield).length;
 
     // 3.3: Limit active Bombers per airfield
-    const existingBombers = this.mg
-      .nearbyUnits(airfieldUnit.tile(), 0, UnitType.Bomber)
-      .filter(({ unit }) => unit.owner().id() === this.player.id()).length;
-    if (existingBombers >= this.mg.config().bomberMaxPerAirfield()) {
-      return;
+    const activeBombers = this.player.units(UnitType.Bomber).length;
+
+    if (activeBombers >= totalAirfields) {
+      return; // already “one-per-field” in the air
     }
 
     // Cargo-plane spawn
-    const totalAirfields = this.mg.units(UnitType.Airfield).length;
     if (
       this.random.chance(this.mg.config().cargoPlaneSpawnRate(totalAirfields))
     ) {
@@ -82,16 +82,24 @@ export class AirfieldExecution implements Execution {
     }
 
     // 3.4: Bomber spawn chance
-    if (!this.random.chance(this.mg.config().bomberSpawnRate(totalAirfields))) {
+    this.spawnTicker++;
+    if (this.spawnTicker < this.mg.config().bomberSpawnInterval()) {
       return;
     }
+    this.spawnTicker = 0;
 
     // 3.4a: Pick a valid target tile
+    const range = this.mg.config().bomberTargetRange();
     const targets = this.mg
-      .nearbyUnits(airfieldUnit.tile(), 80, [
-        UnitType.Port,
+      .nearbyUnits(airfieldUnit.tile(), range, [
         UnitType.City,
+        UnitType.SAMLauncher,
+        UnitType.Airfield,
         UnitType.DefensePost,
+        UnitType.MissileSilo,
+        UnitType.Port,
+        UnitType.Hospital,
+        UnitType.Academy,
       ])
       .map(({ unit }) => unit.tile())
       .filter((t) => this.mg!.owner(t).id() !== this.player.id());

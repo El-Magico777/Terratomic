@@ -675,12 +675,7 @@ export interface Game extends GameMap {
    * @param scale       fraction of normal nuke magnitude (e.g. 0.125 = 1/8th)
    * @param owner       whose “ownership” counts for scoring/damage attribution
    */
-  nukeExplosion(
-    tile: TileRef,
-    radius: number,
-    scale: number,
-    owner: Player,
-  ): void;
+  nukeExplosion(tile: TileRef, radius: number, owner: Player): void;
 }
 
 export interface PlayerActions {

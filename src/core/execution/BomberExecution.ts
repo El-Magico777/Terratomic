@@ -9,97 +9,127 @@ import {
 import { TileRef } from "../game/GameMap";
 import { StraightPathFinder } from "../pathfinding/PathFinding";
 
+/**
+ * Handles the lifecycle of a Bomber: spawning, flying out, dropping bombs, and returning.
+ */
+
 export class BomberExecution implements Execution {
-  private active = true;
-  private mg: Game;
-  private bomber!: Unit; // the Bomber unit once spawned
-  private bombsLeft = 3; // payload
-  private fuelLeft!: number; // will initialize in init()
-  private returning = false; // outbound vs. inbound
-  private pathFinder: StraightPathFinder;
+  private active = true; // Whether this execution is still running
+  private mg: Game; // Reference to the game engine
+  private bomber!: Unit; // The Bomber unit once it’s spawned
+  private bombsLeft!: number; // How many bombs remain in its payload
+  private fuelLeft!: number; // Remaining “ticks” of fuel
+  private returning = false; // False while heading outbound, true on the way home
+  private pathFinder: StraightPathFinder; // For straight-line path calculations
+  private dropTicker = 0; // Tick counter to enforce drop cadence
 
   constructor(
-    private origOwner: Player,
-    private sourceAirfield: Unit,
-    private targetTile: TileRef,
+    private origOwner: Player, // The player who owns/spawned this bomber
+    private sourceAirfield: Unit, // The Airfield unit where the bomber spawns and returns
+    private targetTile: TileRef, // The intended target tile for bomb drops
   ) {}
 
+  /** Called once when the execution is started. */
   init(mg: Game, ticks: number): void {
     this.mg = mg;
     this.pathFinder = new StraightPathFinder(mg);
+    // Initialize fuel and payload from the game’s config
     this.fuelLeft = mg.config().bomberFuelTicks();
+    this.bombsLeft = mg.config().bomberPayload();
   }
 
+  /** Called every game‐tick to advance the bomber’s state. */
   tick(_ticks: number): void {
-    // 1) SPAWN
+    // 1) SPAWN: build the unit the first time tick() runs
     if (!this.bomber) {
       const spawn = this.origOwner.canBuild(
         UnitType.Bomber,
         this.sourceAirfield.tile(),
       );
       if (!spawn) {
+        // Cannot spawn → terminate execution
         this.active = false;
         return;
       }
+      // Build with a targetTile param so the UI can show its destination
       this.bomber = this.origOwner.buildUnit(UnitType.Bomber, spawn, {
         targetTile: this.targetTile,
       });
     }
 
-    // 2) FUEL CHECK
+    // 2) FUEL CHECK: decrement fuel each tick; crash if it runs out
     this.fuelLeft--;
     if (this.fuelLeft <= 0) {
       this.crash();
       return;
     }
 
-    // 3) STILL ALIVE?
+    // 3) STILL ALIVE: if someone shot down the bomber, stop executing
     if (!this.bomber.isActive()) {
       this.active = false;
       return;
     }
 
-    // 4) CHOOSE DESTINATION
-    const destination = this.returning
-      ? this.sourceAirfield.tile()
-      : this.targetTile;
+    // 4) DROP CADENCE: only drop bombs at the configured rate when within range
+    if (!this.returning && this.bombsLeft > 0) {
+      this.dropTicker++;
+      if (
+        this.dropTicker >= this.mg.config().bomberDropCadence() &&
+        this.mg.euclideanDistSquared(this.bomber.tile(), this.targetTile) <= 1
+      ) {
+        this.dropBomb(); // drop one bomb
+        this.dropTicker = 0; // reset cadence counter
+        return; // skip movement this tick
+      }
+    }
 
-    // 5) MOVE ONE STEP
-    const step = this.pathFinder.nextTile(this.bomber.tile(), destination, 2);
+    // 5) CHOOSE DESTINATION: Determine current destination: either heading back to the airfield or proceeding toward the target
+    //    - If we’ve used up all bombs, we’re returning to the airfield
+    //    - Otherwise continue toward the original target
+    const destination = this.returning
+      ? this.sourceAirfield.tile() // if all bombs dropped, return to source airfield
+      : this.targetTile; // otherwise, fly toward the target tile
+
+    // 6) PATHFINDING: compute the next step along a straight line
+    const step = this.pathFinder.nextTile(
+      this.bomber.tile(), // current position of the bomber
+      destination, // where we want to go
+      2, // max distance to move in one tick
+    );
+
+    // 7) ARRIVAL HANDLING:
+    // If nextTile returned `true`, we've arrived at the destination
     if (step === true) {
-      // Reached end of path
-      if (!this.returning) {
-        // drop a bomb if needed
-        if (this.bombsLeft > 0) {
-          this.dropBomb();
-        }
-      } else {
-        // touched down on return runway: end execution
+      if (!this.returning && this.bombsLeft > 0) {
+        // If we're arriving at the target and still have bombs, drop one immediately
+        this.dropBomb();
+      } else if (this.returning) {
+        // If we're returning and arrived back at the airfield, end the execution
         this.active = false;
       }
-      return;
+      return; // skip the move() call when we've already handled arrival
     }
+
+    // 8) MOVE: advance the bomber one tile toward its destination
     this.bomber.move(step);
-
-    // 6) BOMB DROPPING (once per tick, within 1-tile distance)
-    if (
-      !this.returning &&
-      this.bombsLeft > 0 &&
-      this.mg.euclideanDistSquared(this.bomber.tile(), this.targetTile) <= 1
-    ) {
-      this.dropBomb();
-    }
   }
 
+  /**
+   * Drops a bomb at the bomber’s current tile.
+   * Decrements the bomb count and handles returning logic.
+   */
   private dropBomb(): void {
-    // tiny nuke explosion: radius=1, scale=0.125
-    this.mg.nukeExplosion(this.bomber.tile(), 1, 0.125, this.origOwner);
+    // immediate blast at bomber.tile()
+    this.mg.nukeExplosion(
+      this.bomber.tile(),
+      this.mg.config().bomberExplosionRadius(),
+      this.origOwner,
+    );
     this.bombsLeft--;
-    if (this.bombsLeft === 0) {
-      this.returning = true; // flip into return‐home mode
-    }
+    if (this.bombsLeft === 0) this.returning = true;
   }
 
+  /** Called when fuel runs out. Deletes the bomber and notifies the player. */
   private crash(): void {
     this.bomber.delete(false);
     this.active = false;
@@ -115,6 +145,7 @@ export class BomberExecution implements Execution {
   }
 
   activeDuringSpawnPhase(): boolean {
+    // Bombers shouldn’t spawn during the initial “placement” phase
     return false;
   }
 }
