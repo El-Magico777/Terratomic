@@ -90,8 +90,8 @@ export class EventsDisplay extends LitElement implements Layer {
   @state() private goldAmountAnimating: boolean = false;
   private goldAmountTimeoutId: ReturnType<typeof setTimeout> | null = null;
   @state() private eventsFilters: Map<MessageCategory, boolean> = new Map([
-    [MessageCategory.ATTACK, false],
-    [MessageCategory.TRADE, false],
+    [MessageCategory.ATTACK, true],
+    [MessageCategory.TRADE, true],
     [MessageCategory.ALLIANCE, false],
     [MessageCategory.CHAT, false],
   ]);
@@ -938,7 +938,8 @@ export class EventsDisplay extends LitElement implements Layer {
         : html`
             <!-- Main Events Display -->
             <div
-              class="relative w-full lg:bottom-2.5 lg:right-2.5 z-50 lg:w-96 backdrop-blur"
+              class="relative w-full z-50 lg:w-96 backdrop-blur"
+              style="top: 2.5; left: 2.5;"
             >
               <!-- Button Bar -->
               <div

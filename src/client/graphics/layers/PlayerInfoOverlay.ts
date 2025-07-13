@@ -199,88 +199,149 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
     }
 
     return html`
-      <div class="p-2">
+      <div class="flex p-2 min-w-max">
+        <!-- Box 0: Name, Type -->
         <div
-          class="text-bold text-sm lg:text-lg font-bold mb-1 inline-flex break-all ${isFriendly
-            ? "text-green-500"
-            : "text-white"}"
+          class="flex-none flex flex-col gap-1 pr-4 border-r border-gray-600"
         >
-          ${player.flag()
-            ? html`<img
-                class="h-8 mr-1 aspect-[3/4]"
-                src=${"/flags/" + player.flag() + ".svg"}
-              />`
+          <div
+            class="text-bold text-lg font-bold mb-1 inline-flex break-all ${isFriendly
+              ? "text-green-500"
+              : "text-white"}"
+          >
+            ${player.flag()
+              ? html`<img
+                  class="h-8 mr-1 aspect-[3/4]"
+                  src=${`/flags/${player.flag()}.svg`}
+                />`
+              : ""}
+            ${player.name()}
+          </div>
+          <div class="text-sm opacity-80">
+            ${translateText("player_info_overlay.type")}: ${playerType}
+          </div>
+        </div>
+
+        <!-- Box 1: Team, Troops, Relation -->
+        <div
+          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
+        >
+          ${player.team() !== null
+            ? html`<div class="text-sm opacity-80">
+                ${translateText("player_info_overlay.team")}: ${player.team()}
+              </div>`
             : ""}
-          ${player.name()}
+          ${player.troops() >= 1
+            ? html`<div class="text-sm opacity-80" translate="no">
+                ${translateText("player_info_overlay.d_troops")}:
+                ${renderTroops(player.troops())}
+              </div>`
+            : ""}
+          ${attackingTroops >= 1
+            ? html`<div class="text-sm opacity-80" translate="no">
+                ${translateText("player_info_overlay.a_troops")}:
+                ${renderTroops(attackingTroops)}
+              </div>`
+            : ""}
+          ${relationHtml}
         </div>
-        ${player.team() !== null
-          ? html`<div class="text-sm opacity-80">
-              ${translateText("player_info_overlay.team")}: ${player.team()}
-            </div>`
-          : ""}
-        <div class="text-sm opacity-80">
-          ${translateText("player_info_overlay.type")}: ${playerType}
+
+        <!-- Box 2: Gold, Productivity -->
+        <div
+          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
+        >
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/GoldCoinIcon.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Gold"
+            />
+            ${renderNumber(player.gold())}
+          </div>
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/DonateGoldIconWhite.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Productivity"
+            />
+            ${Math.round(player.productivity() * 100)}%
+            (${player.productivityGrowthPerMinute() >= 0 ? "+" : ""}${(
+              player.productivityGrowthPerMinute() * 100
+            ).toFixed(1)}%/min)
+          </div>
         </div>
-        ${player.troops() >= 1
-          ? html`<div class="text-sm opacity-80" translate="no">
-              ${translateText("player_info_overlay.d_troops")}:
-              ${renderTroops(player.troops())}
-            </div>`
-          : ""}
-        ${attackingTroops >= 1
-          ? html`<div class="text-sm opacity-80" translate="no">
-              ${translateText("player_info_overlay.a_troops")}:
-              ${renderTroops(attackingTroops)}
-            </div>`
-          : ""}
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.gold")}:
-          ${renderNumber(player.gold())}
+
+        <!-- Box 3: Cities, Hospitals, Academies -->
+        <div
+          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
+        >
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/CityIconWhite.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="City"
+            />
+            ${player.units(UnitType.City).length}
+          </div>
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/HospitalIconWhite.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Hospital"
+            />
+            ${player.units(UnitType.Hospital).length}
+          </div>
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/AcademyIconWhite.png"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Academy"
+            />
+            ${player.units(UnitType.Academy).length}
+          </div>
         </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.productivity")}:
-          ${Math.round(player.productivity() * 100)}%
-          (${player.productivityGrowthPerMinute() >= 0 ? "+" : ""}${(
-            player.productivityGrowthPerMinute() * 100
-          ).toFixed(1)}%/min)
+
+        <!-- Box 4: Ports, Warships -->
+        <div
+          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
+        >
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/PortIcon.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Port"
+            />
+            ${player.units(UnitType.Port).length}
+          </div>
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/BattleshipIconWhite.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Warship"
+            />
+            ${player.units(UnitType.Warship).length}
+          </div>
         </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.ports")}:
-          ${player.units(UnitType.Port).length}
+
+        <!-- Box 5: Missile Launchers, SAMs -->
+        <div class="flex-none flex flex-col gap-1 pl-4">
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/MissileSiloIconWhite.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Missile Silo"
+            />
+            ${player.units(UnitType.MissileSilo).length}
+          </div>
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/SamLauncherIconWhite.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="SAM Launcher"
+            />
+            ${player.units(UnitType.SAMLauncher).length}
+          </div>
         </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.airfields")}:
-          ${player.units(UnitType.Airfield).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.cities")}:
-          ${player.units(UnitType.City).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.hospitals")}:
-          ${player.units(UnitType.Hospital).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.academies")}:
-          ${player.units(UnitType.Academy).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.missile_launchers")}:
-          ${player.units(UnitType.MissileSilo).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.sams")}:
-          ${player.units(UnitType.SAMLauncher).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.warships")}:
-          ${player.units(UnitType.Warship).length}
-        </div>
-        <div class="text-sm opacity-80" translate="no">
-          ${translateText("player_info_overlay.fighter_jets")}:
-          ${player.units(UnitType.FighterJet).length}
-        </div>
-        ${relationHtml}
       </div>
     `;
   }
@@ -317,16 +378,16 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
     }
 
     const containerClasses = this._isInfoVisible
-      ? "opacity-100 visible"
+      ? "opacity-100 visible pointer-events-auto"
       : "opacity-0 invisible pointer-events-none";
 
     return html`
       <div
-        class="flex w-full z-50 flex-col"
+        class="fixed inset-0 z-50 pointer-events-none"
         @contextmenu=${(e) => e.preventDefault()}
       >
         <div
-          class="bg-slate-800/40 backdrop-blur-sm shadow-xs rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300  text-white text-lg md:text-base ${containerClasses}"
+          class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-slate-800/40 backdrop-blur-sm shadow-xs rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300  text-white text-lg md:text-base ${containerClasses}"
         >
           ${this.player !== null ? this.renderPlayerInfo(this.player) : ""}
           ${this.unit !== null ? this.renderUnitInfo(this.unit) : ""}
