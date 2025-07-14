@@ -237,16 +237,24 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
               >`
             : ""}
           ${player.troops() >= 1
-            ? html`<span translate="no"
-                >${translateText("player_info_overlay.d_troops")}:
-                ${renderTroops(player.troops())}</span
-              >`
+            ? html`<span translate="no">
+                <img
+                  src="/images/TroopIconWhite.png"
+                  class="inline-block w-4 h-4 mr-1"
+                  alt="Troops"
+                />
+                ${renderTroops(player.troops())}
+              </span>`
             : ""}
           ${attackingTroops >= 1
-            ? html`<span translate="no"
-                >${translateText("player_info_overlay.a_troops")}:
-                ${renderTroops(attackingTroops)}</span
-              >`
+            ? html`<span translate="no">
+                <img
+                  src="/images/SwordIconWhite.svg"
+                  class="inline-block w-4 h-4 mr-1"
+                  alt="Attack"
+                />
+                ${renderTroops(attackingTroops)}
+              </span>`
             : ""}
         </div>
 
