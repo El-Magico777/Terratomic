@@ -324,7 +324,9 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         </div>
 
         <!-- Box 5: Missile Launchers, SAMs -->
-        <div class="flex-none flex flex-col gap-1 pl-4">
+        <div
+          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
+        >
           <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/MissileSiloIconWhite.svg"
@@ -340,6 +342,26 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
               alt="SAM Launcher"
             />
             ${player.units(UnitType.SAMLauncher).length}
+          </div>
+        </div>
+
+        <!-- Box 6: Airfields, Fighter Jets -->
+        <div class="flex-none flex flex-col gap-1 pl-4">
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/AirfieldIcon.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Airfield"
+            />
+            ${player.units(UnitType.Airfield).length}
+          </div>
+          <div class="text-sm opacity-80" translate="no">
+            <img
+              src="/images/FighterJetIcon.svg"
+              class="inline-block w-4 h-4 mr-1"
+              alt="Fighter Jet"
+            />
+            ${player.units(UnitType.FighterJet).length}
           </div>
         </div>
       </div>
