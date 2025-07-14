@@ -644,15 +644,23 @@ export class DefaultConfig implements Config {
     const defenderType = defenderIsPlayer ? defender.type() : null;
 
     if (defenderIsPlayer) {
+      let maxDefensePostHealthRatio = 0;
       for (const dp of gm.nearbyUnits(
         tileToConquer,
         gm.config().defensePostRange(),
         UnitType.DefensePost,
         ({ unit }) => unit.owner() === defender,
       )) {
-        mag *= this.defensePostLossMultiplier();
-        speed *= this.defensePostSpeedMultiplier();
-        break;
+        const ratio = dp.unit.hasHealth()
+          ? Number(dp.unit.health()) / (dp.unit.info().maxHealth ?? 1)
+          : 1;
+        if (ratio > maxDefensePostHealthRatio) {
+          maxDefensePostHealthRatio = ratio;
+        }
+      }
+      if (maxDefensePostHealthRatio > 0) {
+        mag *= this.defensePostLossMultiplier() * maxDefensePostHealthRatio;
+        speed /= this.defensePostSpeedMultiplier() * maxDefensePostHealthRatio;
       }
     }
 
