@@ -208,6 +208,30 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         break;
     }
 
+    const unitTypes = [
+      UnitType.City,
+      UnitType.Hospital,
+      UnitType.Academy,
+      UnitType.Port,
+      UnitType.Warship,
+      UnitType.MissileSilo,
+      UnitType.SAMLauncher,
+      UnitType.Airfield,
+      UnitType.FighterJet,
+    ];
+
+    const unitIconMap: { [key in UnitType]?: string } = {
+      [UnitType.City]: "/images/CityIconWhite.svg",
+      [UnitType.Hospital]: "/images/HospitalIconWhite.svg",
+      [UnitType.Academy]: "/images/AcademyIconWhite.png",
+      [UnitType.Port]: "/images/PortIcon.svg",
+      [UnitType.Warship]: "/images/BattleshipIconWhite.svg",
+      [UnitType.MissileSilo]: "/images/MissileSiloIconWhite.svg",
+      [UnitType.SAMLauncher]: "/images/SamLauncherIconWhite.svg",
+      [UnitType.Airfield]: "/images/AirfieldIcon.svg",
+      [UnitType.FighterJet]: "/images/FighterJetIcon.svg",
+    };
+
     return html`
       <div class="flex flex-col p-2 min-w-max">
         <!-- Box 0: Name, Relation, Type -->
@@ -227,149 +251,91 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
               : ""}
             ${player.name()}
           </div>
-          <div class="text-sm opacity-80">${relationHtml} ${playerType}</div>
+          <div class="text-sm opacity-80">
+            ${relationHtml}
+            <span class="${isFriendly ? "text-green-500" : ""}"
+              >${playerType}</span
+            >
+          </div>
         </div>
 
         <!-- Bottom Section -->
-        <div
-          class="grid grid-cols-[max-content,max-content] justify-center gap-x-2 gap-y-1"
-        >
-          <!-- Top-Left: Box 2 (Team, Troops) -->
+        <div class="flex flex-row gap-2 items-stretch">
+          <!-- Left Column (Box 2 & 3 Merged) -->
           <div
-            class="flex items-center gap-2 text-sm opacity-80 border border-gray-400 rounded p-1"
+            class="flex flex-col justify-between p-1 border border-gray-400 rounded"
           >
-            ${player.team() !== null
-              ? html`<span
-                  >${translateText("player_info_overlay.team")}:
-                  ${player.team()}</span
-                >`
-              : ""}
-            ${player.troops() >= 1
-              ? html`<span translate="no">
+            <!-- Box 2 Content -->
+            <div class="flex items-center gap-2 text-sm opacity-80">
+              ${player.team() !== null
+                ? html`<span
+                    >${translateText("player_info_overlay.team")}:
+                    ${player.team()}</span
+                  >`
+                : ""}
+              ${player.troops() >= 1
+                ? html`<span translate="no">
+                    <img
+                      src="/images/TroopIconWhite.png"
+                      class="inline-block w-4 h-4 mr-1"
+                      alt="Troops"
+                    />
+                    ${renderTroops(player.troops())}
+                  </span>`
+                : ""}
+              ${attackingTroops >= 1
+                ? html`<span translate="no">
+                    <img
+                      src="/images/SwordIconWhite.svg"
+                      class="inline-block w-4 h-4 mr-1"
+                      alt="Attack"
+                    />
+                    ${renderTroops(attackingTroops)}
+                  </span>`
+                : ""}
+            </div>
+            <!-- Box 3 Content -->
+            <div class="flex items-center gap-2 text-sm opacity-80">
+              <span translate="no">
+                <img
+                  src="/images/GoldCoinIcon.svg"
+                  class="inline-block w-4 h-4 mr-1"
+                  alt="Gold"
+                />
+                ${renderNumber(player.gold())}
+              </span>
+              <span translate="no">
+                <img
+                  src="/images/ProductionRateIcon.svg"
+                  class="inline-block w-4 h-4 mr-1"
+                  alt="Productivity"
+                />
+                ${Math.round(player.productivity() * 100)}%
+              </span>
+            </div>
+          </div>
+
+          <!-- Right Column (Box 1 Refactored) -->
+          <div class="grid grid-cols-9 gap-1">
+            ${unitTypes.map((unitType) => {
+              const iconSrc = unitIconMap[unitType];
+              if (!iconSrc) return null;
+
+              return html`
+                <div
+                  class="flex flex-col items-center justify-between p-1 border border-gray-400 rounded"
+                >
                   <img
-                    src="/images/TroopIconWhite.png"
-                    class="inline-block w-4 h-4 mr-1"
-                    alt="Troops"
+                    src="${iconSrc}"
+                    class="inline-block w-4 h-4"
+                    alt="${unitType}"
                   />
-                  ${renderTroops(player.troops())}
-                </span>`
-              : ""}
-            ${attackingTroops >= 1
-              ? html`<span translate="no">
-                  <img
-                    src="/images/SwordIconWhite.svg"
-                    class="inline-block w-4 h-4 mr-1"
-                    alt="Attack"
-                  />
-                  ${renderTroops(attackingTroops)}
-                </span>`
-              : ""}
-          </div>
-
-          <!-- Top-Right: Box 1 Icons -->
-          <div
-            class="flex justify-end items-center gap-2 border border-gray-400 rounded p-1"
-          >
-            <img
-              src="/images/CityIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="City"
-            />
-            <img
-              src="/images/HospitalIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="Hospital"
-            />
-            <img
-              src="/images/AcademyIconWhite.png"
-              class="inline-block w-4 h-4"
-              alt="Academy"
-            />
-            <img
-              src="/images/PortIcon.svg"
-              class="inline-block w-4 h-4"
-              alt="Port"
-            />
-            <img
-              src="/images/BattleshipIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="Warship"
-            />
-            <img
-              src="/images/MissileSiloIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="Missile Silo"
-            />
-            <img
-              src="/images/SamLauncherIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="SAM Launcher"
-            />
-            <img
-              src="/images/AirfieldIcon.svg"
-              class="inline-block w-4 h-4"
-              alt="Airfield"
-            />
-            <img
-              src="/images/FighterJetIcon.svg"
-              class="inline-block w-4 h-4"
-              alt="Fighter Jet"
-            />
-          </div>
-
-          <!-- Bottom-Left: Box 3 (Gold, Productivity) -->
-          <div
-            class="flex items-center gap-2 text-sm opacity-80 border border-gray-400 rounded p-1"
-          >
-            <span translate="no">
-              <img
-                src="/images/GoldCoinIcon.svg"
-                class="inline-block w-4 h-4 mr-1"
-                alt="Gold"
-              />
-              ${renderNumber(player.gold())}
-            </span>
-            <span translate="no">
-              <img
-                src="/images/ProductionRateIcon.svg"
-                class="inline-block w-4 h-4 mr-1"
-                alt="Productivity"
-              />
-              ${Math.round(player.productivity() * 100)}%
-            </span>
-          </div>
-
-          <!-- Bottom-Right: Box 1 Counts -->
-          <div
-            class="flex justify-around items-center text-sm opacity-80 border border-gray-400 rounded p-1"
-          >
-            <span class="text-center w-4"
-              >${player.units(UnitType.City).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.Hospital).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.Academy).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.Port).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.Warship).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.MissileSilo).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.SAMLauncher).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.Airfield).length}</span
-            >
-            <span class="text-center w-4"
-              >${player.units(UnitType.FighterJet).length}</span
-            >
+                  <span class="text-sm opacity-80"
+                    >${player.units(unitType).length}</span
+                  >
+                </div>
+              `;
+            })}
           </div>
         </div>
       </div>
@@ -417,7 +383,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         @contextmenu=${(e) => e.preventDefault()}
       >
         <div
-          class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-slate-800/40 backdrop-blur-sm shadow-xs rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300  text-white text-lg md:text-base ${containerClasses}"
+          class="absolute top-0 left-1/2 transform -translate-x-1/2 bg-slate-800/40 backdrop-blur-sm shadow-xs rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300  text-white text-lg md:text-base ${containerClasses}"
         >
           ${this.player !== null ? this.renderPlayerInfo(this.player) : ""}
           ${this.unit !== null ? this.renderUnitInfo(this.unit) : ""}
