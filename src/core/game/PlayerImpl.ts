@@ -83,6 +83,7 @@ export class PlayerImpl implements Player {
   public _borderTiles: Set<TileRef> = new Set();
 
   public _units: Unit[] = [];
+  private _effectiveUnitsCache: Map<UnitType, number> = new Map();
   public _tiles: Set<TileRef> = new Set();
 
   private _flag: string | undefined;
@@ -259,6 +260,27 @@ export class PlayerImpl implements Player {
       total++;
     }
     return total;
+  }
+
+  invalidateEffectiveUnitsCache(type: UnitType): void {
+    this._effectiveUnitsCache.delete(type);
+  }
+
+  effectiveUnits(type: UnitType): number {
+    if (this._effectiveUnitsCache.has(type)) {
+      return this._effectiveUnitsCache.get(type)!;
+    }
+
+    const calculatedValue = this._units
+      .filter((u) => u.type() === type && u.isActive())
+      .reduce((sum, u) => {
+        const healthRatio = u.hasHealth()
+          ? Number(u.health()) / (u.info().maxHealth ?? 1)
+          : 1;
+        return sum + healthRatio;
+      }, 0);
+    this._effectiveUnitsCache.set(type, calculatedValue);
+    return calculatedValue;
   }
 
   sharesBorderWith(other: Player | TerraNullius): boolean {
@@ -868,6 +890,7 @@ export class PlayerImpl implements Player {
     this.removeTroops("troops" in params ? (params.troops ?? 0) : 0);
     this.mg.addUpdate(b.toUpdate());
     this.mg.addUnit(b);
+    this.invalidateEffectiveUnitsCache(type);
 
     return b;
   }

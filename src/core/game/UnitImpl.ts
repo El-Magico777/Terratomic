@@ -199,7 +199,6 @@ export class UnitImpl implements Unit {
 
   modifyHealth(delta: number, attacker?: Player): void {
     if (delta > 0) {
-      // Regeneratie
       this._accumulatedRegen += delta;
       const integerPart = Math.floor(this._accumulatedRegen);
       if (integerPart > 0) {
@@ -211,15 +210,15 @@ export class UnitImpl implements Unit {
         this._accumulatedRegen -= integerPart;
       }
     } else {
-      // Schade (negatieve delta)
       this._health = withinInt(
-        this._health + toInt(delta), // Delta is al negatief
+        this._health + toInt(delta),
         0n,
         toInt(this.info().maxHealth ?? 1),
       );
-      this._accumulatedRegen = 0; // Reset accumulatie bij schade
+      this._accumulatedRegen = 0;
     }
     this.mg.addUpdate(this.toUpdate());
+    (this.owner() as PlayerImpl).invalidateEffectiveUnitsCache(this.type());
     if (this._health === 0n) {
       this.delete(true, attacker);
     }
