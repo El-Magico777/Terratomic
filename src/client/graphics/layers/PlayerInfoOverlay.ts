@@ -209,9 +209,9 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
     }
 
     return html`
-      <div class="flex p-2 min-w-max flex-col">
-        <!-- Box 0: Name, Relation, Type (on one line) -->
-        <div class="flex items-center gap-2 mb-2">
+      <div class="flex flex-col p-2 min-w-max">
+        <!-- Box 0: Name, Relation, Type -->
+        <div class="flex justify-center items-center gap-2 mb-2 w-full">
           <div
             class="text-bold text-lg font-bold inline-flex break-all ${isFriendly
               ? "text-green-500"
@@ -228,133 +228,140 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
           <div class="text-sm opacity-80">${relationHtml} ${playerType}</div>
         </div>
 
-        <!-- New Box 2 (old Box 1): Team, Troops (on one line) -->
-        <div class="flex items-center gap-2 mb-2 text-sm opacity-80">
-          ${player.team() !== null
-            ? html`<span
-                >${translateText("player_info_overlay.team")}:
-                ${player.team()}</span
-              >`
-            : ""}
-          ${player.troops() >= 1
-            ? html`<span translate="no">
-                <img
-                  src="/images/TroopIconWhite.png"
-                  class="inline-block w-4 h-4 mr-1"
-                  alt="Troops"
-                />
-                ${renderTroops(player.troops())}
-              </span>`
-            : ""}
-          ${attackingTroops >= 1
-            ? html`<span translate="no">
-                <img
-                  src="/images/SwordIconWhite.svg"
-                  class="inline-block w-4 h-4 mr-1"
-                  alt="Attack"
-                />
-                ${renderTroops(attackingTroops)}
-              </span>`
-            : ""}
-        </div>
+        <!-- Bottom Section -->
+        <div class="flex flex-row gap-4">
+          <!-- Left Column -->
+          <div class="flex flex-col gap-2">
+            <!-- Box 2: Team, Troops -->
+            <div class="flex items-center gap-2 text-sm opacity-80">
+              ${player.team() !== null
+                ? html`<span
+                    >${translateText("player_info_overlay.team")}:
+                    ${player.team()}</span
+                  >`
+                : ""}
+              ${player.troops() >= 1
+                ? html`<span translate="no">
+                    <img
+                      src="/images/TroopIconWhite.png"
+                      class="inline-block w-4 h-4 mr-1"
+                      alt="Troops"
+                    />
+                    ${renderTroops(player.troops())}
+                  </span>`
+                : ""}
+              ${attackingTroops >= 1
+                ? html`<span translate="no">
+                    <img
+                      src="/images/SwordIconWhite.svg"
+                      class="inline-block w-4 h-4 mr-1"
+                      alt="Attack"
+                    />
+                    ${renderTroops(attackingTroops)}
+                  </span>`
+                : ""}
+            </div>
 
-        <!-- New Box 3 (old Box 2): Gold, Productivity (on one line) -->
-        <div class="flex items-center gap-2 mb-2 text-sm opacity-80">
-          <span translate="no">
-            <img
-              src="/images/GoldCoinIcon.svg"
-              class="inline-block w-4 h-4 mr-1"
-              alt="Gold"
-            />
-            ${renderNumber(player.gold())}
-          </span>
-          <span translate="no">
-            <img
-              src="/images/ProductionRateIcon.svg"
-              class="inline-block w-4 h-4 mr-1"
-              alt="Productivity"
-            />
-            ${Math.round(player.productivity() * 100)}%
-          </span>
-        </div>
-
-        <!-- New Box 1 (old Boxes 3, 4, 5, 6): All Units/Buildings (icons on one line, counts on next, aligned) -->
-        <div class="flex flex-col gap-1">
-          <div class="flex justify-around items-center">
-            <img
-              src="/images/CityIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="City"
-            />
-            <img
-              src="/images/HospitalIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="Hospital"
-            />
-            <img
-              src="/images/AcademyIconWhite.png"
-              class="inline-block w-4 h-4"
-              alt="Academy"
-            />
-            <img
-              src="/images/PortIcon.svg"
-              class="inline-block w-4 h-4"
-              alt="Port"
-            />
-            <img
-              src="/images/BattleshipIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="Warship"
-            />
-            <img
-              src="/images/MissileSiloIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="Missile Silo"
-            />
-            <img
-              src="/images/SamLauncherIconWhite.svg"
-              class="inline-block w-4 h-4"
-              alt="SAM Launcher"
-            />
-            <img
-              src="/images/AirfieldIcon.svg"
-              class="inline-block w-4 h-4"
-              alt="Airfield"
-            />
-            <img
-              src="/images/FighterJetIcon.svg"
-              class="inline-block w-4 h-4"
-              alt="Fighter Jet"
-            />
+            <!-- Box 3: Gold, Productivity -->
+            <div class="flex items-center gap-2 text-sm opacity-80">
+              <span translate="no">
+                <img
+                  src="/images/GoldCoinIcon.svg"
+                  class="inline-block w-4 h-4 mr-1"
+                  alt="Gold"
+                />
+                ${renderNumber(player.gold())}
+              </span>
+              <span translate="no">
+                <img
+                  src="/images/ProductionRateIcon.svg"
+                  class="inline-block w-4 h-4 mr-1"
+                  alt="Productivity"
+                />
+                ${Math.round(player.productivity() * 100)}%
+              </span>
+            </div>
           </div>
-          <div class="flex justify-around items-center text-sm opacity-80">
-            <span class="text-center"
-              >${player.units(UnitType.City).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.Hospital).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.Academy).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.Port).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.Warship).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.MissileSilo).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.SAMLauncher).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.Airfield).length}</span
-            >
-            <span class="text-center"
-              >${player.units(UnitType.FighterJet).length}</span
-            >
+
+          <!-- Right Column -->
+          <!-- Box 1: All Units/Buildings -->
+          <div class="flex flex-col gap-1">
+            <div class="flex justify-around items-center">
+              <img
+                src="/images/CityIconWhite.svg"
+                class="inline-block w-4 h-4"
+                alt="City"
+              />
+              <img
+                src="/images/HospitalIconWhite.svg"
+                class="inline-block w-4 h-4"
+                alt="Hospital"
+              />
+              <img
+                src="/images/AcademyIconWhite.png"
+                class="inline-block w-4 h-4"
+                alt="Academy"
+              />
+              <img
+                src="/images/PortIcon.svg"
+                class="inline-block w-4 h-4"
+                alt="Port"
+              />
+              <img
+                src="/images/BattleshipIconWhite.svg"
+                class="inline-block w-4 h-4"
+                alt="Warship"
+              />
+              <img
+                src="/images/MissileSiloIconWhite.svg"
+                class="inline-block w-4 h-4"
+                alt="Missile Silo"
+              />
+              <img
+                src="/images/SamLauncherIconWhite.svg"
+                class="inline-block w-4 h-4"
+                alt="SAM Launcher"
+              />
+              <img
+                src="/images/AirfieldIcon.svg"
+                class="inline-block w-4 h-4"
+                alt="Airfield"
+              />
+              <img
+                src="/images/FighterJetIcon.svg"
+                class="inline-block w-4 h-4"
+                alt="Fighter Jet"
+              />
+            </div>
+            <div class="flex justify-around items-center text-sm opacity-80">
+              <span class="text-center"
+                >${player.units(UnitType.City).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.Hospital).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.Academy).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.Port).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.Warship).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.MissileSilo).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.SAMLauncher).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.Airfield).length}</span
+              >
+              <span class="text-center"
+                >${player.units(UnitType.FighterJet).length}</span
+              >
+            </div>
           </div>
         </div>
       </div>
