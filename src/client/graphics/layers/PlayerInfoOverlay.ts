@@ -172,18 +172,28 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
       .map((a) => a.troops)
       .reduce((a, b) => a + b, 0);
 
-    if (player.type() === PlayerType.FakeHuman && myPlayer !== null) {
-      const relation =
-        this.playerProfile?.relations[myPlayer.smallID()] ?? Relation.Neutral;
-      const relationClass = this.getRelationClass(relation);
-      const relationName = this.getRelationName(relation);
+    if (myPlayer !== null) {
+      let displayRelation = false;
+      let relationClass = "";
+      let relationName = "";
 
-      relationHtml = html`
-        <div class="text-sm opacity-80">
-          ${translateText("player_info_overlay.attitude")}:
+      if (myPlayer.isFriendly(player)) {
+        relationClass = this.getRelationClass(Relation.Friendly);
+        relationName = translateText("relation.allied");
+        displayRelation = true;
+      } else if (player.type() === PlayerType.FakeHuman) {
+        const relation =
+          this.playerProfile?.relations[myPlayer.smallID()] ?? Relation.Neutral;
+        relationClass = this.getRelationClass(relation);
+        relationName = this.getRelationName(relation);
+        displayRelation = true;
+      }
+
+      if (displayRelation) {
+        relationHtml = html`
           <span class="${relationClass}">${relationName}</span>
-        </div>
-      `;
+        `;
+      }
     }
     let playerType = "";
     switch (player.type()) {
@@ -199,13 +209,11 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
     }
 
     return html`
-      <div class="flex p-2 min-w-max">
-        <!-- Box 0: Name, Type -->
-        <div
-          class="flex-none flex flex-col gap-1 pr-4 border-r border-gray-600"
-        >
+      <div class="flex p-2 min-w-max flex-col">
+        <!-- Box 0: Name, Relation, Type (on one line) -->
+        <div class="flex items-center gap-2 mb-2">
           <div
-            class="text-bold text-lg font-bold mb-1 inline-flex break-all ${isFriendly
+            class="text-bold text-lg font-bold inline-flex break-all ${isFriendly
               ? "text-green-500"
               : "text-white"}"
           >
@@ -217,151 +225,128 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
               : ""}
             ${player.name()}
           </div>
-          <div class="text-sm opacity-80">
-            ${translateText("player_info_overlay.type")}: ${playerType}
-          </div>
+          <div class="text-sm opacity-80">${relationHtml} ${playerType}</div>
         </div>
 
-        <!-- Box 1: Team, Troops, Relation -->
-        <div
-          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
-        >
+        <!-- New Box 2 (old Box 1): Team, Troops (on one line) -->
+        <div class="flex items-center gap-2 mb-2 text-sm opacity-80">
           ${player.team() !== null
-            ? html`<div class="text-sm opacity-80">
-                ${translateText("player_info_overlay.team")}: ${player.team()}
-              </div>`
+            ? html`<span
+                >${translateText("player_info_overlay.team")}:
+                ${player.team()}</span
+              >`
             : ""}
           ${player.troops() >= 1
-            ? html`<div class="text-sm opacity-80" translate="no">
-                ${translateText("player_info_overlay.d_troops")}:
-                ${renderTroops(player.troops())}
-              </div>`
+            ? html`<span translate="no"
+                >${translateText("player_info_overlay.d_troops")}:
+                ${renderTroops(player.troops())}</span
+              >`
             : ""}
           ${attackingTroops >= 1
-            ? html`<div class="text-sm opacity-80" translate="no">
-                ${translateText("player_info_overlay.a_troops")}:
-                ${renderTroops(attackingTroops)}
-              </div>`
+            ? html`<span translate="no"
+                >${translateText("player_info_overlay.a_troops")}:
+                ${renderTroops(attackingTroops)}</span
+              >`
             : ""}
-          ${relationHtml}
         </div>
 
-        <!-- Box 2: Gold, Productivity -->
-        <div
-          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
-        >
-          <div class="text-sm opacity-80" translate="no">
+        <!-- New Box 3 (old Box 2): Gold, Productivity (on one line) -->
+        <div class="flex items-center gap-2 mb-2 text-sm opacity-80">
+          <span translate="no">
             <img
               src="/images/GoldCoinIcon.svg"
               class="inline-block w-4 h-4 mr-1"
               alt="Gold"
             />
             ${renderNumber(player.gold())}
-          </div>
-          <div class="text-sm opacity-80" translate="no">
+          </span>
+          <span translate="no">
             <img
-              src="/images/DonateGoldIconWhite.svg"
+              src="/images/ProductionRateIcon.svg"
               class="inline-block w-4 h-4 mr-1"
               alt="Productivity"
             />
             ${Math.round(player.productivity() * 100)}%
-            (${player.productivityGrowthPerMinute() >= 0 ? "+" : ""}${(
-              player.productivityGrowthPerMinute() * 100
-            ).toFixed(1)}%/min)
-          </div>
+          </span>
         </div>
 
-        <!-- Box 3: Cities, Hospitals, Academies -->
-        <div
-          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
-        >
-          <div class="text-sm opacity-80" translate="no">
+        <!-- New Box 1 (old Boxes 3, 4, 5, 6): All Units/Buildings (icons on one line, counts on next, aligned) -->
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-around items-center">
             <img
               src="/images/CityIconWhite.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="City"
             />
-            ${player.units(UnitType.City).length}
-          </div>
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/HospitalIconWhite.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="Hospital"
             />
-            ${player.units(UnitType.Hospital).length}
-          </div>
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/AcademyIconWhite.png"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="Academy"
             />
-            ${player.units(UnitType.Academy).length}
-          </div>
-        </div>
-
-        <!-- Box 4: Ports, Warships -->
-        <div
-          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
-        >
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/PortIcon.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="Port"
             />
-            ${player.units(UnitType.Port).length}
-          </div>
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/BattleshipIconWhite.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="Warship"
             />
-            ${player.units(UnitType.Warship).length}
-          </div>
-        </div>
-
-        <!-- Box 5: Missile Launchers, SAMs -->
-        <div
-          class="flex-none flex flex-col gap-1 px-4 border-r border-gray-600"
-        >
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/MissileSiloIconWhite.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="Missile Silo"
             />
-            ${player.units(UnitType.MissileSilo).length}
-          </div>
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/SamLauncherIconWhite.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="SAM Launcher"
             />
-            ${player.units(UnitType.SAMLauncher).length}
-          </div>
-        </div>
-
-        <!-- Box 6: Airfields, Fighter Jets -->
-        <div class="flex-none flex flex-col gap-1 pl-4">
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/AirfieldIcon.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="Airfield"
             />
-            ${player.units(UnitType.Airfield).length}
-          </div>
-          <div class="text-sm opacity-80" translate="no">
             <img
               src="/images/FighterJetIcon.svg"
-              class="inline-block w-4 h-4 mr-1"
+              class="inline-block w-4 h-4"
               alt="Fighter Jet"
             />
-            ${player.units(UnitType.FighterJet).length}
+          </div>
+          <div class="flex justify-around items-center text-sm opacity-80">
+            <span class="text-center"
+              >${player.units(UnitType.City).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.Hospital).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.Academy).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.Port).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.Warship).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.MissileSilo).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.SAMLauncher).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.Airfield).length}</span
+            >
+            <span class="text-center"
+              >${player.units(UnitType.FighterJet).length}</span
+            >
           </div>
         </div>
       </div>

@@ -405,8 +405,8 @@
     "nation": "Nation",
     "player": "Player",
     "team": "Team",
-    "d_troops": "Defending troops",
-    "a_troops": "Attacking troops",
+    "d_troops": "Troops",
+    "a_troops": "Attack",
     "gold": "Gold",
     "productivity": "Productivity",
     "ports": "Ports",
@@ -437,6 +437,7 @@
     "distrustful": "Distrustful",
     "neutral": "Neutral",
     "friendly": "Friendly",
+    "allied": "Allied",
     "default": "Default"
   },
   "control_panel": {
