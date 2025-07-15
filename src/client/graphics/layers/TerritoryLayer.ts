@@ -1,5 +1,5 @@
 import { PriorityQueue } from "@datastructures-js/priority-queue";
-import { Colord } from "colord";
+import { Colord, colord } from "colord";
 import { Theme } from "../../../core/configuration/Config";
 import { EventBus } from "../../../core/EventBus";
 import { Cell, PlayerType, UnitType } from "../../../core/game/Game";
@@ -37,6 +37,8 @@ export class TerritoryLayer implements Layer {
   private lastRefresh = 0;
 
   private lastFocusedPlayer: PlayerView | null = null;
+  private hotBorderTiles: Map<TileRef, number> = new Map();
+  private hotBorderColor = colord({ r: 255, g: 0, b: 0 });
 
   constructor(
     private game: GameView,
@@ -58,7 +60,23 @@ export class TerritoryLayer implements Layer {
   }
 
   tick() {
-    this.game.recentlyUpdatedTiles().forEach((t) => this.enqueueTile(t));
+    const focusedPlayer = this.game.focusedPlayer();
+
+    this.game.recentlyUpdatedTiles().forEach((t) => {
+      this.enqueueTile(t);
+
+      if (focusedPlayer) {
+        const owner = this.game.owner(t);
+        if (owner === focusedPlayer) {
+          for (const neighbor of this.game.neighbors(t)) {
+            if (this.game.owner(neighbor) !== owner) {
+              this.hotBorderTiles.set(t, Date.now() + 3000);
+            }
+          }
+        }
+      }
+    });
+
     const updates = this.game.updatesSinceLastTick();
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
     unitUpdates.forEach((update) => {
@@ -78,7 +96,6 @@ export class TerritoryLayer implements Layer {
       }
     });
 
-    const focusedPlayer = this.game.focusedPlayer();
     if (focusedPlayer !== this.lastFocusedPlayer) {
       if (this.lastFocusedPlayer) {
         this.paintPlayerBorder(this.lastFocusedPlayer);
@@ -143,6 +160,15 @@ export class TerritoryLayer implements Layer {
       // TODO: consider re-enabling this on mobile or low end devices for smoother dragging.
       // this.lastDragTime = Date.now();
     });
+    setInterval(() => {
+      const now = Date.now();
+      for (const [tile, expiration] of this.hotBorderTiles.entries()) {
+        if (now > expiration) {
+          this.hotBorderTiles.delete(tile);
+          this.enqueueTile(tile);
+        }
+      }
+    }, 250);
     this.redraw();
   }
 
@@ -286,7 +312,9 @@ export class TerritoryLayer implements Layer {
         this.paintTile(tile, borderColor, 255);
       } else {
         const useBorderColor = playerIsFocused
-          ? this.theme.focusedBorderColor()
+          ? this.hotBorderTiles.has(tile)
+            ? this.hotBorderColor
+            : this.theme.focusedBorderColor()
           : this.theme.borderColor(owner);
         this.paintTile(tile, useBorderColor, 255);
       }
