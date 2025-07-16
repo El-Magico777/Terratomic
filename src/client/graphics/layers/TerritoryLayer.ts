@@ -37,8 +37,10 @@ export class TerritoryLayer implements Layer {
   private lastRefresh = 0;
 
   private lastFocusedPlayer: PlayerView | null = null;
-  private hotBorderTiles: Map<TileRef, number> = new Map();
-  private hotBorderColor = colord({ r: 255, g: 0, b: 0 });
+  private hotBorderTiles: Map<TileRef, { expiration: number; color: Colord }> =
+    new Map();
+  private hotBorderColorRed = colord({ r: 255, g: 0, b: 0 });
+  private hotBorderColorBlack = colord({ r: 0, g: 0, b: 0 });
   private previousBorderStatus: Map<TileRef, boolean> = new Map();
 
   constructor(
@@ -109,7 +111,30 @@ export class TerritoryLayer implements Layer {
 
         if (isCurrentBorder && !wasPreviousBorder) {
           // This tile just became a border
-          this.hotBorderTiles.set(tile, Date.now() + 3000);
+          let hotBorderColor = this.hotBorderColorRed; // Default to red (shrinking)
+
+          // Infer expansion vs. shrinking
+          const recentlyUpdatedTilesSet = new Set(
+            this.game.recentlyUpdatedTiles(),
+          );
+          if (recentlyUpdatedTilesSet.has(tile)) {
+            // If the tile itself was recently updated, it implies expansion
+            hotBorderColor = this.hotBorderColorBlack;
+          } else {
+            // Check if any neighbor was recently updated (implies shrinking)
+            for (const neighbor of this.game.neighbors(tile)) {
+              if (recentlyUpdatedTilesSet.has(neighbor)) {
+                // If a neighbor was updated, and it's not the current tile, it's likely shrinking
+                hotBorderColor = this.hotBorderColorRed;
+                break;
+              }
+            }
+          }
+
+          this.hotBorderTiles.set(tile, {
+            expiration: Date.now() + 3000,
+            color: hotBorderColor,
+          });
           tilesToEnqueue.add(tile);
         } else if (!isCurrentBorder && this.hotBorderTiles.has(tile)) {
           // Was a hot border but is no longer a border
@@ -222,7 +247,10 @@ export class TerritoryLayer implements Layer {
     });
     setInterval(() => {
       const now = Date.now();
-      for (const [tile, expiration] of this.hotBorderTiles.entries()) {
+      for (const [
+        tile,
+        { expiration, color },
+      ] of this.hotBorderTiles.entries()) {
         if (now > expiration) {
           this.hotBorderTiles.delete(tile);
           this.enqueueTile(tile);
@@ -373,7 +401,7 @@ export class TerritoryLayer implements Layer {
       } else {
         const useBorderColor = playerIsFocused
           ? this.hotBorderTiles.has(tile)
-            ? this.hotBorderColor
+            ? this.hotBorderTiles.get(tile)!.color
             : this.theme.focusedBorderColor()
           : this.theme.borderColor(owner);
         this.paintTile(tile, useBorderColor, 255);
