@@ -62,20 +62,25 @@ export class TerritoryLayer implements Layer {
   tick() {
     const focusedPlayer = this.game.focusedPlayer();
 
+    const tilesToCheckForHotBorder = new Set<TileRef>();
+
     this.game.recentlyUpdatedTiles().forEach((t) => {
       this.enqueueTile(t);
 
-      if (focusedPlayer) {
-        const owner = this.game.owner(t);
-        if (owner === focusedPlayer) {
-          for (const neighbor of this.game.neighbors(t)) {
-            if (this.game.owner(neighbor) !== owner) {
-              this.hotBorderTiles.set(t, Date.now() + 3000);
-            }
-          }
-        }
+      tilesToCheckForHotBorder.add(t);
+      for (const neighbor of this.game.neighbors(t)) {
+        tilesToCheckForHotBorder.add(neighbor);
       }
     });
+
+    if (focusedPlayer) {
+      for (const tile of tilesToCheckForHotBorder) {
+        const owner = this.game.owner(tile);
+        if (owner === focusedPlayer && this.game.isBorder(tile)) {
+          this.hotBorderTiles.set(tile, Date.now() + 3000);
+        }
+      }
+    }
 
     const updates = this.game.updatesSinceLastTick();
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
