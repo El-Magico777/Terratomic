@@ -65,6 +65,7 @@ export class TerritoryLayer implements Layer {
   }
 
   tick() {
+    this.game.recentlyUpdatedTiles().forEach((t) => this.enqueueTile(t));
     const focusedPlayer = this.game.focusedPlayer();
 
     const tilesToProcess = new Set<TileRef>();
