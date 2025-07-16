@@ -39,6 +39,7 @@ export class TerritoryLayer implements Layer {
   private lastFocusedPlayer: PlayerView | null = null;
   private hotBorderTiles: Map<TileRef, number> = new Map();
   private hotBorderColor = colord({ r: 255, g: 0, b: 0 });
+  private previousBorderStatus: Map<TileRef, boolean> = new Map();
 
   constructor(
     private game: GameView,
@@ -62,25 +63,49 @@ export class TerritoryLayer implements Layer {
   tick() {
     const focusedPlayer = this.game.focusedPlayer();
 
-    const tilesToCheckForHotBorder = new Set<TileRef>();
-
-    this.game.recentlyUpdatedTiles().forEach((t) => {
-      this.enqueueTile(t);
-
-      tilesToCheckForHotBorder.add(t);
-      for (const neighbor of this.game.neighbors(t)) {
-        tilesToCheckForHotBorder.add(neighbor);
-      }
-    });
-
     if (focusedPlayer) {
-      for (const tile of tilesToCheckForHotBorder) {
-        const owner = this.game.owner(tile);
-        if (owner === focusedPlayer && this.game.isBorder(tile)) {
+      const currentBorderTiles = new Set<TileRef>();
+      this.game.forEachTile((tile) => {
+        if (
+          this.game.owner(tile) === focusedPlayer &&
+          this.game.isBorder(tile)
+        ) {
+          currentBorderTiles.add(tile);
+        }
+      });
+
+      for (const tile of currentBorderTiles) {
+        if (
+          !this.previousBorderStatus.has(tile) ||
+          !this.previousBorderStatus.get(tile)
+        ) {
+          // This tile just became a border
           this.hotBorderTiles.set(tile, Date.now() + 3000);
         }
       }
+
+      // Clear hot borders for tiles that are no longer borders
+      for (const [tile] of this.hotBorderTiles.entries()) {
+        if (!currentBorderTiles.has(tile)) {
+          this.hotBorderTiles.delete(tile);
+          this.enqueueTile(tile);
+        }
+      }
+
+      // Update previousBorderStatus for the next tick
+      this.previousBorderStatus.clear();
+      for (const tile of currentBorderTiles) {
+        this.previousBorderStatus.set(tile, true);
+      }
+    } else {
+      // If no focused player, clear all hot borders and previous border status
+      this.hotBorderTiles.clear();
+      this.previousBorderStatus.clear();
     }
+
+    this.game.recentlyUpdatedTiles().forEach((t) => {
+      this.enqueueTile(t);
+    });
 
     const updates = this.game.updatesSinceLastTick();
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
