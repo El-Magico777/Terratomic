@@ -42,6 +42,8 @@ export class TerritoryLayer implements Layer {
   private hotBorderColorRed = colord({ r: 255, g: 0, b: 0 });
   private hotBorderColorBlack = colord({ r: 0, g: 0, b: 0 });
   private previousBorderStatus: Map<TileRef, boolean> = new Map();
+  private darkenedTiles: Map<TileRef, { expiration: number; color: Colord }> =
+    new Map();
 
   constructor(
     private game: GameView,
@@ -160,9 +162,31 @@ export class TerritoryLayer implements Layer {
 
     // Enqueue all tiles that need to be rendered
     tilesToEnqueue.forEach((t) => this.enqueueTile(t));
-    this.game.recentlyUpdatedTiles().forEach((t) => this.enqueueTile(t));
 
     const updates = this.game.updatesSinceLastTick();
+    const recentlyUpdatedTilesSet = new Set(this.game.recentlyUpdatedTiles());
+
+    // Handle newly conquered tiles for darkening effect
+    const tileUpdates = updates !== null ? updates[GameUpdateType.Tile] : [];
+
+    tileUpdates.forEach((update) => {
+      const tile = Number(update.update >> 16n);
+      // Check if the tile was recently updated (i.e., its owner changed)
+      if (recentlyUpdatedTilesSet.has(tile)) {
+        const owner = this.game.owner(tile);
+        if (owner.isPlayer()) {
+          // Ensure owner is a PlayerView
+          const territoryColor = this.theme.territoryColor(owner as PlayerView);
+          const darkenedColor = territoryColor.darken(0.1);
+          this.darkenedTiles.set(tile, {
+            expiration: Date.now() + 3000,
+            color: darkenedColor,
+          });
+          this.enqueueTile(tile);
+        }
+      }
+    });
+
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
     unitUpdates.forEach((update) => {
       if (update.unitType === UnitType.DefensePost) {
@@ -253,6 +277,15 @@ export class TerritoryLayer implements Layer {
       ] of this.hotBorderTiles.entries()) {
         if (now > expiration) {
           this.hotBorderTiles.delete(tile);
+          this.enqueueTile(tile);
+        }
+      }
+      for (const [
+        tile,
+        { expiration, color },
+      ] of this.darkenedTiles.entries()) {
+        if (now > expiration) {
+          this.darkenedTiles.delete(tile);
           this.enqueueTile(tile);
         }
       }
@@ -381,8 +414,21 @@ export class TerritoryLayer implements Layer {
       return;
     }
     const owner = this.game.owner(tile) as PlayerView;
+
+    let finalColor = this.theme.territoryColor(owner);
+    let finalAlpha = 150;
+
+    // Check if the tile is temporarily darkened (newly conquered)
+    if (this.darkenedTiles.has(tile)) {
+      const darkenedInfo = this.darkenedTiles.get(tile)!;
+      finalColor = darkenedInfo.color;
+      finalAlpha = 150; // Make darkened tiles more transparent
+    }
+
     if (this.game.isBorder(tile)) {
+      finalAlpha = 255; // Borders are always opaque
       const playerIsFocused = owner && this.game.focusedPlayer() === owner;
+
       if (
         this.game.hasUnitNearby(
           tile,
@@ -391,33 +437,28 @@ export class TerritoryLayer implements Layer {
           owner.id(),
         )
       ) {
-        const playerIsFocused = owner && this.game.focusedPlayer() === owner;
-        // Check if it's a hot border first
+        // Defense post border
         if (playerIsFocused && this.hotBorderTiles.has(tile)) {
-          const hotBorderInfo = this.hotBorderTiles.get(tile)!;
-          this.paintTile(tile, hotBorderInfo.color, 255);
+          finalColor = this.hotBorderTiles.get(tile)!.color;
         } else {
           const borderColors = this.theme.defendedBorderColors(owner);
           const x = this.game.x(tile);
           const y = this.game.y(tile);
           const lightTile =
             (x % 2 === 0 && y % 2 === 0) || (y % 2 === 1 && x % 2 === 1);
-          const borderColor = lightTile
-            ? borderColors.light
-            : borderColors.dark;
-          this.paintTile(tile, borderColor, 255);
+          finalColor = lightTile ? borderColors.light : borderColors.dark;
         }
       } else {
-        const useBorderColor = playerIsFocused
-          ? this.hotBorderTiles.has(tile)
-            ? this.hotBorderTiles.get(tile)!.color
-            : this.theme.focusedBorderColor()
-          : this.theme.borderColor(owner);
-        this.paintTile(tile, useBorderColor, 255);
+        // Regular border
+        if (playerIsFocused && this.hotBorderTiles.has(tile)) {
+          finalColor = this.hotBorderTiles.get(tile)!.color;
+        } else {
+          finalColor = this.theme.borderColor(owner);
+        }
       }
-    } else {
-      this.paintTile(tile, this.theme.territoryColor(owner), 150);
     }
+
+    this.paintTile(tile, finalColor, finalAlpha);
   }
 
   paintTile(tile: TileRef, color: Colord, alpha: number) {
