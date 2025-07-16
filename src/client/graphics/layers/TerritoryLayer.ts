@@ -30,6 +30,10 @@ export class TerritoryLayer implements Layer {
   private highlightCanvas: HTMLCanvasElement;
   private highlightContext: CanvasRenderingContext2D;
 
+  // Used for fading effect on newly conquered tiles
+  private fadeCanvas: HTMLCanvasElement;
+  private fadeContext: CanvasRenderingContext2D;
+
   private alternativeView = false;
   private lastDragTime = 0;
   private nodrawDragDuration = 200;
@@ -186,7 +190,7 @@ export class TerritoryLayer implements Layer {
         if (owner.isPlayer()) {
           // Ensure owner is a PlayerView
           const territoryColor = this.theme.territoryColor(owner as PlayerView);
-          const darkenedColor = territoryColor.darken(0.3);
+          const darkenedColor = territoryColor.darken(0.2);
           const originalColor = territoryColor;
           const duration = 3000; // 3 seconds
           this.darkenedTiles.set(tile, {
@@ -293,15 +297,27 @@ export class TerritoryLayer implements Layer {
           this.enqueueTile(tile);
         }
       }
+      this.fadeContext.clearRect(
+        0,
+        0,
+        this.fadeCanvas.width,
+        this.fadeCanvas.height,
+      );
       for (const [tile, darkenedInfo] of this.darkenedTiles.entries()) {
         const now = Date.now();
         if (now < darkenedInfo.startTime + darkenedInfo.duration) {
-          // Still fading, re-enqueue for smooth transition
-          this.enqueueTile(tile);
+          // Still fading, draw to fade canvas
+          const elapsed = now - darkenedInfo.startTime;
+          const progress = Math.min(elapsed / darkenedInfo.duration, 1);
+          const color = darkenedInfo.darkenedColor.mix(
+            darkenedInfo.originalColor,
+            progress,
+          );
+          this.paintFadeTile(tile, color, 150);
         } else {
           // Fade complete, remove from map
           this.darkenedTiles.delete(tile);
-          this.enqueueTile(tile);
+          this.enqueueTile(tile); // Re-render the tile one last time in its final state
         }
       }
     }, 250);
@@ -335,6 +351,16 @@ export class TerritoryLayer implements Layer {
     this.highlightContext = highlightContext;
     this.highlightCanvas.width = this.game.width();
     this.highlightCanvas.height = this.game.height();
+
+    // Add a third canvas for fading effect
+    this.fadeCanvas = document.createElement("canvas");
+    const fadeContext = this.fadeCanvas.getContext("2d", {
+      alpha: true,
+    });
+    if (fadeContext === null) throw new Error("2d context not supported");
+    this.fadeContext = fadeContext;
+    this.fadeCanvas.width = this.game.width();
+    this.fadeCanvas.height = this.game.height();
 
     this.game.forEachTile((t) => {
       this.paintTerritory(t);
@@ -392,6 +418,13 @@ export class TerritoryLayer implements Layer {
         this.game.height(),
       );
     }
+    context.drawImage(
+      this.fadeCanvas,
+      -this.game.width() / 2,
+      -this.game.height() / 2,
+      this.game.width(),
+      this.game.height(),
+    );
   }
 
   renderTerritory() {
@@ -432,20 +465,6 @@ export class TerritoryLayer implements Layer {
 
     let finalColor = this.theme.territoryColor(owner);
     let finalAlpha = 150;
-
-    // Check if the tile is temporarily darkened (newly conquered)
-    if (this.darkenedTiles.has(tile)) {
-      const darkenedInfo = this.darkenedTiles.get(tile)!;
-      const elapsed = Date.now() - darkenedInfo.startTime;
-      const progress = Math.min(elapsed / darkenedInfo.duration, 1);
-
-      // Interpolate between darkenedColor and originalColor
-      finalColor = darkenedInfo.darkenedColor.mix(
-        darkenedInfo.originalColor,
-        progress,
-      );
-      finalAlpha = 150; // Maintain transparency during fade
-    }
 
     if (this.game.isBorder(tile)) {
       finalAlpha = 255; // Borders are always opaque
@@ -522,5 +541,12 @@ export class TerritoryLayer implements Layer {
     const x = this.game.x(tile);
     const y = this.game.y(tile);
     this.highlightContext.clearRect(x, y, 1, 1);
+  }
+
+  paintFadeTile(tile: TileRef, color: Colord, alpha: number) {
+    const x = this.game.x(tile);
+    const y = this.game.y(tile);
+    this.fadeContext.fillStyle = color.alpha(alpha / 255).toRgbString();
+    this.fadeContext.fillRect(x, y, 1, 1);
   }
 }
