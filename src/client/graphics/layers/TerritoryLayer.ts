@@ -63,39 +63,66 @@ export class TerritoryLayer implements Layer {
   tick() {
     const focusedPlayer = this.game.focusedPlayer();
 
+    const tilesToProcess = new Set<TileRef>();
+
     if (focusedPlayer) {
-      const currentBorderTiles = new Set<TileRef>();
-      this.game.forEachTile((tile) => {
+      // Add existing hot border tiles
+      for (const tile of this.hotBorderTiles.keys()) {
+        tilesToProcess.add(tile);
+      }
+
+      // Add tiles from previous border status
+      for (const tile of this.previousBorderStatus.keys()) {
+        tilesToProcess.add(tile);
+      }
+
+      // Add recently updated tiles and their neighbors, but only if relevant to focused player's border
+      this.game.recentlyUpdatedTiles().forEach((updatedTile) => {
+        // Check the updated tile itself
         if (
-          this.game.owner(tile) === focusedPlayer &&
-          this.game.isBorder(tile)
+          this.game.owner(updatedTile) === focusedPlayer &&
+          this.game.isBorder(updatedTile)
         ) {
-          currentBorderTiles.add(tile);
+          tilesToProcess.add(updatedTile);
+        }
+        // Check neighbors of the updated tile
+        for (const neighbor of this.game.neighbors(updatedTile)) {
+          if (
+            this.game.owner(neighbor) === focusedPlayer &&
+            this.game.isBorder(neighbor)
+          ) {
+            tilesToProcess.add(neighbor);
+          }
         }
       });
+    }
 
-      for (const tile of currentBorderTiles) {
-        if (
-          !this.previousBorderStatus.has(tile) ||
-          !this.previousBorderStatus.get(tile)
-        ) {
+    const newPreviousBorderStatus = new Map<TileRef, boolean>();
+    const tilesToEnqueue = new Set<TileRef>(); // Collect tiles to enqueue once
+
+    if (focusedPlayer) {
+      for (const tile of tilesToProcess) {
+        const owner = this.game.owner(tile);
+        const isCurrentBorder =
+          owner === focusedPlayer && this.game.isBorder(tile);
+        const wasPreviousBorder = this.previousBorderStatus.get(tile) || false;
+
+        if (isCurrentBorder && !wasPreviousBorder) {
           // This tile just became a border
           this.hotBorderTiles.set(tile, Date.now() + 3000);
-        }
-      }
-
-      // Clear hot borders for tiles that are no longer borders
-      for (const [tile] of this.hotBorderTiles.entries()) {
-        if (!currentBorderTiles.has(tile)) {
+          tilesToEnqueue.add(tile);
+        } else if (!isCurrentBorder && this.hotBorderTiles.has(tile)) {
+          // Was a hot border but is no longer a border
           this.hotBorderTiles.delete(tile);
-          this.enqueueTile(tile);
+          tilesToEnqueue.add(tile);
+        } else if (this.hotBorderTiles.has(tile)) {
+          // Still a hot border, re-enqueue to ensure it's painted
+          tilesToEnqueue.add(tile);
         }
-      }
 
-      // Update previousBorderStatus for the next tick
-      this.previousBorderStatus.clear();
-      for (const tile of currentBorderTiles) {
-        this.previousBorderStatus.set(tile, true);
+        if (isCurrentBorder) {
+          newPreviousBorderStatus.set(tile, true);
+        }
       }
     } else {
       // If no focused player, clear all hot borders and previous border status
@@ -103,9 +130,12 @@ export class TerritoryLayer implements Layer {
       this.previousBorderStatus.clear();
     }
 
-    this.game.recentlyUpdatedTiles().forEach((t) => {
-      this.enqueueTile(t);
-    });
+    // Update previousBorderStatus for the next tick
+    this.previousBorderStatus = newPreviousBorderStatus;
+
+    // Enqueue all tiles that need to be rendered
+    tilesToEnqueue.forEach((t) => this.enqueueTile(t));
+    this.game.recentlyUpdatedTiles().forEach((t) => this.enqueueTile(t));
 
     const updates = this.game.updatesSinceLastTick();
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
