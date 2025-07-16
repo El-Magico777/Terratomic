@@ -1,5 +1,6 @@
 import { PriorityQueue } from "@datastructures-js/priority-queue";
-import { Colord, colord } from "colord";
+import { Colord, colord, extend } from "colord";
+import mixPlugin from "colord/plugins/mix";
 import { Theme } from "../../../core/configuration/Config";
 import { EventBus } from "../../../core/EventBus";
 import { Cell, PlayerType, UnitType } from "../../../core/game/Game";
@@ -42,8 +43,15 @@ export class TerritoryLayer implements Layer {
   private hotBorderColorRed = colord({ r: 255, g: 0, b: 0 });
   private hotBorderColorBlack = colord({ r: 0, g: 0, b: 0 });
   private previousBorderStatus: Map<TileRef, boolean> = new Map();
-  private darkenedTiles: Map<TileRef, { expiration: number; color: Colord }> =
-    new Map();
+  private darkenedTiles: Map<
+    TileRef,
+    {
+      startTime: number;
+      duration: number;
+      darkenedColor: Colord;
+      originalColor: Colord;
+    }
+  > = new Map();
 
   constructor(
     private game: GameView,
@@ -51,6 +59,7 @@ export class TerritoryLayer implements Layer {
     private transformHandler: TransformHandler,
   ) {
     this.theme = game.config().theme();
+    extend([mixPlugin]);
   }
 
   shouldTransform(): boolean {
@@ -177,10 +186,14 @@ export class TerritoryLayer implements Layer {
         if (owner.isPlayer()) {
           // Ensure owner is a PlayerView
           const territoryColor = this.theme.territoryColor(owner as PlayerView);
-          const darkenedColor = territoryColor.darken(0.1);
+          const darkenedColor = territoryColor.darken(0.3);
+          const originalColor = territoryColor;
+          const duration = 3000; // 3 seconds
           this.darkenedTiles.set(tile, {
-            expiration: Date.now() + 3000,
-            color: darkenedColor,
+            startTime: Date.now(),
+            duration: duration,
+            darkenedColor: darkenedColor,
+            originalColor: originalColor,
           });
           this.enqueueTile(tile);
         }
@@ -280,11 +293,13 @@ export class TerritoryLayer implements Layer {
           this.enqueueTile(tile);
         }
       }
-      for (const [
-        tile,
-        { expiration, color },
-      ] of this.darkenedTiles.entries()) {
-        if (now > expiration) {
+      for (const [tile, darkenedInfo] of this.darkenedTiles.entries()) {
+        const now = Date.now();
+        if (now < darkenedInfo.startTime + darkenedInfo.duration) {
+          // Still fading, re-enqueue for smooth transition
+          this.enqueueTile(tile);
+        } else {
+          // Fade complete, remove from map
           this.darkenedTiles.delete(tile);
           this.enqueueTile(tile);
         }
@@ -421,8 +436,15 @@ export class TerritoryLayer implements Layer {
     // Check if the tile is temporarily darkened (newly conquered)
     if (this.darkenedTiles.has(tile)) {
       const darkenedInfo = this.darkenedTiles.get(tile)!;
-      finalColor = darkenedInfo.color;
-      finalAlpha = 150; // Make darkened tiles more transparent
+      const elapsed = Date.now() - darkenedInfo.startTime;
+      const progress = Math.min(elapsed / darkenedInfo.duration, 1);
+
+      // Interpolate between darkenedColor and originalColor
+      finalColor = darkenedInfo.darkenedColor.mix(
+        darkenedInfo.originalColor,
+        progress,
+      );
+      finalAlpha = 150; // Maintain transparency during fade
     }
 
     if (this.game.isBorder(tile)) {
