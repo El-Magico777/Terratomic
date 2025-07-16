@@ -391,13 +391,22 @@ export class TerritoryLayer implements Layer {
           owner.id(),
         )
       ) {
-        const borderColors = this.theme.defendedBorderColors(owner);
-        const x = this.game.x(tile);
-        const y = this.game.y(tile);
-        const lightTile =
-          (x % 2 === 0 && y % 2 === 0) || (y % 2 === 1 && x % 2 === 1);
-        const borderColor = lightTile ? borderColors.light : borderColors.dark;
-        this.paintTile(tile, borderColor, 255);
+        const playerIsFocused = owner && this.game.focusedPlayer() === owner;
+        // Check if it's a hot border first
+        if (playerIsFocused && this.hotBorderTiles.has(tile)) {
+          const hotBorderInfo = this.hotBorderTiles.get(tile)!;
+          this.paintTile(tile, hotBorderInfo.color, 255);
+        } else {
+          const borderColors = this.theme.defendedBorderColors(owner);
+          const x = this.game.x(tile);
+          const y = this.game.y(tile);
+          const lightTile =
+            (x % 2 === 0 && y % 2 === 0) || (y % 2 === 1 && x % 2 === 1);
+          const borderColor = lightTile
+            ? borderColors.light
+            : borderColors.dark;
+          this.paintTile(tile, borderColor, 255);
+        }
       } else {
         const useBorderColor = playerIsFocused
           ? this.hotBorderTiles.has(tile)
