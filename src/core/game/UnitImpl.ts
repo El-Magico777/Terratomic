@@ -314,7 +314,7 @@ export class UnitImpl implements Unit {
     if (duration !== undefined) {
       this._cooldownDuration = duration;
     } else {
-      this._cooldownDuration = this.mg.config().SAMCooldown(); // Default for nukes
+      this._cooldownDuration = this.mg.config().SAMNukeCooldown(); // Default for nukes
     }
     this.mg.addUpdate(this.toUpdate());
   }

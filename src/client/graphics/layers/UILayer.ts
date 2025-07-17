@@ -148,7 +148,7 @@ export class UILayer implements Layer {
           !this.allProgressBars.has(unit.id())
         ) {
           const totalCooldown =
-            unit.cooldownDuration() ?? this.game.config().SAMCooldown();
+            unit.cooldownDuration() ?? this.game.config().SAMNukeCooldown();
           this.drawLoadingBar(unit, totalCooldown);
         }
         break;

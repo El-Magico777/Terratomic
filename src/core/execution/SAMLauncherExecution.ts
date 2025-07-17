@@ -75,15 +75,23 @@ export class SAMLauncherExecution implements Execution {
   }
 
   private isHit(type: UnitType, random: number): boolean {
-    if (type === UnitType.AtomBomb) {
-      return true;
+    if (!this.sam) return false; // Should not happen
+    const healthPercentage = this.sam.hasHealth()
+      ? Number(this.sam.health()) / (this.sam.info().maxHealth ?? 1)
+      : 1;
+
+    if (type === UnitType.AtomBomb || type === UnitType.HydrogenBomb) {
+      return (
+        random < this.mg.config().samNukeHittingChance() * healthPercentage
+      );
     }
 
     if (type === UnitType.MIRVWarhead) {
       return random < this.mg.config().samWarheadHittingChance();
     }
 
-    return random < this.mg.config().samHittingChance();
+    // For planes (CargoPlane, Bomber, FighterJet)
+    return random < this.mg.config().samPlaneHittingChance() * healthPercentage;
   }
 
   tick(ticks: number): void {
@@ -101,7 +109,7 @@ export class SAMLauncherExecution implements Execution {
         return;
       }
       this.sam = this.player.buildUnit(UnitType.SAMLauncher, spawnTile, {
-        cooldownDuration: this.mg.config().SAMCooldown(),
+        cooldownDuration: this.mg.config().SAMNukeCooldown(),
       });
     }
     if (!this.sam.isActive()) {
@@ -184,7 +192,7 @@ export class SAMLauncherExecution implements Execution {
             UnitType.MIRVWarhead,
             mirvWarheadTargets.length,
           );
-      } else if (target !== null) {
+      } else if (target !== null && hit) {
         target.setTargetedBySAM(true);
         this.mg.addExecution(
           new SAMMissileExecution(
@@ -194,6 +202,8 @@ export class SAMLauncherExecution implements Execution {
             target,
           ),
         );
+      } else if (target !== null) {
+        // Do nothing, the missile missed
       } else {
         throw new Error("target is null");
       }
@@ -235,22 +245,32 @@ export class SAMLauncherExecution implements Execution {
       this.sam.launch(this.mg.config().SAMPlaneCooldown());
       const samOwner = this.sam!.owner();
       const targetPlane = validAirborneTargets[0].unit;
+      const random = this.pseudoRandom!.next();
+      const hit = this.isHit(targetPlane.type(), random);
 
-      this.mg.displayMessage(
-        `1 AirPlane intercepted`,
-        MessageType.SAM_HIT,
-        samOwner.id(),
-      );
+      if (hit) {
+        this.mg.displayMessage(
+          `1 AirPlane intercepted`,
+          MessageType.SAM_HIT,
+          samOwner.id(),
+        );
 
-      targetPlane.setTargetedBySAM(true);
-      this.mg.addExecution(
-        new SAMMissileExecution(
-          this.sam!.tile(),
-          this.sam!.owner(),
-          this.sam!,
-          targetPlane,
-        ),
-      );
+        targetPlane.setTargetedBySAM(true);
+        this.mg.addExecution(
+          new SAMMissileExecution(
+            this.sam!.tile(),
+            this.sam!.owner(),
+            this.sam!,
+            targetPlane,
+          ),
+        );
+      } else {
+        this.mg.displayMessage(
+          `Missile failed to intercept ${targetPlane.type()}`,
+          MessageType.SAM_MISS,
+          this.sam.owner().id(),
+        );
+      }
     }
   }
 
