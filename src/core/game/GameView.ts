@@ -369,16 +369,7 @@ export class GameView implements GameMap {
 
     this.updatedTiles = [];
     this.lastUpdate.packedTileUpdates.forEach((tu) => {
-      const tileRef = this.updateTile(tu);
-      this.updatedTiles.push(tileRef);
-      // Ensure gu.updates.Tile is initialized
-      if (!gu.updates[GameUpdateType.Tile]) {
-        gu.updates[GameUpdateType.Tile] = [];
-      }
-      gu.updates[GameUpdateType.Tile].push({
-        type: GameUpdateType.Tile,
-        update: tu,
-      });
+      this.updatedTiles.push(this.updateTile(tu));
     });
 
     if (gu.updates === null) {

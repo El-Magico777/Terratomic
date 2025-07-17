@@ -1,5 +1,5 @@
 import { PriorityQueue } from "@datastructures-js/priority-queue";
-import { Colord, colord } from "colord";
+import { Colord } from "colord";
 import { Theme } from "../../../core/configuration/Config";
 import { EventBus } from "../../../core/EventBus";
 import { Cell, PlayerType, UnitType } from "../../../core/game/Game";
@@ -37,13 +37,12 @@ export class TerritoryLayer implements Layer {
   private lastRefresh = 0;
 
   private lastFocusedPlayer: PlayerView | null = null;
+  private lastCleanupTick = 0;
   private hotBorderTiles: Map<TileRef, { expiration: number; color: Colord }> =
     new Map();
-  private hotBorderColorRed = colord({ r: 255, g: 0, b: 0 });
-  private hotBorderColorBlack = colord({ r: 0, g: 0, b: 0 });
+  private hotBorderColorRed: Colord;
+  private hotBorderColorBlack: Colord;
   private previousBorderStatus: Map<TileRef, boolean> = new Map();
-  private darkenedTiles: Map<TileRef, { expiration: number; color: Colord }> =
-    new Map();
 
   constructor(
     private game: GameView,
@@ -51,6 +50,8 @@ export class TerritoryLayer implements Layer {
     private transformHandler: TransformHandler,
   ) {
     this.theme = game.config().theme();
+    this.hotBorderColorRed = this.theme.hotBorderColorRed();
+    this.hotBorderColorBlack = this.theme.hotBorderColorBlack();
   }
 
   shouldTransform(): boolean {
@@ -66,6 +67,21 @@ export class TerritoryLayer implements Layer {
 
   tick() {
     this.game.recentlyUpdatedTiles().forEach((t) => this.enqueueTile(t));
+
+    const CLEANUP_INTERVAL_TICKS = 10; // Adjust as needed, e.g., 10-30 ticks
+    if (this.game.ticks() - this.lastCleanupTick >= CLEANUP_INTERVAL_TICKS) {
+      this.lastCleanupTick = this.game.ticks(); // Update last cleanup time
+
+      const now = Date.now();
+      // Clean up hot borders
+      for (const [tile, { expiration }] of this.hotBorderTiles.entries()) {
+        if (now > expiration) {
+          this.hotBorderTiles.delete(tile);
+          this.enqueueTile(tile); // Re-queue to repaint to normal state
+        }
+      }
+    }
+
     const focusedPlayer = this.game.focusedPlayer();
 
     const tilesToProcess = new Set<TileRef>();
@@ -167,27 +183,6 @@ export class TerritoryLayer implements Layer {
     const updates = this.game.updatesSinceLastTick();
     const recentlyUpdatedTilesSet = new Set(this.game.recentlyUpdatedTiles());
 
-    // Handle newly conquered tiles for darkening effect
-    const tileUpdates = updates !== null ? updates[GameUpdateType.Tile] : [];
-
-    tileUpdates.forEach((update) => {
-      const tile = Number(update.update >> 16n);
-      // Check if the tile was recently updated (i.e., its owner changed)
-      if (recentlyUpdatedTilesSet.has(tile)) {
-        const owner = this.game.owner(tile);
-        if (owner.isPlayer()) {
-          // Ensure owner is a PlayerView
-          const territoryColor = this.theme.territoryColor(owner as PlayerView);
-          const darkenedColor = territoryColor.darken(0.06);
-          this.darkenedTiles.set(tile, {
-            expiration: Date.now() + 3000,
-            color: darkenedColor,
-          });
-          this.enqueueTile(tile);
-        }
-      }
-    });
-
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
     unitUpdates.forEach((update) => {
       if (update.unitType === UnitType.DefensePost) {
@@ -270,27 +265,6 @@ export class TerritoryLayer implements Layer {
       // TODO: consider re-enabling this on mobile or low end devices for smoother dragging.
       // this.lastDragTime = Date.now();
     });
-    setInterval(() => {
-      const now = Date.now();
-      for (const [
-        tile,
-        { expiration, color },
-      ] of this.hotBorderTiles.entries()) {
-        if (now > expiration) {
-          this.hotBorderTiles.delete(tile);
-          this.enqueueTile(tile);
-        }
-      }
-      for (const [
-        tile,
-        { expiration, color },
-      ] of this.darkenedTiles.entries()) {
-        if (now > expiration) {
-          this.darkenedTiles.delete(tile);
-          this.enqueueTile(tile);
-        }
-      }
-    }, 2000);
     this.redraw();
   }
 
@@ -415,16 +389,8 @@ export class TerritoryLayer implements Layer {
       return;
     }
     const owner = this.game.owner(tile) as PlayerView;
-
     let finalColor = this.theme.territoryColor(owner);
     let finalAlpha = 150;
-
-    // Check if the tile is temporarily darkened (newly conquered)
-    if (this.darkenedTiles.has(tile)) {
-      const darkenedInfo = this.darkenedTiles.get(tile)!;
-      finalColor = darkenedInfo.color;
-      finalAlpha = 150; // Make darkened tiles more transparent
-    }
 
     if (this.game.isBorder(tile)) {
       finalAlpha = 255; // Borders are always opaque
@@ -454,7 +420,9 @@ export class TerritoryLayer implements Layer {
         if (playerIsFocused && this.hotBorderTiles.has(tile)) {
           finalColor = this.hotBorderTiles.get(tile)!.color;
         } else {
-          finalColor = this.theme.borderColor(owner);
+          finalColor = playerIsFocused
+            ? this.theme.focusedBorderColor()
+            : this.theme.borderColor(owner);
         }
       }
     }
