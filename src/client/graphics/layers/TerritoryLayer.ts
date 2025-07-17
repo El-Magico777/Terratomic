@@ -290,7 +290,7 @@ export class TerritoryLayer implements Layer {
           this.enqueueTile(tile);
         }
       }
-    }, 250);
+    }, 2000);
     this.redraw();
   }
 
