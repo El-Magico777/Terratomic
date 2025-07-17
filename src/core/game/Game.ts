@@ -431,9 +431,9 @@ export interface Unit {
   // --- UNIT SPECIFIC ---
 
   // SAMs & Missile Silos
-  launch(): void;
+  launch(duration?: Tick): void;
   ticksLeftInCooldown(): Tick | undefined;
-  isInCooldown(): boolean;
+  isInCooldown(duration?: Tick): boolean;
 
   // Trade Ships
   setSafeFromPirates(): void; // Only for trade ships

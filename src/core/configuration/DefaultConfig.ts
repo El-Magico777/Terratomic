@@ -248,6 +248,9 @@ export class DefaultConfig implements Config {
   SAMCooldown(): number {
     return 75;
   }
+  SAMPlaneCooldown(): number {
+    return 40;
+  }
   SiloCooldown(): number {
     return 75;
   }

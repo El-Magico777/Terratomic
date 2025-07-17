@@ -139,6 +139,7 @@ export interface Config {
   safeFromPiratesCooldownMax(): number;
   defensePostRange(): number;
   SAMCooldown(): number;
+  SAMPlaneCooldown(): number;
   SiloCooldown(): number;
   defensePostLossMultiplier(): number;
   defensePostSpeedMultiplier(): number;

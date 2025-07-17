@@ -228,27 +228,29 @@ export class SAMLauncherExecution implements Execution {
       return !unit.targetedBySAM();
     });
 
-    if (validAirborneTargets.length > 0) {
-      this.sam.launch();
+    if (
+      validAirborneTargets.length > 0 &&
+      !this.sam.isInCooldown(this.mg.config().SAMPlaneCooldown())
+    ) {
+      this.sam.launch(this.mg.config().SAMPlaneCooldown());
       const samOwner = this.sam!.owner();
+      const targetPlane = validAirborneTargets[0].unit;
 
       this.mg.displayMessage(
-        `${validAirborneTargets.length} AirPlane(s) intercepted`,
+        `1 AirPlane intercepted`,
         MessageType.SAM_HIT,
         samOwner.id(),
       );
 
-      validAirborneTargets.forEach(({ unit: u }) => {
-        u.setTargetedBySAM(true);
-        this.mg.addExecution(
-          new SAMMissileExecution(
-            this.sam!.tile(),
-            this.sam!.owner(),
-            this.sam!,
-            u,
-          ),
-        );
-      });
+      targetPlane.setTargetedBySAM(true);
+      this.mg.addExecution(
+        new SAMMissileExecution(
+          this.sam!.tile(),
+          this.sam!.owner(),
+          this.sam!,
+          targetPlane,
+        ),
+      );
     }
   }
 
