@@ -178,7 +178,7 @@ export class TerritoryLayer implements Layer {
         if (owner.isPlayer()) {
           // Ensure owner is a PlayerView
           const territoryColor = this.theme.territoryColor(owner as PlayerView);
-          const darkenedColor = territoryColor.darken(0.1);
+          const darkenedColor = territoryColor.darken(0.06);
           this.darkenedTiles.set(tile, {
             expiration: Date.now() + 3000,
             color: darkenedColor,
