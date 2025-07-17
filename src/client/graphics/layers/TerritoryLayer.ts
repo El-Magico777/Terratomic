@@ -58,7 +58,10 @@ export class TerritoryLayer implements Layer {
     return true;
   }
 
-  async paintPlayerBorder(player: PlayerView) {
+  async paintPlayerBorder(player: PlayerView | null) {
+    if (!player || typeof player.borderTiles !== "function") {
+      return;
+    }
     const tiles = await player.borderTiles();
     tiles.borderTiles.forEach((tile: TileRef) => {
       this.paintTerritory(tile, true); // Immediately paint the tile instead of enqueueing
@@ -121,6 +124,11 @@ export class TerritoryLayer implements Layer {
     const newPreviousBorderStatus = new Map<TileRef, boolean>();
     const tilesToEnqueue = new Set<TileRef>(); // Collect tiles to enqueue once
 
+    // Copy existing previousBorderStatus
+    for (const [tile, status] of this.previousBorderStatus.entries()) {
+      newPreviousBorderStatus.set(tile, status);
+    }
+
     if (focusedPlayer) {
       for (const tile of tilesToProcess) {
         const owner = this.game.owner(tile);
@@ -164,14 +172,13 @@ export class TerritoryLayer implements Layer {
           tilesToEnqueue.add(tile);
         }
 
-        if (isCurrentBorder) {
-          newPreviousBorderStatus.set(tile, true);
-        }
+        // Update newPreviousBorderStatus for this tile
+        newPreviousBorderStatus.set(tile, isCurrentBorder);
       }
     } else {
       // If no focused player, clear all hot borders and previous border status
       this.hotBorderTiles.clear();
-      this.previousBorderStatus.clear();
+      newPreviousBorderStatus.clear(); // Clear this too
     }
 
     // Update previousBorderStatus for the next tick
@@ -450,7 +457,10 @@ export class TerritoryLayer implements Layer {
     });
   }
 
-  async enqueuePlayerBorder(player: PlayerView) {
+  async enqueuePlayerBorder(player: PlayerView | null) {
+    if (!player || typeof player.borderTiles !== "function") {
+      return;
+    }
     const playerBorderTiles = await player.borderTiles();
     playerBorderTiles.borderTiles.forEach((tile: TileRef) => {
       this.enqueueTile(tile);
