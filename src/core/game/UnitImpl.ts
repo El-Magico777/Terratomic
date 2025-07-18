@@ -28,6 +28,7 @@ export class UnitImpl implements Unit {
   private _troops: number;
   private _cooldownStartTick: Tick | null = null;
   private _cooldownDuration: Tick | null = null;
+  private _returning: boolean = false;
   private _patrolTile: TileRef | undefined;
   private _level: number = 1;
   private _targetable: boolean = true;
@@ -124,6 +125,7 @@ export class UnitImpl implements Unit {
       targetTile: this.targetTile() ?? undefined,
       ticksLeftInCooldown: this.ticksLeftInCooldown() ?? undefined,
       cooldownDuration: this._cooldownDuration ?? undefined,
+      returning: this.returning(),
     };
   }
 
@@ -379,6 +381,14 @@ export class UnitImpl implements Unit {
 
   targetedBySAM(): boolean {
     return this._targetedBySAM;
+  }
+
+  returning(): boolean {
+    return this._returning;
+  }
+
+  setReturning(returning: boolean): void {
+    this._returning = returning;
   }
 
   setReachedTarget(): void {

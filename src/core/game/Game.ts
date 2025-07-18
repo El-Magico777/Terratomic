@@ -417,6 +417,8 @@ export interface Unit {
   reachedTarget(): boolean;
   isTargetable(): boolean;
   setTargetable(targetable: boolean): void;
+  returning(): boolean;
+  setReturning(returning: boolean): void;
 
   // Health
   hasHealth(): boolean;

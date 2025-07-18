@@ -127,6 +127,10 @@ export class UnitView {
     return this.data.ticksLeftInCooldown > 0;
   }
 
+  returning(): boolean {
+    return this.data.returning ?? false;
+  }
+
   info(): UnitInfo {
     return this.gameView.unitInfo(this.type());
   }

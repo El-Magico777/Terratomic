@@ -221,22 +221,45 @@ export class SAMLauncherExecution implements Execution {
     );
     if (!this.sam) return;
 
-    const validAirborneTargets = potentialAirborneTargets.filter(({ unit }) => {
-      const unitOwner = unit.owner();
-      const targetUnitOwner = unit.targetUnit()?.owner();
+    const validAirborneTargets = potentialAirborneTargets
+      .filter(({ unit }) => {
+        const unitOwner = unit.owner();
+        const targetUnitOwner = unit.targetUnit()?.owner();
 
-      if (unitOwner === this.player) return false;
+        if (unitOwner === this.player) return false;
 
-      if (this.player.isFriendly(unitOwner)) return false;
-      if (
-        targetUnitOwner === this.player ||
-        (targetUnitOwner && targetUnitOwner.isFriendly(this.player))
-      ) {
-        return false;
-      }
+        if (this.player.isFriendly(unitOwner)) return false;
+        if (
+          targetUnitOwner === this.player ||
+          (targetUnitOwner && targetUnitOwner.isFriendly(this.player))
+        ) {
+          return false;
+        }
 
-      return !unit.targetedBySAM();
-    });
+        // Exclude returning bombers
+        if (unit.type() === UnitType.Bomber && unit.returning()) {
+          return false;
+        }
+
+        return !unit.targetedBySAM();
+      })
+      .sort((a, b) => {
+        // Prioritize by unit type: Bomber > FighterJet > CargoPlane
+        const typeOrder = {
+          [UnitType.Bomber]: 0,
+          [UnitType.FighterJet]: 1,
+          [UnitType.CargoPlane]: 2,
+        };
+        const typeA = typeOrder[a.unit.type() as UnitType];
+        const typeB = typeOrder[b.unit.type() as UnitType];
+
+        if (typeA !== typeB) {
+          return typeA - typeB;
+        }
+
+        // For same type, prioritize by distance (closer first)
+        return a.distSquared - b.distSquared;
+      });
 
     if (
       validAirborneTargets.length > 0 &&
