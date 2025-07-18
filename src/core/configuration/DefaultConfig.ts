@@ -955,4 +955,3 @@ export class DefaultConfig implements Config {
     return 300; // 30 seconds before expiration
   }
 }
-
