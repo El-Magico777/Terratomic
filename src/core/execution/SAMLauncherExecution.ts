@@ -273,7 +273,7 @@ export class SAMLauncherExecution implements Execution {
 
       if (hit) {
         this.mg.displayMessage(
-          `1 AirPlane intercepted`,
+          "messages.airplane_intercepted",
           MessageType.SAM_HIT,
           samOwner.id(),
         );
@@ -289,7 +289,7 @@ export class SAMLauncherExecution implements Execution {
         );
       } else {
         this.mg.displayMessage(
-          `Missile failed to intercept ${targetPlane.type()}`,
+          "messages.missile_failed_intercept",
           MessageType.SAM_MISS,
           this.sam.owner().id(),
         );
