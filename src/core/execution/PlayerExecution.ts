@@ -123,12 +123,26 @@ export class PlayerExecution implements Execution {
     this.player.largestClusterBoundingBox = calculateBoundingBox(this.mg, main);
     const surroundedBy = this.surroundedBySamePlayer(main);
     if (surroundedBy && !this.player.isFriendly(surroundedBy)) {
-      this.removeCluster(main);
+      // Check for paratrooper immunity for the main cluster
+      const isImmune = this.checkParatrooperImmunity(main, surroundedBy);
+      if (!isImmune) {
+        this.removeCluster(main);
+      }
     }
 
     for (const cluster of clusters) {
+      // Note: isSurrounded here still returns boolean, so we need to re-evaluate the surrounding player
       if (this.isSurrounded(cluster)) {
-        this.removeCluster(cluster);
+        const surroundingPlayer = this.getCapturingPlayer(cluster); // Re-determine the capturing player for immunity check
+        if (surroundingPlayer) {
+          const isImmune = this.checkParatrooperImmunity(
+            cluster,
+            surroundingPlayer,
+          );
+          if (!isImmune) {
+            this.removeCluster(cluster);
+          }
+        }
       }
     }
   }
@@ -136,12 +150,18 @@ export class PlayerExecution implements Execution {
   private surroundedBySamePlayer(cluster: Set<TileRef>): false | Player {
     const enemies = new Set<number>();
     for (const tile of cluster) {
-      const isOceanShore = this.mg.isOceanShore(tile);
-      if (this.mg.isOceanShore(tile) && !isOceanShore) {
-        continue;
+      // Check for paratrooper landing zone immunity
+      if (this.mg.paratrooperLandingZones().has(tile)) {
+        return false; // This tile is a paratrooper landing zone, so the cluster is immune
       }
+
+      const isOceanShore = this.mg.isOceanShore(tile);
+      // Corrected: If it's an ocean shore, it's not fully surrounded.
+      if (isOceanShore) {
+        continue; // Skip this tile, it's an "escape route"
+      }
+
       if (
-        isOceanShore ||
         this.mg.isOnEdgeOfMap(tile) ||
         this.mg.neighbors(tile).some((n) => !this.mg?.hasOwner(n))
       ) {
@@ -170,6 +190,11 @@ export class PlayerExecution implements Execution {
   private isSurrounded(cluster: Set<TileRef>): boolean {
     const enemyTiles = new Set<TileRef>();
     for (const tr of cluster) {
+      // Check for paratrooper landing zone immunity
+      if (this.mg.paratrooperLandingZones().has(tr)) {
+        return false; // This tile is a paratrooper landing zone, so the cluster is immune
+      }
+
       if (this.mg.isShore(tr) || this.mg.isOnEdgeOfMap(tr)) {
         return false;
       }
@@ -303,6 +328,28 @@ export class PlayerExecution implements Execution {
       clusters.push(cluster);
     }
     return clusters;
+  }
+
+  private checkParatrooperImmunity(
+    cluster: Set<TileRef>,
+    surroundingPlayer: Player,
+  ): boolean {
+    for (const tile of cluster) {
+      const conquestInfo = this.mg.getParatrooperConquestInfo(tile);
+
+      // A tile is immune if ALL these conditions are met:
+      // 1. It was conquered by a paratrooper (conquestInfo exists).
+      // 2. The current player (this.player) is the one who initiated that paratrooper conquest.
+      // 3. The player currently surrounding the cluster (surroundingPlayer) is the *original owner* of this tile before the paratrooper attack.
+      if (
+        !conquestInfo ||
+        conquestInfo.originatorID !== this.player.id() ||
+        conquestInfo.previousOwnerID !== surroundingPlayer.id()
+      ) {
+        return false; // If any tile doesn't meet these criteria, the whole cluster is NOT immune.
+      }
+    }
+    return true; // All tiles in the cluster meet the immunity criteria.
   }
 
   owner(): Player {

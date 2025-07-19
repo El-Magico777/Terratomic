@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import airAttackIcon from "../../../../resources/images/AirAttackIconWhite.svg";
 import allianceIcon from "../../../../resources/images/AllianceIconWhite.svg";
 import boatIcon from "../../../../resources/images/BoatIconWhite.svg";
 import buildIcon from "../../../../resources/images/BuildIconWhite.svg";
@@ -26,6 +27,7 @@ import {
   SendAttackIntentEvent,
   SendBoatAttackIntentEvent,
   SendBreakAllianceIntentEvent,
+  SendParatrooperAttackIntentEvent,
   SendSpawnIntentEvent,
 } from "../../Transport";
 import { TransformHandler } from "../TransformHandler";
@@ -41,6 +43,7 @@ enum Slot {
   Boat,
   Build,
   Ally,
+  AirAttack,
 }
 
 export class RadialMenu implements Layer {
@@ -64,6 +67,16 @@ export class RadialMenu implements Layer {
       Slot.Boat,
       {
         name: "boat",
+        disabled: true,
+        action: () => {},
+        color: null,
+        icon: null,
+      },
+    ],
+    [
+      Slot.AirAttack,
+      {
+        name: "airAttack",
         disabled: true,
         action: () => {},
         color: null,
@@ -418,6 +431,20 @@ export class RadialMenu implements Layer {
     }
     if (actions.canAttack) {
       this.enableCenterButton(true);
+    }
+
+    if (myPlayer.units(UnitType.Airfield).length > 0) {
+      this.activateMenuElement(Slot.AirAttack, "#8B0000", airAttackIcon, () => {
+        if (this.clickedCell === null) return;
+        const dst = this.g.ref(this.clickedCell.x, this.clickedCell.y);
+        this.eventBus.emit(
+          new SendParatrooperAttackIntentEvent(
+            this.g.owner(tile).id(),
+            dst,
+            this.uiState.attackRatio * myPlayer.troops(),
+          ),
+        );
+      });
     }
 
     if (!this.g.hasOwner(tile)) {

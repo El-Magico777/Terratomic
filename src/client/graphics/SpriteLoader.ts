@@ -22,6 +22,7 @@ const SPRITE_CONFIG: Partial<Record<UnitType, string>> = {
   [UnitType.TradeShip]: tradeShipSprite,
   [UnitType.MIRV]: mirvSprite,
   [UnitType.CargoPlane]: cargoPlaneSprite,
+  [UnitType.Paratrooper]: cargoPlaneSprite,
   [UnitType.Bomber]: fighterJetSprite,
   [UnitType.FighterJet]: bomberSprite,
 };

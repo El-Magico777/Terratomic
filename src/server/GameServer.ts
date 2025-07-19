@@ -222,6 +222,9 @@ export class GameServer {
               );
               return;
             }
+            if (clientMsg.intent.type === "paratrooper_attack") {
+              this.log.info("Received paratrooper attack intent");
+            }
             this.addIntent(clientMsg.intent);
           }
           if (clientMsg.type === "ping") {

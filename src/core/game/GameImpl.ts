@@ -55,6 +55,12 @@ export class GameImpl implements Game {
 
   private unInitExecs: Execution[] = [];
 
+  private paratrooperConquestInfo: Map<
+    TileRef,
+    { originatorID: PlayerID; previousOwnerID: PlayerID | null }
+  > = new Map();
+  private _paratrooperLandingZones: Set<TileRef> = new Set();
+
   _players: Map<PlayerID, PlayerImpl> = new Map<PlayerID, PlayerImpl>();
   _playersBySmallID: Player[] = [];
 
@@ -70,7 +76,7 @@ export class GameImpl implements Game {
   private nextPlayerID = 1;
   private _nextUnitID = 1;
 
-  private updates: GameUpdates = createGameUpdatesMap();
+  private updates: GameUpdates = this.createGameUpdatesMap();
   private unitGrid: UnitGrid;
 
   private playerTeams: Team[] = [ColoredTeams.Red, ColoredTeams.Blue];
@@ -286,7 +292,7 @@ export class GameImpl implements Game {
   }
 
   executeNextTick(): GameUpdates {
-    this.updates = createGameUpdatesMap();
+    this.updates = this.createGameUpdatesMap();
     this.execs.forEach((e) => {
       if (
         (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
@@ -457,29 +463,52 @@ export class GameImpl implements Game {
     return ns;
   }
 
-  conquer(owner: PlayerImpl, tile: TileRef): void {
+  public conquer(
+    newOwner: Player,
+    tile: TileRef,
+    isParatrooperConquest: boolean = false,
+    previousOwner: Player | TerraNullius | null = null,
+  ) {
     if (!this.isLand(tile)) {
       throw Error(`cannot conquer water`);
     }
-    const previousOwner = this.owner(tile) as TerraNullius | PlayerImpl;
-    if (previousOwner.isPlayer()) {
-      previousOwner._lastTileChange = this._ticks;
-      previousOwner._tiles.delete(tile);
-      previousOwner._borderTiles.delete(tile);
+    const currentOwner = this.owner(tile);
+
+    if (currentOwner.isPlayer()) {
+      (currentOwner as PlayerImpl)._lastTileChange = this._ticks;
+      (currentOwner as PlayerImpl)._tiles.delete(tile);
+      (currentOwner as PlayerImpl)._borderTiles.delete(tile);
     }
-    this._map.setOwnerID(tile, owner.smallID());
-    owner._tiles.add(tile);
-    const numTiles = owner.numTilesOwned();
-    owner.setProductivity(
-      (owner.productivity() * (numTiles - 1)) / numTiles + 1 / numTiles,
+    this._map.setOwnerID(tile, newOwner.smallID());
+    (newOwner as PlayerImpl)._tiles.add(tile);
+    const numTiles = (newOwner as PlayerImpl).numTilesOwned();
+    (newOwner as PlayerImpl).setProductivity(
+      ((newOwner as PlayerImpl).productivity() * (numTiles - 1)) / numTiles +
+        1 / numTiles,
     );
-    owner._lastTileChange = this._ticks;
+    (newOwner as PlayerImpl)._lastTileChange = this._ticks;
     this.updateBorders(tile);
     this._map.setFallout(tile, false);
+
+    this.addUpdate({
+      type: GameUpdateType.TileOwnerChanged,
+      tile: tile,
+      newOwnerID: newOwner.id(),
+      previousOwnerID: currentOwner.id(),
+    });
     this.addUpdate({
       type: GameUpdateType.Tile,
       update: this.toTileUpdate(tile),
     });
+
+    if (isParatrooperConquest) {
+      this.paratrooperConquestInfo.set(tile, {
+        originatorID: newOwner.id(),
+        previousOwnerID: currentOwner.isPlayer() ? currentOwner.id() : null,
+      });
+    } else {
+      this.paratrooperConquestInfo.delete(tile);
+    }
   }
 
   relinquish(tile: TileRef) {
@@ -832,15 +861,24 @@ export class GameImpl implements Game {
   public alliances(): AllianceImpl[] {
     return this.alliances_;
   }
-}
 
-// Or a more dynamic approach that will catch new enum values:
-const createGameUpdatesMap = (): GameUpdates => {
-  const map = {} as GameUpdates;
-  Object.values(GameUpdateType)
-    .filter((key) => !isNaN(Number(key))) // Filter out reverse mappings
-    .forEach((key) => {
-      map[key as GameUpdateType] = [];
-    });
-  return map;
-};
+  public paratrooperLandingZones(): Set<TileRef> {
+    return this._paratrooperLandingZones;
+  }
+
+  public getParatrooperConquestInfo(
+    tile: TileRef,
+  ): { originatorID: PlayerID; previousOwnerID: PlayerID | null } | undefined {
+    return this.paratrooperConquestInfo.get(tile);
+  }
+
+  private createGameUpdatesMap(): GameUpdates {
+    const map = {} as GameUpdates;
+    Object.values(GameUpdateType)
+      .filter((key) => !isNaN(Number(key))) // Filter out reverse mappings
+      .forEach((key) => {
+        map[key as GameUpdateType] = [];
+      });
+    return map;
+  }
+}

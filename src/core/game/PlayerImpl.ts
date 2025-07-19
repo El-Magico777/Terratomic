@@ -976,6 +976,7 @@ export class PlayerImpl implements Player {
         return this.landBasedStructureSpawn(targetTile, validTiles);
       case UnitType.CargoPlane:
       case UnitType.Bomber:
+      case UnitType.Paratrooper:
         return this.cargoPlaneSpawn(targetTile);
       case UnitType.FighterJet:
         return this.fighterJetSpawn(targetTile);

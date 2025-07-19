@@ -237,7 +237,8 @@ export class UnitImpl implements Unit {
     if (
       displayMessage !== false &&
       this._type !== UnitType.MIRVWarhead &&
-      this._type !== UnitType.Bomber
+      this._type !== UnitType.Bomber &&
+      this._type !== UnitType.Paratrooper
     ) {
       this.mg.displayMessage(
         `Your ${this._type} was destroyed`,
