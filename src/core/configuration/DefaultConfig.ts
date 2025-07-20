@@ -366,6 +366,10 @@ export class DefaultConfig implements Config {
     return 1000;
   }
 
+  paratrooperTroopCostPercentage(): number {
+    return 0.3;
+  }
+
   paratrooperAttackAmount(
     attacker: Player,
     defender: Player | TerraNullius,

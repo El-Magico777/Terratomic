@@ -85,6 +85,21 @@ export class ParatrooperAttackExecution implements Execution {
       return;
     }
 
+    const troopCost = Math.floor(
+      this.troops * game.config().paratrooperTroopCostPercentage(),
+    );
+
+    this.troops -= troopCost;
+
+    if (this.troops <= 0) {
+      game.displayMessage(
+        "Not enough troops to send after deducting paratrooper cost.",
+        MessageType.WARN,
+        this.attacker.id(),
+      );
+      return;
+    }
+
     if (
       this.attacker.units(UnitType.Paratrooper).length >=
       game.config().paratrooperMaxNumber()
