@@ -1,4 +1,5 @@
 import { Execution, Game, MessageType, Player, UnitType } from "../game/Game";
+
 import { TileRef } from "../game/GameMap";
 import { StraightPathFinder } from "../pathfinding/PathFinding";
 import { AttackExecution } from "./AttackExecution";
@@ -37,11 +38,7 @@ export class ParatrooperAttackExecution implements Execution {
     this.mg = game;
     const airfields = this.attacker.units(UnitType.Airfield);
     if (airfields.length === 0) {
-      game.displayMessage(
-        "No airfields available to launch paratrooper attack.",
-        MessageType.WARN,
-        this.attacker.id(),
-      );
+      console.warn("No airfields available to launch paratrooper attack.");
       return;
     }
 
@@ -59,29 +56,19 @@ export class ParatrooperAttackExecution implements Execution {
     }
 
     if (closestAirfield === null) {
-      game.displayMessage(
+      console.warn(
         "Could not find a suitable airfield for paratrooper attack.",
-        MessageType.WARN,
-        this.attacker.id(),
       );
       return;
     }
 
     if (minDistance > game.config().paratrooperMaxRange()) {
-      game.displayMessage(
-        "Destination is out of range for paratrooper attack.",
-        MessageType.WARN,
-        this.attacker.id(),
-      );
+      console.warn("Destination is out of range for paratrooper attack.");
       return;
     }
 
     if (this.troops <= 0 || this.troops > this.attacker.troops()) {
-      game.displayMessage(
-        "Invalid number of troops for paratrooper attack.",
-        MessageType.WARN,
-        this.attacker.id(),
-      );
+      console.warn("Invalid number of troops for paratrooper attack.");
       return;
     }
 
@@ -92,10 +79,8 @@ export class ParatrooperAttackExecution implements Execution {
     this.troops -= troopCost;
 
     if (this.troops <= 0) {
-      game.displayMessage(
+      console.warn(
         "Not enough troops to send after deducting paratrooper cost.",
-        MessageType.WARN,
-        this.attacker.id(),
       );
       return;
     }
@@ -123,10 +108,8 @@ export class ParatrooperAttackExecution implements Execution {
     // Initialize pathfinder
     this.pathFinder = new StraightPathFinder(this.mg.map());
 
-    game.paratrooperLandingZones().add(this.dst);
-
     game.displayMessage(
-      `Incoming Paratrooper Attack on (${this.mg.map().x(this.dst)}, ${this.mg.map().y(this.dst)}) from ${this.attacker.displayName()}`,
+      `Incoming Paratrooper Attack from ${this.attacker.displayName()}`,
       MessageType.PARATROOPER_INBOUND,
       this.targetPlayerID,
     );
@@ -165,11 +148,6 @@ export class ParatrooperAttackExecution implements Execution {
         if (targetOwner === this.attacker) {
           // Landed on own territory, add troops to tile
           this.attacker.addTroops(paratrooper.troops());
-          game.displayMessage(
-            `Paratroopers landed safely on (${this.mg.map().x(this.dst)}, ${this.mg.map().y(this.dst)})`,
-            MessageType.WARN,
-            this.attacker.id(),
-          );
         } else {
           // Initiate AttackExecution
           const attackExecution = new AttackExecution(
@@ -178,18 +156,11 @@ export class ParatrooperAttackExecution implements Execution {
             targetOwner.id(),
             this.dst,
             false, // Do not remove troops from attacker, as they are from the paratrooper
-            true, // NEW: This attack originates from a paratrooper
           );
           game.addExecution(attackExecution);
-          game.displayMessage(
-            `Paratroopers initiated attack on (${this.mg.map().x(this.dst)}, ${this.mg.map().y(this.dst)})`,
-            MessageType.ATTACK_REQUEST,
-            this.attacker.id(),
-          );
         }
-        paratrooper.delete();
-        this.paratrooperUnitID = null;
-        game.paratrooperLandingZones().delete(this.dst);
+        paratrooper.delete(false);
+
         return;
       } else {
         currentTile = nextTileResult;

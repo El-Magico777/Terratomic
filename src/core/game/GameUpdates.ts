@@ -231,7 +231,6 @@ export interface TileOwnerChangedUpdate {
   type: GameUpdateType.TileOwnerChanged;
   tile: TileRef;
   newOwnerID: PlayerID;
-  previousOwnerID: PlayerID | null;
 }
 
 export interface AllianceViewData {

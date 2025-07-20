@@ -359,7 +359,7 @@ export class DefaultConfig implements Config {
   }
 
   paratrooperSpeed(): number {
-    return 2;
+    return 1;
   }
 
   paratrooperMaxRange(): number {

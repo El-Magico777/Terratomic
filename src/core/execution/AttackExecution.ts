@@ -36,7 +36,6 @@ export class AttackExecution implements Execution {
     private _targetID: PlayerID | null,
     private sourceTile: TileRef | null = null,
     private removeTroops: boolean = true,
-    private isParatrooperAttack: boolean = false, // NEW: Flag for paratrooper attacks
   ) {
     this.isDeepStrike = sourceTile !== null;
   }
@@ -326,12 +325,7 @@ export class AttackExecution implements Execution {
       if (targetPlayer) {
         targetPlayer.addHospitalReturns(defenderReturns);
       }
-      this.mg.conquer(
-        this._owner,
-        tileToConquer,
-        this.isParatrooperAttack,
-        this.target,
-      );
+      this.mg.conquer(this._owner, tileToConquer);
       this.handleDeadDefender();
     }
   }

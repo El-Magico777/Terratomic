@@ -149,6 +149,10 @@ export class CancelBoatIntentEvent implements GameEvent {
   constructor(public readonly unitID: number) {}
 }
 
+export class CancelParatrooperIntentEvent implements GameEvent {
+  constructor(public readonly unitID: number) {}
+}
+
 export class SendSetTargetTroopRatioEvent implements GameEvent {
   constructor(public readonly ratio: number) {}
 }
@@ -266,6 +270,9 @@ export class Transport {
     );
     this.eventBus.on(CancelBoatIntentEvent, (e) =>
       this.onCancelBoatIntentEvent(e),
+    );
+    this.eventBus.on(CancelParatrooperIntentEvent, (e) =>
+      this.onCancelParatrooperIntentEvent(e),
     );
 
     this.eventBus.on(MoveWarshipIntentEvent, (e) => {
@@ -628,6 +635,14 @@ export class Transport {
   private onCancelBoatIntentEvent(event: CancelBoatIntentEvent) {
     this.sendIntent({
       type: "cancel_boat",
+      clientID: this.lobbyConfig.clientID,
+      unitID: event.unitID,
+    });
+  }
+
+  private onCancelParatrooperIntentEvent(event: CancelParatrooperIntentEvent) {
+    this.sendIntent({
+      type: "cancel_paratrooper",
       clientID: this.lobbyConfig.clientID,
       unitID: event.unitID,
     });
