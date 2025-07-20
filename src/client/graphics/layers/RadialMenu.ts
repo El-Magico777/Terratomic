@@ -433,7 +433,7 @@ export class RadialMenu implements Layer {
       this.enableCenterButton(true);
     }
 
-    if (myPlayer.units(UnitType.Airfield).length > 0) {
+    if (this.shouldShowAirAttack(myPlayer, tile)) {
       this.activateMenuElement(Slot.AirAttack, "#8B0000", airAttackIcon, () => {
         if (this.clickedCell === null) return;
         const dst = this.g.ref(this.clickedCell.x, this.clickedCell.y);
@@ -450,6 +450,27 @@ export class RadialMenu implements Layer {
     if (!this.g.hasOwner(tile)) {
       return;
     }
+  }
+
+  private shouldShowAirAttack(player: PlayerView, tile: TileRef): boolean {
+    if (player.units(UnitType.Airfield).length === 0) {
+      return false;
+    }
+    if (!this.g.isLand(tile)) {
+      return false;
+    }
+    const owner = this.g.owner(tile);
+    if (owner === player) {
+      return false;
+    }
+    if (
+      owner.isPlayer &&
+      owner.isPlayer() &&
+      player.isFriendly(owner as PlayerView)
+    ) {
+      return false;
+    }
+    return true;
   }
 
   private onPointerUp(event: MouseUpEvent) {
