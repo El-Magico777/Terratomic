@@ -163,6 +163,9 @@ const _structureTypes: ReadonlySet<UnitType> = new Set([
   UnitType.SAMLauncher,
   UnitType.MissileSilo,
   UnitType.Port,
+  UnitType.Airfield,
+  UnitType.Hospital,
+  UnitType.Academy,
 ]);
 
 export function isStructureType(type: UnitType): boolean {
@@ -425,7 +428,6 @@ export interface Unit {
   // Troops
   setTroops(troops: number): void;
   troops(): number;
-
   // --- UNIT SPECIFIC ---
 
   // SAMs & Missile Silos
@@ -497,6 +499,7 @@ export interface Player {
   totalPopulation(): number;
   workers(): number;
   troops(): number;
+  attackingTroops(): number;
   targetTroopRatio(): number;
   productivity(): number; // Returns the productivity rate based on investment rate
   updateProductivity(): void;
@@ -598,6 +601,11 @@ export interface Player {
   playerProfile(): PlayerProfile;
   tradingPorts(port: Unit): Unit[];
   airfields(airfield: Unit): Unit[];
+  setBomberIntent(
+    intent: { targetPlayerID: string; structure: UnitType } | null,
+  ): void;
+  getBomberIntent(): { targetPlayerID: string; structure: UnitType } | null;
+
   // WARNING: this operation is expensive.
   bestTransportShipSpawn(tile: TileRef): TileRef | false;
 }

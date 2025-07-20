@@ -109,6 +109,9 @@ export class PlayerImpl implements Player {
   private _hasSpawned = false;
   private _isDisconnected = false;
 
+  private bomberIntent: { targetPlayerID: string; structure: UnitType } | null =
+    null;
+
   constructor(
     private mg: GameImpl,
     private _smallID: number,
@@ -153,6 +156,7 @@ export class PlayerImpl implements Player {
       hospitalReturns: this.hospitalReturns(),
       workers: this.workers(),
       troops: this.troops(),
+      attackingTroops: this.attackingTroops(),
       targetTroopRatio: this.targetTroopRatio(),
       productivity: this.productivity(),
       productivityGrowthPerMinute: this.productivityGrowthPerMinute(),
@@ -756,7 +760,7 @@ export class PlayerImpl implements Player {
   totalPopulation(): number {
     return this.population() + this.attackingTroops();
   }
-  private attackingTroops(): number {
+  attackingTroops(): number {
     const landAttackTroops = this._outgoingAttacks
       .filter((a) => a.isActive())
       .reduce((sum, a) => sum + a.troops(), 0);
@@ -825,7 +829,7 @@ export class PlayerImpl implements Player {
     return this._productivityGrowthPerMinute;
   }
   updateProductivity(): void {
-    const alpha = 0.0004;
+    const alpha = 0.0005;
     const beta = 0.5;
 
     const maxPop = this.mg.config().maxPopulation(this);
@@ -858,7 +862,10 @@ export class PlayerImpl implements Player {
     if (amount < 0) {
       throw new Error(`Cannot remove negative productivity: ${amount}`);
     }
-    this._productivity = Math.max(0.33, this._productivity - amount);
+    this._productivity = Math.max(0.33, this._productivity * (1 - amount));
+  }
+  setProductivity(p: number): void {
+    this._productivity = p;
   }
   hospitalReturns(): number {
     return this._hospitalReturns;
@@ -1292,5 +1299,16 @@ export class PlayerImpl implements Player {
       .forEach((p) => airfields.push(p));
 
     return airfields;
+  }
+  public setBomberIntent(
+    intent: { targetPlayerID: string; structure: UnitType } | null,
+  ): void {
+    this.bomberIntent = intent;
+  }
+  public getBomberIntent(): {
+    targetPlayerID: string;
+    structure: UnitType;
+  } | null {
+    return this.bomberIntent;
   }
 }

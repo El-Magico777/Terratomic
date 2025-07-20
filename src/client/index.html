@@ -181,7 +181,7 @@
               -1px -1px 0 #000;
           "
         >
-          v0.1.0
+          v0.1.2
         </div>
       </div>
     </header>
@@ -190,19 +190,30 @@
     <!-- Main container with responsive padding -->
     <main class="flex justify-center flex-grow">
       <div class="container pt-12">
+        <!--
         <o-button
           id="login-discord"
           title="Initializing..."
           disable="true"
           block
         ></o-button>
+        -->
 
+        <!--
         <o-button
           id="logout-discord"
           title="Log out"
           translationKey="main.log_out"
           visible="false"
           block
+        ></o-button>
+        -->
+
+        <o-button
+          id="join-discord-button"
+          translationKey="main.join_discord"
+          block
+          iconSrc="/images/DiscordIcon.svg"
         ></o-button>
 
         <div class="container__row">
@@ -325,13 +336,6 @@
             target="_blank"
           >
             Wiki
-          </a>
-          <a
-            target="_blank"
-            href="https://discord.gg/w8HXjhaBkU"
-            class="t-link"
-          >
-            <span data-i18n="main.join_discord"> Join the Discord! </span>
           </a>
         </div>
         <div class="l-footer__col t-text-white">
