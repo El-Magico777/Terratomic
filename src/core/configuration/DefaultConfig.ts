@@ -353,6 +353,26 @@ export class DefaultConfig implements Config {
     return 10;
   }
 
+  // Paratroopers/Air attack
+  paratrooperMaxNumber(): number {
+    return 3;
+  }
+
+  paratrooperSpeed(): number {
+    return 2;
+  }
+
+  paratrooperMaxRange(): number {
+    return 1000;
+  }
+
+  paratrooperAttackAmount(
+    attacker: Player,
+    defender: Player | TerraNullius,
+  ): number {
+    return Math.floor(attacker.troops() / 10);
+  }
+
   unitInfo(type: UnitType): UnitInfo {
     switch (type) {
       case UnitType.TransportShip:
@@ -614,14 +634,6 @@ export class DefaultConfig implements Config {
     return 3;
   }
 
-  paratrooperMaxNumber(): number {
-    return 3;
-  }
-
-  paratrooperSpeed(): number {
-    return 2;
-  }
-
   numSpawnPhaseTurns(): number {
     return this._gameConfig.gameType === GameType.Singleplayer ? 100 : 300;
   }
@@ -751,13 +763,6 @@ export class DefaultConfig implements Config {
 
   boatAttackAmount(attacker: Player, defender: Player | TerraNullius): number {
     return Math.floor(attacker.troops() / 5);
-  }
-
-  paratrooperAttackAmount(
-    attacker: Player,
-    defender: Player | TerraNullius,
-  ): number {
-    return Math.floor(attacker.troops() / 10);
   }
 
   warshipShellLifetime(): number {

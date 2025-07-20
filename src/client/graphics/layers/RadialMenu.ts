@@ -470,6 +470,23 @@ export class RadialMenu implements Layer {
     ) {
       return false;
     }
+
+    const airfields = player.units(UnitType.Airfield);
+    const closestAirfield = airfields.reduce(
+      (closest, airfield) => {
+        const dist = this.g.manhattanDist(airfield.tile(), tile);
+        if (dist < closest.dist) {
+          return { airfield, dist };
+        }
+        return closest;
+      },
+      { airfield: null, dist: Infinity },
+    );
+
+    if (closestAirfield.dist > this.g.config().paratrooperMaxRange()) {
+      return false;
+    }
+
     return true;
   }
 

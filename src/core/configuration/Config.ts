@@ -120,6 +120,7 @@ export interface Config {
   ): number;
   paratrooperMaxNumber(): number;
   paratrooperSpeed(): number;
+  paratrooperMaxRange(): number;
   allianceDuration(): Tick;
   allianceRequestCooldown(): Tick;
   temporaryEmbargoDuration(): Tick;

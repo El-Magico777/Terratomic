@@ -67,6 +67,15 @@ export class ParatrooperAttackExecution implements Execution {
       return;
     }
 
+    if (minDistance > game.config().paratrooperMaxRange()) {
+      game.displayMessage(
+        "Destination is out of range for paratrooper attack.",
+        MessageType.WARN,
+        this.attacker.id(),
+      );
+      return;
+    }
+
     if (this.troops <= 0 || this.troops > this.attacker.troops()) {
       game.displayMessage(
         "Invalid number of troops for paratrooper attack.",
