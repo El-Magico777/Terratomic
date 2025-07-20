@@ -483,7 +483,7 @@ export interface Player {
   isAlive(): boolean;
   isTraitor(): boolean;
   markTraitor(): void;
-  largestClusterBoundingBox: { min: Cell; max: Cell } | null;
+
   lastTileChange(): Tick;
 
   isDisconnected(): boolean;

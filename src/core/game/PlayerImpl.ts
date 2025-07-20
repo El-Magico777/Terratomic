@@ -18,7 +18,6 @@ import {
   AllPlayers,
   Attack,
   BuildableUnit,
-  Cell,
   ColoredTeams,
   Embargo,
   EmojiMessage,
@@ -128,8 +127,6 @@ export class PlayerImpl implements Player {
     this._displayName = this._name; // processName(this._name)
     this._pseudo_random = new PseudoRandom(simpleHash(this.playerInfo.id));
   }
-
-  largestClusterBoundingBox: { min: Cell; max: Cell } | null;
 
   toUpdate(): PlayerUpdate {
     const outgoingAllianceRequests = this.outgoingAllianceRequests().map((ar) =>
