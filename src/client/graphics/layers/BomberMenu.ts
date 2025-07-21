@@ -44,88 +44,7 @@ export class BomberMenu extends HTMLElement implements Layer {
   private structureSelect!: HTMLSelectElement;
 
   connectedCallback() {
-    // shadow = scoped markup + styles
-    const root = this.attachShadow({ mode: "open" });
-
-    root.innerHTML = /*html*/ `
-      <style>
-        :host {
-          position: fixed;
-          bottom: 8px;          /* same vertical margin as other bottom UI */
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 1000;        /* above the canvas, below modals */
-          pointer-events: all;  /* make sure it’s clickable */
-        }
-        button {
-          font: inherit;
-          padding: 6px 12px;
-          border-radius: 4px;
-          border: 1px solid var(--border-color, #444);
-          background: var(--button-bg, #222);
-          color: var(--button-fg, #eee);
-          cursor: pointer;
-        }
-        dialog {
-          border: none;
-          border-radius: 6px;
-          background: #1a1a1a;
-          padding: 16px 20px;
-          max-width: 320px;
-          color: #eee;
-        }
-        dialog::backdrop { background: rgba(0,0,0,.55); }
-        label { display:block; margin-top: 8px; font-size: 0.9rem; }
-        select, dialog button {
-          width: 100%;
-          margin-top: 4px;
-          padding: 4px 6px;
-          background:#2b2b2b;
-          color:#eee;
-          border:1px solid #555;
-        }
-        .actions { display:flex; gap:8px; margin-top:12px; }
-      </style>
-
-      <button id="open">✈ Bomb Target</button>
-
-      <dialog id="dialog">
-        <form method="dialog">
-          <label>Player
-            <select id="player"></select>
-          </label>
-
-          <label>Structure
-            <select id="structure"></select>
-          </label>
-
-          <div class="actions">
-            <button value="cancel">Cancel</button>
-             <button id="clear" type="button">Clear Target</button>
-            <button id="confirm" value="default">Set</button>
-          </div>
-        </form>
-      </dialog>
-    `;
-
-    this.dialog = root.getElementById("dialog") as HTMLDialogElement;
-    this.playerSelect = root.getElementById("player") as HTMLSelectElement;
-    this.structureSelect = root.getElementById(
-      "structure",
-    ) as HTMLSelectElement;
-
-    root.getElementById("open")!.addEventListener("click", () => this.open());
-    root.getElementById("confirm")!.addEventListener("click", (e) => {
-      e.preventDefault(); // keep <dialog> open until we close manually
-      this.sendIntent();
-    });
-    root.getElementById("clear")!.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.eventBus.emit(new SendBomberIntentEvent(null, null));
-      this.dialog.close();
-    });
-
-    this.updateVisibility();
+    // This component is deprecated and its functionality has been moved to ControlPanel.ts
   }
 
   /** Called from createRenderer once game & eventBus exist */
@@ -192,4 +111,4 @@ export class BomberMenu extends HTMLElement implements Layer {
     this.style.display = this.game.inSpawnPhase() ? "none" : "block";
   }
 }
-customElements.define("bomber-menu", BomberMenu);
+// customElements.define("bomber-menu", BomberMenu);
