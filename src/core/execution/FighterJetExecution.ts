@@ -117,10 +117,25 @@ export class FighterJetExecution implements Execution {
         b.tile()!,
       );
 
+      // Prioritize Paratrooper
+      if (
+        a.type() === UnitType.Paratrooper &&
+        b.type() !== UnitType.Paratrooper
+      )
+        return -1;
+      if (
+        a.type() !== UnitType.Paratrooper &&
+        b.type() === UnitType.Paratrooper
+      )
+        return 1;
+
+      // Prioritize FighterJet
       if (a.type() === UnitType.FighterJet && b.type() !== UnitType.FighterJet)
         return -1;
       if (a.type() !== UnitType.FighterJet && b.type() === UnitType.FighterJet)
         return 1;
+
+      // Prioritize Bomber over CargoPlane
       if (a.type() === UnitType.Bomber && b.type() === UnitType.CargoPlane)
         return -1;
       if (a.type() === UnitType.CargoPlane && b.type() === UnitType.Bomber)

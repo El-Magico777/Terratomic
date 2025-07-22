@@ -251,9 +251,10 @@ export class SAMLauncherExecution implements Execution {
       .sort((a, b) => {
         // Prioritize by unit type: Bomber > FighterJet > CargoPlane
         const typeOrder = {
-          [UnitType.Bomber]: 0,
-          [UnitType.FighterJet]: 1,
-          [UnitType.CargoPlane]: 2,
+          [UnitType.Paratrooper]: 0,
+          [UnitType.Bomber]: 1,
+          [UnitType.FighterJet]: 2,
+          [UnitType.CargoPlane]: 3,
         };
         const typeA = typeOrder[a.unit.type() as UnitType];
         const typeB = typeOrder[b.unit.type() as UnitType];
