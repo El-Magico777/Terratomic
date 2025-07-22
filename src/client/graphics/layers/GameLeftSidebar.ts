@@ -12,7 +12,7 @@ import { Layer } from "./Layer";
 @customElement("game-left-sidebar")
 export class GameLeftSidebar extends LitElement implements Layer {
   @state()
-  private isLeaderboardShow = false;
+  private isLeaderboardShow = true;
   @state()
   private isTeamLeaderboardShow = false;
   private isVisible = false;
