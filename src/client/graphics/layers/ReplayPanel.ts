@@ -39,6 +39,10 @@ export class ReplayPanel extends LitElement implements Layer {
   }
 
   render() {
+    if (!this._isSinglePlayer && !this.game?.config().isReplay()) {
+      return html``;
+    }
+
     return html`
       <div
         class="bg-[rgba(31,36,5,0.6)] p-1 lg:p-2 rounded-es-sm lg:rounded-lg backdrop-blur-md"
