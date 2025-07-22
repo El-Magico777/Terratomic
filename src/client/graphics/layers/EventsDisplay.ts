@@ -918,7 +918,7 @@ export class EventsDisplay extends LitElement implements Layer {
       <!-- Events Toggle (when hidden) -->
       ${this._hidden
         ? html`
-            <div class="fixed top-0 left-0 z-50">
+            <div class="relative w-fit lg:bottom-2.5 lg:right-2.5 z-50">
               ${this.renderButton({
                 content: html`
                   Events
@@ -937,7 +937,9 @@ export class EventsDisplay extends LitElement implements Layer {
           `
         : html`
             <!-- Main Events Display -->
-            <div class="fixed top-0 left-0 z-50 lg:w-96 backdrop-blur">
+            <div
+              class="relative w-full lg:bottom-2.5 lg:right-2.5 z-50 lg:w-96 backdrop-blur"
+            >
               <!-- Button Bar -->
               <div
                 class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md bg-gray-800/70"
