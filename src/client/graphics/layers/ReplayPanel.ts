@@ -20,23 +20,9 @@ export class ReplayPanel extends LitElement implements Layer {
   private _replaySpeedMultiplier: number = defaultReplaySpeedMultiplier;
   private _isSinglePlayer: boolean = false;
 
-  @state()
-  private _isVisible = false;
-
   init() {
     this._isSinglePlayer =
       this.game?.config().gameConfig().gameType === GameType.Singleplayer;
-    if (this._isSinglePlayer) {
-      this.setVisible(true);
-    }
-  }
-
-  tick() {
-    if (!this._isVisible && this.game?.config().isReplay()) {
-      this.setVisible(true);
-    }
-
-    this.requestUpdate();
   }
 
   onReplaySpeedChange(value: ReplaySpeedMultiplier) {
@@ -52,16 +38,7 @@ export class ReplayPanel extends LitElement implements Layer {
     return false;
   }
 
-  setVisible(visible: boolean) {
-    this._isVisible = visible;
-    this.requestUpdate();
-  }
-
   render() {
-    if (!this._isVisible) {
-      return html``;
-    }
-
     return html`
       <div
         class="bg-[rgba(31,36,5,0.6)] p-1 lg:p-2 rounded-es-sm lg:rounded-lg backdrop-blur-md"

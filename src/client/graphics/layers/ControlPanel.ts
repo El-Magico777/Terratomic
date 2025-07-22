@@ -13,6 +13,7 @@ import {
 import { renderNumber, renderTroops } from "../../Utils";
 import { UIState } from "../UIState";
 import { Layer } from "./Layer";
+import "./ReplayPanel";
 
 @customElement("control-panel")
 export class ControlPanel extends LitElement implements Layer {
@@ -508,6 +509,14 @@ export class ControlPanel extends LitElement implements Layer {
                 </button>
               `
             : ""}
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Options"
+              ? "bg-gray-700 text-white"
+              : "text-white"}"
+            @click=${() => (this.activeTab = "Options")}
+          >
+            Options
+          </button>
         </div>
 
         <div class="tab-content min-h-[320px]">
@@ -740,8 +749,10 @@ export class ControlPanel extends LitElement implements Layer {
           ${this.activeTab === "Options"
             ? html`
                 <div class="text-white">
-                  <h2>Options Tab Content</h2>
-                  <p>This is where general options will go.</p>
+                  <replay-panel
+                    .game=${this.game}
+                    .eventBus=${this.eventBus}
+                  ></replay-panel>
                 </div>
               `
             : ""}

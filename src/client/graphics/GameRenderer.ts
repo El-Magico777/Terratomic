@@ -21,7 +21,6 @@ import { OptionsMenu } from "./layers/OptionsMenu";
 import { PlayerInfoOverlay } from "./layers/PlayerInfoOverlay";
 import { PlayerPanel } from "./layers/PlayerPanel";
 import { RadialMenu } from "./layers/RadialMenu";
-import { ReplayPanel } from "./layers/ReplayPanel";
 import { SpawnTimer } from "./layers/SpawnTimer";
 import { StructureLayer } from "./layers/StructureLayer";
 import { TeamStats } from "./layers/TeamStats";
@@ -138,13 +137,6 @@ export function createRenderer(
   optionsMenu.eventBus = eventBus;
   optionsMenu.game = game;
 
-  const replayPanel = document.querySelector("replay-panel") as ReplayPanel;
-  if (!(replayPanel instanceof ReplayPanel)) {
-    console.error("ReplayPanel element not found in the DOM");
-  }
-  replayPanel.eventBus = eventBus;
-  replayPanel.game = game;
-
   const topBar = document.querySelector("top-bar") as TopBar;
   if (!(topBar instanceof TopBar)) {
     console.error("top bar not found");
@@ -228,7 +220,6 @@ export function createRenderer(
     playerInfo,
     winModel,
     optionsMenu,
-    replayPanel,
     teamStats,
     topBar,
     playerPanel,
