@@ -326,29 +326,6 @@ export class PlayerView {
   isDisconnected(): boolean {
     return this.data.isDisconnected;
   }
-
-  sharesBorderWith(other: PlayerView): boolean {
-    const myPlayerId = parseInt(this.id());
-    const otherPlayerId = parseInt(other.id());
-
-    // Iterate through all tiles on the map
-    for (let x = 0; x < this.game.width(); x++) {
-      for (let y = 0; y < this.game.height(); y++) {
-        const tile = this.game.ref(x, y);
-        // If this tile is owned by the current player
-        if (this.game.ownerID(tile) === myPlayerId) {
-          // Check its neighbors
-          for (const neighbor of this.game.neighbors(tile)) {
-            // If a neighbor is owned by the other player, they share a border
-            if (this.game.ownerID(neighbor) === otherPlayerId) {
-              return true;
-            }
-          }
-        }
-      }
-    }
-    return false;
-  }
 }
 
 export class GameView implements GameMap {
