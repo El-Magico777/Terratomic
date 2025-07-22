@@ -20,6 +20,8 @@ import { MarkDisconnectedExecution } from "./MarkDisconnectedExecution";
 import { MoveFighterJetExecution } from "./MoveFighterJetExecution";
 import { MoveWarshipExecution } from "./MoveWarshipExecution";
 import { NoOpExecution } from "./NoOpExecution";
+import { ParatrooperAttackExecution } from "./ParatrooperAttackExecution";
+import { ParatrooperRetreatExecution } from "./ParatrooperRetreatExecution";
 import { QuickChatExecution } from "./QuickChatExecution";
 import { RetreatExecution } from "./RetreatExecution";
 import { SetInvestmentRateExecution } from "./SetInvestmentRateExecution";
@@ -66,6 +68,8 @@ export class Executor {
         return new RetreatExecution(player, intent.attackID);
       case "cancel_boat":
         return new BoatRetreatExecution(player, intent.unitID);
+      case "cancel_paratrooper":
+        return new ParatrooperRetreatExecution(player, intent.unitID);
       case "move_warship":
         return new MoveWarshipExecution(player, intent.unitId, intent.tile);
       case "move_fighter_jet":
@@ -90,6 +94,13 @@ export class Executor {
           intent.dst,
           intent.troops,
           src,
+        );
+      case "paratrooper_attack":
+        return new ParatrooperAttackExecution(
+          player,
+          intent.targetID,
+          intent.troops,
+          intent.dst,
         );
       case "allianceRequest":
         return new AllianceRequestExecution(player, intent.recipient);

@@ -360,6 +360,30 @@ export class DefaultConfig implements Config {
     return 10;
   }
 
+  // Paratroopers/Air attack
+  paratrooperMaxNumber(): number {
+    return 3;
+  }
+
+  paratrooperSpeed(): number {
+    return 1;
+  }
+
+  paratrooperMaxRange(): number {
+    return 1000;
+  }
+
+  paratrooperTroopCostPercentage(): number {
+    return 0.3;
+  }
+
+  paratrooperAttackAmount(
+    attacker: Player,
+    defender: Player | TerraNullius,
+  ): number {
+    return Math.floor(attacker.troops() / 10);
+  }
+
   unitInfo(type: UnitType): UnitInfo {
     switch (type) {
       case UnitType.TransportShip:
@@ -574,6 +598,11 @@ export class DefaultConfig implements Config {
           territoryBound: false,
           maxHealth: 750,
         };
+      case UnitType.Paratrooper:
+        return {
+          cost: () => 0n,
+          territoryBound: false,
+        };
       default:
         assertNever(type);
     }
@@ -615,6 +644,7 @@ export class DefaultConfig implements Config {
   boatMaxNumber(): number {
     return 3;
   }
+
   numSpawnPhaseTurns(): number {
     return this._gameConfig.gameType === GameType.Singleplayer ? 100 : 300;
   }

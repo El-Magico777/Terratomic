@@ -44,6 +44,7 @@ export enum GameUpdateType {
   AllianceExtensionPrompt,
   AllianceExtensionAccepted,
   BomberExplosion,
+  TileOwnerChanged,
 }
 
 export type GameUpdate =
@@ -62,7 +63,8 @@ export type GameUpdate =
   | WinUpdate
   | HashUpdate
   | UnitIncomingUpdate
-  | BomberExplosionUpdate;
+  | BomberExplosionUpdate
+  | TileOwnerChangedUpdate;
 
 export interface BomberExplosionUpdate {
   type: GameUpdateType.BomberExplosion;
@@ -225,6 +227,12 @@ export interface AllianceExtensionAcceptedUpdate {
   type: GameUpdateType.AllianceExtensionAccepted;
   playerID: number;
   allianceID: number;
+}
+
+export interface TileOwnerChangedUpdate {
+  type: GameUpdateType.TileOwnerChanged;
+  tile: TileRef;
+  newOwnerID: PlayerID;
 }
 
 export interface AllianceViewData {

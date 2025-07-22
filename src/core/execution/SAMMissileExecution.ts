@@ -50,6 +50,7 @@ export class SAMMissileExecution implements Execution {
       UnitType.CargoPlane,
       UnitType.Bomber,
       UnitType.FighterJet,
+      UnitType.Paratrooper,
     ];
 
     if (
