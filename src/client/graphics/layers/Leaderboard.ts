@@ -191,7 +191,7 @@ export class Leaderboard extends LitElement implements Layer {
         </button>
 
         <div
-          class="grid bg-slate-800/70 w-full text-xs md:text-sm lg:text-base"
+          class="grid bg-[rgba(54,64,44,0.7)] w-full text-xs md:text-sm lg:text-base"
           style="grid-template-columns: 35px 100px 85px 65px 65px;"
         >
           <div class="contents font-bold bg-slate-700/50">

@@ -243,7 +243,7 @@ export class PlayerPanel extends LitElement implements Layer {
           class="pointer-events-auto max-h-[90vh] overflow-y-auto min-w-[240px] w-auto px-4 py-2"
         >
           <div
-            class="bg-opacity-60 bg-gray-900 p-1 lg:p-2 rounded-lg backdrop-blur-md relative w-full mt-2"
+            class="bg-[rgba(31,36,5,0.6)] p-1 lg:p-2 rounded-lg backdrop-blur-md relative w-full mt-2"
           >
             <!-- Close button -->
             <button

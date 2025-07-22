@@ -64,7 +64,7 @@ export class ReplayPanel extends LitElement implements Layer {
 
     return html`
       <div
-        class="bg-opacity-60 bg-gray-900 p-1 lg:p-2 rounded-es-sm lg:rounded-lg backdrop-blur-md"
+        class="bg-[rgba(31,36,5,0.6)] p-1 lg:p-2 rounded-es-sm lg:rounded-lg backdrop-blur-md"
         @contextmenu=${(e) => e.preventDefault()}
       >
         <label class="block mb-1 text-white" translate="no">
@@ -76,7 +76,7 @@ export class ReplayPanel extends LitElement implements Layer {
           <button
             class="text-white font-bold py-0 rounded border transition ${this
               ._replaySpeedMultiplier === ReplaySpeedMultiplier.slow
-              ? "bg-blue-500 border-gray-400"
+              ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
               this.onReplaySpeedChange(ReplaySpeedMultiplier.slow);
@@ -87,7 +87,7 @@ export class ReplayPanel extends LitElement implements Layer {
           <button
             class="text-white font-bold py-0 rounded border transition ${this
               ._replaySpeedMultiplier === ReplaySpeedMultiplier.normal
-              ? "bg-blue-500 border-gray-400"
+              ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
               this.onReplaySpeedChange(ReplaySpeedMultiplier.normal);
@@ -98,7 +98,7 @@ export class ReplayPanel extends LitElement implements Layer {
           <button
             class="text-white font-bold py-0 rounded border transition ${this
               ._replaySpeedMultiplier === ReplaySpeedMultiplier.fast
-              ? "bg-blue-500 border-gray-400"
+              ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
               this.onReplaySpeedChange(ReplaySpeedMultiplier.fast);
@@ -109,7 +109,7 @@ export class ReplayPanel extends LitElement implements Layer {
           <button
             class="text-white font-bold py-0 rounded border transition ${this
               ._replaySpeedMultiplier === ReplaySpeedMultiplier.fastest
-              ? "bg-blue-500 border-gray-400"
+              ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
               this.onReplaySpeedChange(ReplaySpeedMultiplier.fastest);

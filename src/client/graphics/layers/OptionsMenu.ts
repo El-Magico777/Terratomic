@@ -162,7 +162,7 @@ export class OptionsMenu extends LitElement implements Layer {
         @contextmenu=${(e) => e.preventDefault()}
       >
         <div
-          class="bg-opacity-60 bg-gray-900 p-1 lg:p-2 rounded-es-sm lg:rounded-lg backdrop-blur-md"
+          class="bg-[rgba(31,36,5,0.6)] p-1 lg:p-2 rounded-es-sm lg:rounded-lg backdrop-blur-md"
         >
           <div class="flex items-stretch gap-1 lg:gap-2">
             ${button({
@@ -192,7 +192,7 @@ export class OptionsMenu extends LitElement implements Layer {
         </div>
 
         <div
-          class="options-menu flex flex-col justify-around gap-y-3 mt-2 bg-opacity-60 bg-gray-900 p-1 lg:p-2 rounded-lg backdrop-blur-md ${!this
+          class="options-menu flex flex-col justify-around gap-y-3 mt-2 bg-[rgba(54,64,44,0.6)] p-1 lg:p-2 rounded-lg backdrop-blur-md ${!this
             .showSettings
             ? "hidden"
             : ""}"
