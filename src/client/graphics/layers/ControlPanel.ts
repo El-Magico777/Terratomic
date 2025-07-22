@@ -472,16 +472,16 @@ export class ControlPanel extends LitElement implements Layer {
         }
         @keyframes pulse {
           from {
-            background-color: rgba(59, 130, 246, 0.5);
+            background-color: rgba(102, 115, 91, 0.5);
           }
           to {
-            background-color: rgba(59, 130, 246, 1);
+            background-color: rgba(102, 115, 91, 1);
           }
         }
       </style>
       <div
         class="${this._isVisible
-          ? "w-full text-sm lg:text-m lg:w-72 bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg"
+          ? "w-full text-sm lg:text-m lg:w-72 bg-[rgba(31,36,5,0.7)] backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg"
           : "hidden"}"
         @contextmenu=${(e) => e.preventDefault()}
       >
@@ -720,7 +720,7 @@ export class ControlPanel extends LitElement implements Layer {
                     <div class="flex flex-col gap-2 mt-3">
                       <button
                         type="button"
-                        class="w-full p-1 bg-blue-600 hover:bg-blue-500 text-white border border-gray-500 rounded"
+                        class="w-full p-1 bg-[#48553d] hover:bg-[#36402c] text-white border border-gray-500 rounded"
                         @click=${this.handleBomberIntent}
                       >
                         Set Target
