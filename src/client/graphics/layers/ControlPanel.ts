@@ -90,6 +90,9 @@ export class ControlPanel extends LitElement implements Layer {
   private _hasAirfields: boolean = false;
 
   @state()
+  private _highlightBombersTab: boolean = false;
+
+  @state()
   private _currentTargetPlayerId: PlayerID | null = null;
 
   @state()
@@ -345,6 +348,17 @@ export class ControlPanel extends LitElement implements Layer {
         this._refreshBomberPlayerLists();
       }
     }
+
+    if (changedProperties.has("_hasAirfields")) {
+      const oldHasAirfields = changedProperties.get("_hasAirfields");
+      if (this._hasAirfields && !oldHasAirfields) {
+        // Airfields just became available, highlight the tab
+        this._highlightBombersTab = true;
+        setTimeout(() => {
+          this._highlightBombersTab = false;
+        }, 3000); // Highlight for 3 seconds
+      }
+    }
   }
 
   populateBomberForm() {
@@ -453,6 +467,17 @@ export class ControlPanel extends LitElement implements Layer {
         .attackRatio::-moz-range-thumb {
           border-color: rgb(239 68 68);
         }
+        .highlight-tab {
+          animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+          from {
+            background-color: rgba(59, 130, 246, 0.5);
+          }
+          to {
+            background-color: rgba(59, 130, 246, 1);
+          }
+        }
       </style>
       <div
         class="${this._isVisible
@@ -464,7 +489,7 @@ export class ControlPanel extends LitElement implements Layer {
           <button
             class="py-2 px-4 text-center ${this.activeTab === "Controls"
               ? "bg-gray-700 text-white"
-              : "text-gray-400"}"
+              : "text-white"}"
             @click=${() => (this.activeTab = "Controls")}
           >
             Controls
@@ -474,21 +499,15 @@ export class ControlPanel extends LitElement implements Layer {
                 <button
                   class="py-2 px-4 text-center ${this.activeTab === "Bombers"
                     ? "bg-gray-700 text-white"
-                    : "text-gray-400"}"
+                    : "text-white"} ${this._highlightBombersTab
+                    ? "highlight-tab"
+                    : ""}"
                   @click=${() => (this.activeTab = "Bombers")}
                 >
                   Bombers
                 </button>
               `
             : ""}
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Options"
-              ? "bg-gray-700 text-white"
-              : "text-gray-400"}"
-            @click=${() => (this.activeTab = "Options")}
-          >
-            Options
-          </button>
         </div>
 
         <div class="tab-content min-h-[320px]">
@@ -693,7 +712,7 @@ export class ControlPanel extends LitElement implements Layer {
                                 this._currentTargetStructureType
                               ]}"
                               alt="${this._currentTargetStructureType}"
-                              class="inline-block w-4 h-4 align-middle mr-1"
+                              class="inline-block w-4 h-4 align-top mr-1"
                             />`
                         : html`No target selected`}
                     </div>
