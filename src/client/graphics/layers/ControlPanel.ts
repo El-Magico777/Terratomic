@@ -4,7 +4,7 @@ import { translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
 import { Gold, PlayerID, PlayerType, UnitType } from "../../../core/game/Game";
 import { GameView, PlayerView } from "../../../core/game/GameView";
-import { AttackRatioEvent } from "../../InputHandler";
+import { AttackRatioEvent, ReplaySpeedChangeEvent } from "../../InputHandler";
 import {
   SendBomberIntentEvent,
   SendSetInvestmentRateEvent,
@@ -102,6 +102,9 @@ export class ControlPanel extends LitElement implements Layer {
   @state()
   private _currentTargetPlayerName: string | null = null;
 
+  @state()
+  private _currentReplaySpeed: number = 1; // Default to normal speed
+
   private unitIconMap: { [key: string]: string } = {
     City: "/images/CityIconWhite.svg",
     Hospital: "/images/HospitalIconWhite.svg",
@@ -151,6 +154,12 @@ export class ControlPanel extends LitElement implements Layer {
       this.attackRatio = newAttackRatio;
       this.onAttackRatioChange(this.attackRatio);
     });
+    this.eventBus.on(
+      ReplaySpeedChangeEvent,
+      (event: ReplaySpeedChangeEvent) => {
+        this._currentReplaySpeed = event.replaySpeedMultiplier;
+      },
+    );
   }
 
   tick() {
@@ -752,6 +761,7 @@ export class ControlPanel extends LitElement implements Layer {
                   <replay-panel
                     .game=${this.game}
                     .eventBus=${this.eventBus}
+                    .replaySpeedMultiplier=${this._currentReplaySpeed}
                   ></replay-panel>
                 </div>
               `

@@ -17,7 +17,7 @@ export class ReplayPanel extends LitElement implements Layer {
   public eventBus: EventBus | undefined;
 
   @state()
-  private _replaySpeedMultiplier: number = defaultReplaySpeedMultiplier;
+  public replaySpeedMultiplier: number = defaultReplaySpeedMultiplier;
   private _isSinglePlayer: boolean = false;
 
   init() {
@@ -26,7 +26,7 @@ export class ReplayPanel extends LitElement implements Layer {
   }
 
   onReplaySpeedChange(value: ReplaySpeedMultiplier) {
-    this._replaySpeedMultiplier = value;
+    this.replaySpeedMultiplier = value;
     this.eventBus?.emit(new ReplaySpeedChangeEvent(value));
   }
 
@@ -52,7 +52,7 @@ export class ReplayPanel extends LitElement implements Layer {
         <div class="grid grid-cols-2 gap-1">
           <button
             class="text-white font-bold py-0 rounded border transition ${this
-              ._replaySpeedMultiplier === ReplaySpeedMultiplier.slow
+              .replaySpeedMultiplier === ReplaySpeedMultiplier.slow
               ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
@@ -63,7 +63,7 @@ export class ReplayPanel extends LitElement implements Layer {
           </button>
           <button
             class="text-white font-bold py-0 rounded border transition ${this
-              ._replaySpeedMultiplier === ReplaySpeedMultiplier.normal
+              .replaySpeedMultiplier === ReplaySpeedMultiplier.normal
               ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
@@ -74,7 +74,7 @@ export class ReplayPanel extends LitElement implements Layer {
           </button>
           <button
             class="text-white font-bold py-0 rounded border transition ${this
-              ._replaySpeedMultiplier === ReplaySpeedMultiplier.fast
+              .replaySpeedMultiplier === ReplaySpeedMultiplier.fast
               ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
@@ -85,7 +85,7 @@ export class ReplayPanel extends LitElement implements Layer {
           </button>
           <button
             class="text-white font-bold py-0 rounded border transition ${this
-              ._replaySpeedMultiplier === ReplaySpeedMultiplier.fastest
+              .replaySpeedMultiplier === ReplaySpeedMultiplier.fastest
               ? "bg-[#48553d] border-[#36402c]"
               : "border-gray-500"}"
             @click=${() => {
