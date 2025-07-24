@@ -7,6 +7,7 @@ import { GameView, PlayerView } from "../../../core/game/GameView";
 import { AttackRatioEvent } from "../../InputHandler";
 import {
   SendBomberIntentEvent,
+  SendSetAutoBombingEvent,
   SendSetInvestmentRateEvent,
   SendSetTargetTroopRatioEvent,
 } from "../../Transport";
@@ -100,6 +101,9 @@ export class ControlPanel extends LitElement implements Layer {
 
   @state()
   private _currentTargetPlayerName: string | null = null;
+
+  @state()
+  private _isAutoBombingEnabled: boolean = false;
 
   private unitIconMap: { [key: string]: string } = {
     City: "/images/CityIconWhite.svg",
@@ -413,6 +417,20 @@ export class ControlPanel extends LitElement implements Layer {
     this.eventBus.emit(new SendBomberIntentEvent(targetID, structure));
   }
 
+  _startAutoBombing() {
+    this._isAutoBombingEnabled = true;
+    this.eventBus.emit(new SendSetAutoBombingEvent(true));
+    // Clear any manual target when auto-bombing is enabled
+    this.sendBomberIntent(null, null);
+  }
+
+  _stopAutoBombing() {
+    this._isAutoBombingEnabled = false;
+    this.eventBus.emit(new SendSetAutoBombingEvent(false));
+    // Clear any manual target when auto-bombing is disabled
+    this.sendBomberIntent(null, null);
+  }
+
   handleStructureChange(e: Event) {
     const changedCheckbox = e.target as HTMLInputElement;
     if (changedCheckbox.checked) {
@@ -658,80 +676,116 @@ export class ControlPanel extends LitElement implements Layer {
             ? html`
                 <div class="text-white">
                   <form @submit=${(e) => e.preventDefault()}>
-                    <label class="block mt-2 text-sm"
-                      >Select Target
-                      <select
-                        id="bomber-player-select"
-                        class="w-full mt-1 p-1 bg-gray-700 text-white border border-gray-500 rounded"
-                      ></select>
-                    </label>
+                    <div class="flex gap-2 mt-3">
+                      <button
+                        type="button"
+                        class="flex-1 px-2 py-1 text-xs bg-green-600 hover:bg-green-500 text-white border border-gray-500 rounded"
+                        @click=${this._startAutoBombing}
+                      >
+                        Start Auto Bombing
+                      </button>
+                      <button
+                        type="button"
+                        class="flex-1 px-2 py-1 text-xs bg-red-600 hover:bg-red-500 text-white border border-gray-500 rounded"
+                        @click=${this._stopAutoBombing}
+                      >
+                        Stop Auto Bombing
+                      </button>
+                    </div>
 
-                    <label class="block mt-2 text-sm">Select Structure</label>
-                    <div class="grid grid-cols-3 gap-2 mt-1">
-                      ${[
-                        UnitType.City,
-                        UnitType.DefensePost,
-                        UnitType.SAMLauncher,
-                        UnitType.MissileSilo,
-                        UnitType.Port,
-                        UnitType.Airfield,
-                        UnitType.Hospital,
-                        UnitType.Academy,
-                      ].map((s) => {
-                        return html`
-                          <label
-                            class="flex items-center space-x-1 p-1 border border-gray-700 rounded cursor-pointer has-checked:border-blue-500"
+                    <div class="relative min-h-[250px]">
+                      <div
+                        class="absolute inset-0 flex flex-col gap-2 mt-3 ${this
+                          ._isAutoBombingEnabled
+                          ? "hidden"
+                          : ""}"
+                      >
+                        <label class="inline-flex items-center text-sm">
+                          Select Target
+                          <select
+                            id="bomber-player-select"
+                            class="ml-1 p-1 bg-gray-700 text-white border border-gray-500 rounded"
+                          ></select>
+                        </label>
+
+                        <label class="block mt-2 text-sm"
+                          >Select Structure</label
+                        >
+                        <div class="grid grid-cols-3 gap-2 mt-1">
+                          ${[
+                            UnitType.City,
+                            UnitType.DefensePost,
+                            UnitType.SAMLauncher,
+                            UnitType.MissileSilo,
+                            UnitType.Port,
+                            UnitType.Airfield,
+                            UnitType.Hospital,
+                            UnitType.Academy,
+                          ].map((s) => {
+                            return html`
+                              <label
+                                class="flex items-center space-x-1 p-1 border border-gray-700 rounded cursor-pointer has-checked:border-blue-500"
+                              >
+                                <img
+                                  src="${this.unitIconMap[s]}"
+                                  alt="${s}"
+                                  class="w-4 h-4"
+                                />
+                                <input
+                                  type="checkbox"
+                                  name="structure"
+                                  value="${s}"
+                                  ?checked=${s === UnitType.City}
+                                  class="form-checkbox h-4 w-4 text-blue-600 bg-gray-700 border-gray-500 rounded focus:ring-blue-500"
+                                  @change=${this.handleStructureChange}
+                                />
+                              </label>
+                            `;
+                          })}
+                        </div>
+
+                        <div class="text-white text-sm">
+                          ${this._currentTargetPlayerId &&
+                          this._currentTargetStructureType
+                            ? html`<span class="text-red-500 font-bold"
+                                  >Current target:</span
+                                >
+                                ${this._currentTargetPlayerName}
+                                <img
+                                  src="${this.unitIconMap[
+                                    this._currentTargetStructureType
+                                  ]}"
+                                  alt="${this._currentTargetStructureType}"
+                                  class="inline-block w-4 h-4 align-top mr-1"
+                                />`
+                            : html`No target selected`}
+                        </div>
+
+                        <div class="flex flex-col gap-2 mt-3">
+                          <button
+                            type="button"
+                            class="w-full p-1 bg-blue-600 hover:bg-blue-500 text-white border border-gray-500 rounded"
+                            @click=${this.handleBomberIntent}
                           >
-                            <img
-                              src="${this.unitIconMap[s]}"
-                              alt="${s}"
-                              class="w-4 h-4"
-                            />
-                            <input
-                              type="checkbox"
-                              name="structure"
-                              value="${s}"
-                              ?checked=${s === UnitType.City}
-                              class="form-checkbox h-4 w-4 text-blue-600 bg-gray-700 border-gray-500 rounded focus:ring-blue-500"
-                              @change=${this.handleStructureChange}
-                            />
-                          </label>
-                        `;
-                      })}
-                    </div>
-
-                    <div class="text-white text-sm mt-4 mb-2">
-                      ${this._currentTargetPlayerId &&
-                      this._currentTargetStructureType
-                        ? html`<span class="text-red-500 font-bold"
-                              >Current target:</span
-                            >
-                            ${this._currentTargetPlayerName}
-                            <img
-                              src="${this.unitIconMap[
-                                this._currentTargetStructureType
-                              ]}"
-                              alt="${this._currentTargetStructureType}"
-                              class="inline-block w-4 h-4 align-top mr-1"
-                            />`
-                        : html`No target selected`}
-                    </div>
-
-                    <div class="flex flex-col gap-2 mt-3">
-                      <button
-                        type="button"
-                        class="w-full p-1 bg-blue-600 hover:bg-blue-500 text-white border border-gray-500 rounded"
-                        @click=${this.handleBomberIntent}
+                            Set Target
+                          </button>
+                          <button
+                            type="button"
+                            class="w-full p-1 bg-gray-600 hover:bg-gray-500 text-white border border-gray-500 rounded"
+                            @click=${() => this.sendBomberIntent(null, null)}
+                          >
+                            Clear Target
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        class="absolute inset-0 text-white text-center mt-4 ${!this
+                          ._isAutoBombingEnabled
+                          ? "hidden"
+                          : ""}"
                       >
-                        Set Target
-                      </button>
-                      <button
-                        type="button"
-                        class="w-full p-1 bg-gray-600 hover:bg-gray-500 text-white border border-gray-500 rounded"
-                        @click=${() => this.sendBomberIntent(null, null)}
-                      >
-                        Clear Target
-                      </button>
+                        Automatic bombing is enabled.
+                      </div>
                     </div>
                   </form>
                 </div>
