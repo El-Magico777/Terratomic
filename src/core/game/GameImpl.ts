@@ -24,6 +24,7 @@ import {
   Team,
   TerrainType,
   TerraNullius,
+  Tick,
   Unit,
   UnitInfo,
   UnitType,
@@ -52,6 +53,7 @@ export type CellString = string;
 
 export class GameImpl implements Game {
   private _ticks = 0;
+  public peaceTimerEndsAtTick: Tick | null = null;
 
   private unInitExecs: Execution[] = [];
 
@@ -88,6 +90,14 @@ export class GameImpl implements Game {
     this._width = _map.width();
     this._height = _map.height();
     this.unitGrid = new UnitGrid(this._map);
+
+    const peaceDurationMinutes = this._config.peaceTimerDuration();
+    if (peaceDurationMinutes > 0) {
+      const turnIntervalMs = this._config.serverConfig().turnIntervalMs();
+      const durationInTicks =
+        (peaceDurationMinutes * 60 * 1000) / turnIntervalMs;
+      this.peaceTimerEndsAtTick = this._ticks + durationInTicks;
+    }
 
     if (_config.gameConfig().gameMode === GameMode.Team) {
       this.populateTeams();

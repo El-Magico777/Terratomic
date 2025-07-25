@@ -1,7 +1,7 @@
 import { getServerConfigFromServer } from "../core/configuration/ConfigLoader";
 import { Difficulty, GameMapType, GameMode, GameType } from "../core/game/Game";
 import { PseudoRandom } from "../core/PseudoRandom";
-import { GameConfig } from "../core/Schemas";
+import { GameConfig, PeaceTimerDuration } from "../core/Schemas";
 import { logger } from "./Logger";
 
 const log = logger.child({});
@@ -61,6 +61,7 @@ export class MapPlaylist {
       gameMode: mode,
       playerTeams: numPlayerTeams,
       bots: 400,
+      peaceTimerDurationMinutes: PeaceTimerDuration.None,
     } satisfies GameConfig;
   }
 

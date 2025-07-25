@@ -11,6 +11,7 @@ import {
   UnitType,
   mapCategories,
 } from "../core/game/Game";
+import { PeaceTimerDuration } from "../core/Schemas";
 import { generateID } from "../core/Util";
 import "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
@@ -38,6 +39,8 @@ export class SinglePlayerModal extends LitElement {
   @state() private useRandomMap: boolean = false;
   @state() private gameMode: GameMode = GameMode.FFA;
   @state() private teamCount: number | typeof Duos = 2;
+  @state() private selectedPeaceTimerDuration: PeaceTimerDuration =
+    PeaceTimerDuration.None;
 
   @state() private disabledUnits: UnitType[] = [];
 
@@ -271,6 +274,31 @@ export class SinglePlayerModal extends LitElement {
                   ${translateText("single_modal.infinite_troops")}
                 </div>
               </label>
+
+              <label for="peace-timer" class="option-card">
+                <div class="option-card-title">
+                  ${translateText("host_modal.peace_timer")}
+                </div>
+                <select
+                  id="peace-timer"
+                  @change=${this.handlePeaceTimerChange}
+                  .value="${String(this.selectedPeaceTimerDuration)}"
+                >
+                  ${Object.values(PeaceTimerDuration)
+                    .filter((value) => typeof value === "number")
+                    .map(
+                      (value) => html`
+                        <option value="${value}">
+                          ${value === PeaceTimerDuration.None
+                            ? translateText("host_modal.peace_timer_none")
+                            : translateText("host_modal.peace_timer_minutes", {
+                                minutes: value,
+                              })}
+                        </option>
+                      `,
+                    )}
+                </select>
+              </label>
             </div>
 
             <hr
@@ -345,6 +373,12 @@ export class SinglePlayerModal extends LitElement {
 
   private handleInfiniteTroopsChange(e: Event) {
     this.infiniteTroops = Boolean((e.target as HTMLInputElement).checked);
+  }
+
+  private handlePeaceTimerChange(e: Event) {
+    this.selectedPeaceTimerDuration = parseInt(
+      (e.target as HTMLSelectElement).value,
+    );
   }
 
   private handleDisableNPCsChange(e: Event) {
@@ -426,6 +460,7 @@ export class SinglePlayerModal extends LitElement {
               disabledUnits: this.disabledUnits
                 .map((u) => Object.values(UnitType).find((ut) => ut === u))
                 .filter((ut): ut is UnitType => ut !== undefined),
+              peaceTimerDurationMinutes: this.selectedPeaceTimerDuration,
             },
           },
         } satisfies JoinLobbyEvent,
