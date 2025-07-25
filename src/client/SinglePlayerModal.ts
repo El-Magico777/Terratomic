@@ -281,6 +281,7 @@ export class SinglePlayerModal extends LitElement {
                 </div>
                 <select
                   id="peace-timer"
+                  class="peace-timer-select"
                   @change=${this.handlePeaceTimerChange}
                   .value="${String(this.selectedPeaceTimerDuration)}"
                 >
