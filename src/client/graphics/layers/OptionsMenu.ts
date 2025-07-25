@@ -158,7 +158,7 @@ export class OptionsMenu extends LitElement implements Layer {
       this.game.ticks() < peaceTimerEndsAtTick
     ) {
       const remainingTicks = peaceTimerEndsAtTick - this.game.ticks();
-      const seconds = Math.floor(remainingTicks / 10);
+      const seconds = Math.ceil(remainingTicks / 10);
       const minutes = Math.floor(seconds / 60);
       const remainingSeconds = seconds % 60;
       this._peaceTimerRemaining = `Peace Treaty: ${minutes}m ${remainingSeconds}s`;

@@ -96,7 +96,8 @@ export class GameImpl implements Game {
       const turnIntervalMs = this._config.serverConfig().turnIntervalMs();
       const durationInTicks =
         (peaceDurationMinutes * 60 * 1000) / turnIntervalMs;
-      this.peaceTimerEndsAtTick = this._ticks + durationInTicks;
+      this.peaceTimerEndsAtTick =
+        this._ticks + this._config.numSpawnPhaseTurns() + durationInTicks;
     }
 
     if (_config.gameConfig().gameMode === GameMode.Team) {
