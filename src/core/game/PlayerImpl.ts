@@ -935,6 +935,20 @@ export class PlayerImpl implements Player {
     targetTile: TileRef,
     validTiles: TileRef[] | null = null,
   ): TileRef | false {
+    const isPeaceTimerActive =
+      this.mg.peaceTimerEndsAtTick !== null &&
+      this.mg.ticks() < this.mg.peaceTimerEndsAtTick;
+
+    if (isPeaceTimerActive) {
+      if (
+        unitType === UnitType.AtomBomb ||
+        unitType === UnitType.HydrogenBomb ||
+        unitType === UnitType.MIRV
+      ) {
+        return false; // Cannot build nukes during peace timer
+      }
+    }
+
     if (this.mg.config().isUnitDisabled(unitType)) {
       return false;
     }
