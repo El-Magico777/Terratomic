@@ -644,6 +644,7 @@ export interface Game extends GameMap {
   executeNextTick(): GameUpdates;
   setWinner(winner: Player | Team, allPlayersStats: AllPlayersStats): void;
   config(): Config;
+  peaceTimerEndsAtTick: Tick | null;
 
   // Units
   units(...types: UnitType[]): Unit[];
@@ -754,6 +755,7 @@ export enum MessageType {
   RECEIVED_TROOPS_FROM_PLAYER,
   CHAT,
   WARN,
+  PEACE_TIMER_BLOCKED,
 }
 
 // Message categories used for filtering events in the EventsDisplay
@@ -785,6 +787,7 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.ALLIANCE_BROKEN]: MessageCategory.ALLIANCE,
   [MessageType.ALLIANCE_EXPIRED]: MessageCategory.ALLIANCE,
   [MessageType.WARN]: MessageCategory.ALLIANCE,
+  [MessageType.PEACE_TIMER_BLOCKED]: MessageCategory.ATTACK,
   [MessageType.SENT_GOLD_TO_PLAYER]: MessageCategory.TRADE,
   [MessageType.RECEIVED_GOLD_FROM_PLAYER]: MessageCategory.TRADE,
   [MessageType.RECEIVED_GOLD_FROM_TRADE]: MessageCategory.TRADE,
