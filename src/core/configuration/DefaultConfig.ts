@@ -23,7 +23,12 @@ import {
 import { TileRef } from "../game/GameMap";
 import { PlayerView } from "../game/GameView";
 import { UserSettings } from "../game/UserSettings";
-import { GameConfig, GameID, PeaceTimerDuration, TeamCountConfig } from "../Schemas";
+import {
+  GameConfig,
+  GameID,
+  PeaceTimerDuration,
+  TeamCountConfig,
+} from "../Schemas";
 import { assertNever, simpleHash, within } from "../Util";
 import { Config, GameEnv, NukeMagnitude, ServerConfig, Theme } from "./Config";
 import { PastelTheme } from "./PastelTheme";
