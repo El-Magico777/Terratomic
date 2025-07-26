@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import quickChatData from "../../resources/QuickChat.json" with { type: "json" };
+import quickChatData from "../../resources/QuickChat.json";
 import {
   AllPlayers,
   Difficulty,
