@@ -28,7 +28,7 @@ export class TradeShipExecution implements Execution {
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
-    this.pathFinder = PathFinder.Mini(mg, 2500);
+    this.pathFinder = PathFinder.Mini(mg, 1000);
   }
 
   tick(ticks: number): void {
