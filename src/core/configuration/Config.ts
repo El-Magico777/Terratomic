@@ -70,6 +70,7 @@ export interface Config {
   spawnImmunityDuration(): Tick;
   serverConfig(): ServerConfig;
   gameConfig(): GameConfig;
+  peaceTimerDuration(): number;
   theme(): Theme;
   percentageTilesOwnedToWin(): number;
   numBots(): number;

@@ -7,16 +7,10 @@ export default {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
   transform: {
-    "^.+\\.tsx?$": [
-      "ts-jest",
-      {
-        useESM: true,
-        tsconfig: "tsconfig.jest.json",
-      },
-    ],
+    "^.+\\.tsx?$": "babel-jest",
   },
   transformIgnorePatterns: ["node_modules/(?!(node:)/)"],
-  preset: "ts-jest/presets/default-esm",
+  preset: undefined,
   collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts"],
   coverageThreshold: {
     global: {

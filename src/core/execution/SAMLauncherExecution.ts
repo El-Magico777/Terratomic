@@ -98,6 +98,11 @@ export class SAMLauncherExecution implements Execution {
     if (this.mg === null || this.player === null) {
       throw new Error("Not initialized");
     }
+
+    const isPeaceTimerActive =
+      this.mg.peaceTimerEndsAtTick !== null &&
+      this.mg.ticks() < this.mg.peaceTimerEndsAtTick;
+
     if (this.sam === null) {
       if (this.tile === null) {
         throw new Error("tile is null");
@@ -155,7 +160,8 @@ export class SAMLauncherExecution implements Execution {
     const isSingleTarget = target && !target.targetedBySAM();
     if (
       (isSingleTarget || mirvWarheadTargets.length > 0) &&
-      !this.sam.isInCooldown()
+      !this.sam.isInCooldown() &&
+      !isPeaceTimerActive
     ) {
       this.sam.launch();
       const type =
@@ -214,6 +220,10 @@ export class SAMLauncherExecution implements Execution {
   }
 
   private interceptPlanes() {
+    const isPeaceTimerActive =
+      this.mg.peaceTimerEndsAtTick !== null &&
+      this.mg.ticks() < this.mg.peaceTimerEndsAtTick;
+
     const potentialAirborneTargets = this.mg.nearbyUnits(
       this.sam!.tile(),
       this.cargoPlaneSearchRadius,
@@ -269,7 +279,8 @@ export class SAMLauncherExecution implements Execution {
 
     if (
       validAirborneTargets.length > 0 &&
-      !this.sam.isInCooldown(this.mg.config().SAMPlaneCooldown())
+      !this.sam.isInCooldown(this.mg.config().SAMPlaneCooldown()) &&
+      !isPeaceTimerActive
     ) {
       this.sam.launch(this.mg.config().SAMPlaneCooldown());
       const samOwner = this.sam!.owner();

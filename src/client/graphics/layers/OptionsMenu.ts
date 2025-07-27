@@ -63,6 +63,9 @@ export class OptionsMenu extends LitElement implements Layer {
   private hasWinner = false;
 
   @state()
+  private _peaceTimerRemaining: string | null = null;
+
+  @state()
   private alternateView: boolean = false;
 
   private onTerrainButtonClick() {
@@ -148,6 +151,21 @@ export class OptionsMenu extends LitElement implements Layer {
     } else if (!this.hasWinner && this.game.ticks() % 10 === 0) {
       this.timer++;
     }
+
+    const peaceTimerEndsAtTick = this.game.peaceTimerEndsAtTick();
+    if (
+      peaceTimerEndsAtTick !== null &&
+      this.game.ticks() < peaceTimerEndsAtTick
+    ) {
+      const remainingTicks = peaceTimerEndsAtTick - this.game.ticks();
+      const seconds = Math.ceil(remainingTicks / 10);
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      this._peaceTimerRemaining = `Peace Treaty: ${minutes}m ${remainingSeconds}s`;
+    } else {
+      this._peaceTimerRemaining = null;
+    }
+
     this.isVisible = true;
     this.requestUpdate();
   }
@@ -188,14 +206,28 @@ export class OptionsMenu extends LitElement implements Layer {
               title: "Settings",
               children: "⚙️",
             })}
-          </div>
+          </div>     
+          ${
+            this._peaceTimerRemaining !== null
+              ? html`
+                  <div
+                    class="flex items-center justify-center mt-1 bg-opacity-50 bg-gray-700 text-opacity-90 text-white rounded p-1"
+                  >
+                    <span
+                      class="font-bold text-sm lg:text-base text-white whitespace-normal"
+                      >${this._peaceTimerRemaining}</span
+                    >
+                  </div>
+                `
+              : ""
+          }
         </div>
+      </div>
 
         <div
-          class="options-menu flex flex-col justify-around gap-y-3 mt-2 bg-[rgba(54,64,44,0.6)] p-1 lg:p-2 rounded-lg backdrop-blur-md ${!this
-            .showSettings
-            ? "hidden"
-            : ""}"
+          class="options-menu flex flex-col justify-around gap-y-3 mt-2 bg-[rgba(54,64,44,0.6)] p-1 lg:p-2 rounded-lg backdrop-blur-md ${
+            !this.showSettings ? "hidden" : ""
+          }"
         >
           ${button({
             onClick: this.onTerrainButtonClick,

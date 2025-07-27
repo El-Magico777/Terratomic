@@ -148,6 +148,15 @@ export class FighterJetExecution implements Execution {
   }
 
   private attackTarget() {
+    const isPeaceTimerActive =
+      this.mg.peaceTimerEndsAtTick !== null &&
+      this.mg.ticks() < this.mg.peaceTimerEndsAtTick;
+
+    if (isPeaceTimerActive) {
+      this.fighterJet.setTargetUnit(undefined);
+      return; // Block attack
+    }
+
     if (this.fighterJet.targetUnit() === undefined) {
       return;
     }
@@ -239,6 +248,15 @@ export class FighterJetExecution implements Execution {
   }
 
   private captureCargoPlane() {
+    const isPeaceTimerActive =
+      this.mg.peaceTimerEndsAtTick !== null &&
+      this.mg.ticks() < this.mg.peaceTimerEndsAtTick;
+
+    if (isPeaceTimerActive) {
+      this.fighterJet.setTargetUnit(undefined);
+      return; // Block capture
+    }
+
     if (this.fighterJet.targetUnit() === undefined) {
       return;
     }
