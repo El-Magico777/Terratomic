@@ -615,6 +615,9 @@ export interface Player {
   getBomberIntent(): { targetPlayerID: string; structure: UnitType } | null;
   bombersOnTarget: Map<TileRef, number>;
 
+  setAutoBombingEnabled(enabled: boolean): void;
+  isAutoBombingEnabled(): boolean;
+
   // WARNING: this operation is expensive.
   bestTransportShipSpawn(tile: TileRef): TileRef | false;
 }

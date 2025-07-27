@@ -40,7 +40,8 @@ export type Intent =
   | BomberIntent
   | ParatrooperAttackIntent
   | CancelParatrooperIntent
-  | MarkDisconnectedIntent;
+  | MarkDisconnectedIntent
+  | SetAutoBombingIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -72,6 +73,7 @@ export type ParatrooperAttackIntent = z.infer<
 export type CancelParatrooperIntent = z.infer<
   typeof CancelParatrooperIntentSchema
 >;
+export type SetAutoBombingIntent = z.infer<typeof SetAutoBombingIntentSchema>;
 
 export type QuickChatIntent = z.infer<typeof QuickChatIntentSchema>;
 export type MarkDisconnectedIntent = z.infer<
@@ -349,6 +351,11 @@ export const MarkDisconnectedIntentSchema = BaseIntentSchema.extend({
   isDisconnected: z.boolean(),
 });
 
+export const SetAutoBombingIntentSchema = BaseIntentSchema.extend({
+  type: z.literal("set_auto_bombing"),
+  enabled: z.boolean(),
+});
+
 const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -374,6 +381,7 @@ const IntentSchema = z.discriminatedUnion("type", [
   ParatrooperAttackIntentSchema,
   CancelParatrooperIntentSchema,
   QuickChatIntentSchema,
+  SetAutoBombingIntentSchema,
 ]);
 
 //

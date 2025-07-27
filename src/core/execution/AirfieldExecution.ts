@@ -120,6 +120,10 @@ export class AirfieldExecution implements Execution {
       }
     }
 
+    // Default targeting logic
+    if (!this.player.isAutoBombingEnabled()) {
+      return;
+    }
     const range = mg.config().bomberTargetRange();
     const enemies = mg
       .nearbyUnits(airfieldUnit.tile(), range, [
