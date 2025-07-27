@@ -111,6 +111,7 @@ export class PlayerImpl implements Player {
 
   private bomberIntent: { targetPlayerID: string; structure: UnitType } | null =
     null;
+  public bombersOnTarget = new Map<TileRef, number>();
 
   constructor(
     private mg: GameImpl,
