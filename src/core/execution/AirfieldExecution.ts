@@ -90,7 +90,7 @@ export class AirfieldExecution implements Execution {
     const intent = this.player.getBomberIntent?.();
     if (intent?.targetPlayerID && intent?.structure) {
       const targetPlayer = mg.player(intent.targetPlayerID);
-      if (targetPlayer) {
+      if (targetPlayer && !this.player.isFriendly(targetPlayer)) {
         const targets = targetPlayer.units(intent.structure);
         const availableTargets = targets;
 
