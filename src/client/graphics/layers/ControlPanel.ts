@@ -295,6 +295,7 @@ export class ControlPanel extends LitElement implements Layer {
       // Skip self and players already identified as reachable
       if (
         otherPlayer.id() === myPlayer.id() ||
+        myPlayer.isFriendly(otherPlayer) ||
         checkedPlayerIDs.has(otherPlayer.id())
       ) {
         continue;
