@@ -25,6 +25,13 @@ export const BoatUnitSchema = z.union([z.literal("trade"), z.literal("trans")]);
 export type BoatUnit = z.infer<typeof BoatUnitSchema>;
 export type BoatUnitType = UnitType.TradeShip | UnitType.TransportShip;
 
+export const LandTradeUnitSchema = z.union([
+  z.literal("truck"),
+  z.literal("train"),
+]);
+export type LandTradeUnit = z.infer<typeof LandTradeUnitSchema>;
+export type LandTradeUnitType = UnitType.CargoTruck | UnitType.CargoTrain;
+
 // export const unitTypeToBoatUnit = {
 //   [UnitType.TradeShip]: "trade",
 //   [UnitType.TransportShip]: "trans",
@@ -39,6 +46,8 @@ export const OtherUnitSchema = z.union([
   z.literal("saml"),
   z.literal("airf"),
   z.literal("fjet"),
+  z.literal("rdnt"),
+  z.literal("trnt"),
 ]);
 export type OtherUnit = z.infer<typeof OtherUnitSchema>;
 export type OtherUnitType =
@@ -49,7 +58,9 @@ export type OtherUnitType =
   | UnitType.SAMLauncher
   | UnitType.Warship
   | UnitType.Airfield
-  | UnitType.FighterJet;
+  | UnitType.FighterJet
+  | UnitType.RoadNetwork
+  | UnitType.TrainNetwork;
 
 export const unitTypeToOtherUnit = {
   [UnitType.City]: "city",
@@ -60,6 +71,8 @@ export const unitTypeToOtherUnit = {
   [UnitType.Warship]: "wshp",
   [UnitType.Airfield]: "airf",
   [UnitType.FighterJet]: "fjet",
+  [UnitType.RoadNetwork]: "rdnt",
+  [UnitType.TrainNetwork]: "trnt",
 } as const satisfies Record<OtherUnitType, OtherUnit>;
 
 // Attacks
@@ -72,6 +85,12 @@ export const BOAT_INDEX_SENT = 0; // Boats launched
 export const BOAT_INDEX_ARRIVE = 1; // Boats arrived
 export const BOAT_INDEX_CAPTURE = 2; // Boats captured
 export const BOAT_INDEX_DESTROY = 3; // Boats destroyed
+
+// Land trade units
+export const LAND_INDEX_SENT = 0; // Land trade units launched
+export const LAND_INDEX_ARRIVE = 1; // Land trade units arrived
+export const LAND_INDEX_CAPTURE = 2; // Land trade units captured
+export const LAND_INDEX_DESTROY = 3; // Land trade units destroyed
 
 // Bombs
 export const BOMB_INDEX_LAUNCH = 0; // Bombs launched
@@ -104,6 +123,7 @@ export const PlayerStatsSchema = z
     attacks: AtLeastOneNumberSchema.optional(),
     betrayals: BigIntStringSchema.optional(),
     boats: z.partialRecord(BoatUnitSchema, AtLeastOneNumberSchema).optional(),
+    land: z.partialRecord(LandTradeUnitSchema, AtLeastOneNumberSchema).optional(),
     bombs: z.partialRecord(BombUnitSchema, AtLeastOneNumberSchema).optional(),
     gold: AtLeastOneNumberSchema.optional(),
     units: z.partialRecord(OtherUnitSchema, AtLeastOneNumberSchema).optional(),

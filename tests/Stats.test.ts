@@ -119,6 +119,35 @@ describe("Stats", () => {
     });
   });
 
+  test("landSendTrade", () => {
+    stats.landSendTrade(player1, player2, "truck");
+    expect(stats.stats()).toStrictEqual({
+      client1: { land: { truck: [1n] } },
+    });
+  });
+
+  test("landArriveTrade", () => {
+    stats.landArriveTrade(player1, player2, "truck", 1);
+    expect(stats.stats()).toStrictEqual({
+      client1: { land: { truck: [0n, 1n] }, gold: [0n, 0n, 1n] },
+      client2: { gold: [0n, 0n, 1n] },
+    });
+  });
+
+  test("landCapturedTrade", () => {
+    stats.landCapturedTrade(player1, player2, "truck", 1);
+    expect(stats.stats()).toStrictEqual({
+      client1: { land: { truck: [0n, 0n, 1n] }, gold: [0n, 0n, 0n, 1n] },
+    });
+  });
+
+  test("landDestroyTrade", () => {
+    stats.landDestroyTrade(player1, player2, "truck");
+    expect(stats.stats()).toStrictEqual({
+      client1: { land: { truck: [0n, 0n, 0n, 1n] } },
+    });
+  });
+
   test("boatSendTroops", () => {
     stats.boatSendTroops(player1, player2, 1);
     expect(stats.stats()).toStrictEqual({

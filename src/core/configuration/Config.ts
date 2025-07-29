@@ -131,6 +131,10 @@ export interface Config {
   cargoPlaneSpawnRate(numberOfAirplanes: number): number;
   cargoPlaneMaxNumber(): number;
   cargoPlanesEnabled(): boolean;
+  roadTruckGold(dist: number): Gold;
+  roadTruckSpawnRate(numberOfNetworks: number): number;
+  trainGold(dist: number): Gold;
+  trainSpawnRate(numberOfNetworks: number): number;
   bombersEnabled(): boolean;
   bomberDropCadence(): number;
   bomberPayload(): number;

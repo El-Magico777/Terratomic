@@ -231,7 +231,9 @@
     "hospital": "Hospital",
     "academy": "Military Academy",
     "airfield": "Airfield",
-    "fighter_jet": "Fighter Jet"
+    "fighter_jet": "Fighter Jet",
+    "road_network_upgrade": "Road Network Upgrade",
+    "train_network_upgrade": "Train Network Upgrade"
   },
   "user_setting": {
     "title": "User Settings",
@@ -376,7 +378,9 @@
       "hospital": "Lowers troop casualties from combat",
       "academy": "Increases troop speed and enemy losses in combat",
       "airfield": "Sends bomber planes to bomb other players",
-      "fighter_jet": "Destroys bombers and fighters jets"
+      "fighter_jet": "Destroys bombers and fighters jets",
+      "road_network_upgrade": "Creates roads for cargo trucks",
+      "train_network_upgrade": "Creates rails for cargo trains"
     },
     "not_enough_money": "Not enough money"
   },

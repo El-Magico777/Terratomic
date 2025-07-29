@@ -83,6 +83,20 @@ const buildTable: BuildItemDisplay[][] = [
       countable: true,
     },
     {
+      unitType: UnitType.RoadNetwork,
+      icon: portIcon,
+      description: "build_menu.desc.road_network_upgrade",
+      key: "unit_type.road_network_upgrade",
+      countable: false,
+    },
+    {
+      unitType: UnitType.TrainNetwork,
+      icon: warshipIcon,
+      description: "build_menu.desc.train_network_upgrade",
+      key: "unit_type.train_network_upgrade",
+      countable: false,
+    },
+    {
       unitType: UnitType.MissileSilo,
       icon: missileSiloIcon,
       description: "build_menu.desc.missile_silo",

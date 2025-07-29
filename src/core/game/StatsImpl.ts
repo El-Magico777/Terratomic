@@ -8,6 +8,11 @@ import {
   BOAT_INDEX_DESTROY,
   BOAT_INDEX_SENT,
   BoatUnit,
+  LAND_INDEX_ARRIVE,
+  LAND_INDEX_CAPTURE,
+  LAND_INDEX_DESTROY,
+  LAND_INDEX_SENT,
+  LandTradeUnit,
   BOMB_INDEX_INTERCEPT,
   BOMB_INDEX_LAND,
   BOMB_INDEX_LAUNCH,
@@ -94,6 +99,20 @@ export class StatsImpl implements Stats {
     p.boats[type][index] += _bigint(value);
   }
 
+  private _addLand(
+    player: Player,
+    type: LandTradeUnit,
+    index: number,
+    value: BigIntLike,
+  ) {
+    const p = this._makePlayerStats(player);
+    if (p === undefined) return;
+    if (p.land === undefined) p.land = { [type]: [0n] } as any;
+    if (p.land[type] === undefined) p.land[type] = [0n];
+    while (p.land[type].length <= index) p.land[type].push(0n);
+    p.land[type][index] += _bigint(value);
+  }
+
   private _addBomb(
     player: Player,
     nukeType: NukeType,
@@ -176,6 +195,35 @@ export class StatsImpl implements Stats {
 
   boatDestroyTrade(player: Player, target: Player): void {
     this._addBoat(player, "trade", BOAT_INDEX_DESTROY, 1);
+  }
+
+  landSendTrade(player: Player, target: Player, type: LandTradeUnit): void {
+    this._addLand(player, type, LAND_INDEX_SENT, 1);
+  }
+
+  landArriveTrade(
+    player: Player,
+    target: Player,
+    type: LandTradeUnit,
+    gold: BigIntLike,
+  ): void {
+    this._addLand(player, type, LAND_INDEX_ARRIVE, 1);
+    this._addGold(player, GOLD_INDEX_TRADE, gold);
+    this._addGold(target, GOLD_INDEX_TRADE, gold);
+  }
+
+  landCapturedTrade(
+    player: Player,
+    target: Player,
+    type: LandTradeUnit,
+    gold: BigIntLike,
+  ): void {
+    this._addLand(player, type, LAND_INDEX_CAPTURE, 1);
+    this._addGold(player, GOLD_INDEX_STEAL, gold);
+  }
+
+  landDestroyTrade(player: Player, target: Player, type: LandTradeUnit): void {
+    this._addLand(player, type, LAND_INDEX_DESTROY, 1);
   }
 
   boatSendTroops(

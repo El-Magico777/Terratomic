@@ -14,6 +14,8 @@ This project aims to evolve based on what players actually want, with transparen
 
 This is a game built _with_ its players, not just _for_ them.
 
+Recent development work introduced **road and train network upgrades**, allowing players to establish land trade via cargo trucks and trains.
+
 ## 🤝 Contributing
 
 Whether you're here to squash bugs, prototype new mechanics, or improve the UI, here's how to get started:

@@ -314,6 +314,24 @@ export class DefaultConfig implements Config {
     return 3;
   }
 
+  roadTruckGold(distance: number): Gold {
+    const base = this.tradeShipGold(distance);
+    return BigInt(Math.floor(Number(base) * 0.5));
+  }
+
+  roadTruckSpawnRate(numberOfNetworks: number): number {
+    return Math.round(10 * Math.pow(numberOfNetworks, 0.5));
+  }
+
+  trainGold(distance: number): Gold {
+    const base = this.tradeShipGold(distance);
+    return BigInt(Math.floor(Number(base) * 1.2));
+  }
+
+  trainSpawnRate(numberOfNetworks: number): number {
+    return Math.round(10 * Math.pow(numberOfNetworks, 0.4));
+  }
+
   // Bomber planes
   bombersEnabled(): boolean {
     return true;
@@ -573,6 +591,20 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: false,
           maxHealth: 750,
+        };
+      case UnitType.RoadNetwork:
+      case UnitType.TrainNetwork:
+        return {
+          cost: () => 100_000n,
+          territoryBound: true,
+          constructionDuration: this.instantBuild() ? 0 : 2 * 10,
+          maxHealth: 1000,
+        };
+      case UnitType.CargoTruck:
+      case UnitType.CargoTrain:
+        return {
+          cost: () => 0n,
+          territoryBound: false,
         };
       default:
         assertNever(type);

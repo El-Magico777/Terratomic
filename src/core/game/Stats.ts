@@ -1,5 +1,10 @@
 import { AllPlayersStats } from "../Schemas";
-import { NukeType, OtherUnitType, PlayerStats } from "../StatsSchemas";
+import {
+  LandTradeUnitType,
+  NukeType,
+  OtherUnitType,
+  PlayerStats,
+} from "../StatsSchemas";
 import { Player, TerraNullius } from "./Game";
 
 export interface Stats {
@@ -38,6 +43,24 @@ export interface Stats {
 
   // Player destroys target's trade ship
   boatDestroyTrade(player: Player, target: Player): void;
+
+  landSendTrade(player: Player, target: Player, type: LandTradeUnitType): void;
+
+  landArriveTrade(
+    player: Player,
+    target: Player,
+    type: LandTradeUnitType,
+    gold: number | bigint,
+  ): void;
+
+  landCapturedTrade(
+    player: Player,
+    target: Player,
+    type: LandTradeUnitType,
+    gold: number | bigint,
+  ): void;
+
+  landDestroyTrade(player: Player, target: Player, type: LandTradeUnitType): void;
 
   // Player sends a transport ship to target with troops
   boatSendTroops(

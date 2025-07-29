@@ -154,6 +154,10 @@ export enum UnitType {
   CargoPlane = "Cargo Plane",
   Bomber = "Bomber",
   FighterJet = "Fighter Jet", // Represents a Fighter Jet unit.
+  RoadNetwork = "Road Network",
+  TrainNetwork = "Train Network",
+  CargoTruck = "Cargo Truck",
+  CargoTrain = "Cargo Train",
 }
 
 const _structureTypes: ReadonlySet<UnitType> = new Set([
@@ -164,6 +168,8 @@ const _structureTypes: ReadonlySet<UnitType> = new Set([
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Airfield,
+  UnitType.RoadNetwork,
+  UnitType.TrainNetwork,
   UnitType.Hospital,
   UnitType.Academy,
 ]);
@@ -239,6 +245,18 @@ export interface UnitParamsMap {
 
   [UnitType.FighterJet]: {
     patrolTile: TileRef;
+  };
+
+  [UnitType.RoadNetwork]: {};
+
+  [UnitType.TrainNetwork]: {};
+
+  [UnitType.CargoTruck]: {
+    targetUnit: Unit;
+  };
+
+  [UnitType.CargoTrain]: {
+    targetUnit: Unit;
   };
 }
 
