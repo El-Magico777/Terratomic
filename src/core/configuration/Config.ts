@@ -174,6 +174,11 @@ export interface Config {
   isReplay(): boolean;
   allianceExtensionPromptOffset(): number;
   maxProductivity(): number;
+
+  // Road Network
+  roadNodeConnectionRadius(): number;
+  roadGoldMultiplier(): number;
+  roadAttackSpeedBoost(): number;
 }
 
 export interface Theme {

@@ -714,6 +714,16 @@ export class DefaultConfig implements Config {
     if (attackerType === PlayerType.Bot) {
       speed *= 10; // slow bot attacks
     }
+
+    if (
+      gm.areTilesConnectedViaRoad(
+        attacker.tiles().values().next().value,
+        tileToConquer,
+      )
+    ) {
+      speed *= this.roadAttackSpeedBoost();
+    }
+
     if (defenderIsPlayer) {
       const defenderTroops = defender.troops();
       const defenderTiles = defender.numTilesOwned();
@@ -989,5 +999,17 @@ export class DefaultConfig implements Config {
 
   maxInvestmentRate(): number {
     return 0.5; // 50%
+  }
+
+  // Road Network
+  roadNodeConnectionRadius(): number {
+    return 5;
+  }
+  roadGoldMultiplier(): number {
+    return 1;
+  }
+  roadAttackSpeedBoost(): number {
+    return 0.7;
+  }
   }
 }
