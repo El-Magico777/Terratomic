@@ -345,6 +345,7 @@ export class GameView implements GameMap {
   private _myPlayer: PlayerView | null = null;
   private _focusedPlayer: PlayerView | null = null;
   private _alliances: AllianceViewData[] = [];
+  public roadConnections: Map<TileRef, TileRef[]> = new Map();
 
   private unitGrid: UnitGrid;
 
@@ -385,6 +386,9 @@ export class GameView implements GameMap {
     if (gu.alliances) {
       this._alliances = gu.alliances;
     }
+    if (gu.roadConnections) {
+      this.roadConnections = new Map(gu.roadConnections);
+    }
     gu.updates[GameUpdateType.Player].forEach((pu) => {
       this.smallIDToID.set(pu.smallID, pu.id);
       const player = this._players.get(pu.id);
@@ -420,6 +424,9 @@ export class GameView implements GameMap {
         // Wait until next tick to delete the unit.
         this.toDelete.add(unit.id());
       }
+    });
+    gu.updates[GameUpdateType.RoadConnections].forEach((update) => {
+      this.roadConnections = new Map(update.connections);
     });
   }
 

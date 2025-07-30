@@ -34,6 +34,7 @@ import {
 import { GameMap, TileRef, TileUpdate } from "./GameMap";
 import { GameUpdate, GameUpdateType } from "./GameUpdates";
 import { PlayerImpl } from "./PlayerImpl";
+import { RoadConnectionsUpdate } from "./RoadConnectionsUpdate";
 import { Stats } from "./Stats";
 import { StatsImpl } from "./StatsImpl";
 import { assignTeams } from "./TeamAssignment";
@@ -925,6 +926,11 @@ export class GameImpl implements Game {
         this.roadConnections.set(unit.tile(), otherConnections);
       }
     }
+
+    this.addUpdate({
+      type: GameUpdateType.RoadConnections,
+      connections: Array.from(this.roadConnections.entries()),
+    } as RoadConnectionsUpdate);
   }
 
   public getConnectedRoadNodes(origin: TileRef): TileRef[] {

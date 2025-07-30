@@ -12,6 +12,7 @@ import {
   UnitType,
 } from "./Game";
 import { TileRef, TileUpdate } from "./GameMap";
+import { RoadConnectionsUpdate } from "./RoadConnectionsUpdate";
 
 export interface GameUpdateViewData {
   tick: number;
@@ -19,6 +20,7 @@ export interface GameUpdateViewData {
   packedTileUpdates: BigUint64Array;
   playerNameViewData: Record<number, NameViewData>;
   alliances?: AllianceViewData[];
+  roadConnections?: [TileRef, TileRef[]][];
 }
 
 export interface ErrorUpdate {
@@ -44,6 +46,7 @@ export enum GameUpdateType {
   AllianceExtensionPrompt,
   AllianceExtensionAccepted,
   BomberExplosion,
+  RoadConnections,
 }
 
 export type GameUpdate =
@@ -62,7 +65,8 @@ export type GameUpdate =
   | WinUpdate
   | HashUpdate
   | UnitIncomingUpdate
-  | BomberExplosionUpdate;
+  | BomberExplosionUpdate
+  | RoadConnectionsUpdate;
 
 export interface BomberExplosionUpdate {
   type: GameUpdateType.BomberExplosion;
