@@ -75,7 +75,9 @@ export class GameImpl implements Game {
   private updates: GameUpdates = createGameUpdatesMap();
   private unitGrid: UnitGrid;
 
-  private playerTeams: Team[];
+  public roadConnections: Map<TileRef, TileRef[]> = new Map();
+
+  private playerTeams: Team[] = [ColoredTeams.Red, ColoredTeams.Blue];
   private botTeam: Team = ColoredTeams.Bot;
 
   constructor(
@@ -747,6 +749,9 @@ export class GameImpl implements Game {
 
   addUnit(u: Unit) {
     this.unitGrid.addUnit(u);
+    if (u.type() === UnitType.RoadNode) {
+      this.updateRoadNetwork(u.tile());
+    }
   }
   unitsAt(tile: TileRef): Unit[] {
     return this.unitGrid.unitsAt(tile) as Unit[];
@@ -754,6 +759,9 @@ export class GameImpl implements Game {
   removeUnit(u: Unit) {
     u.owner().invalidateEffectiveUnitsCache(u.type());
     this.unitGrid.removeUnit(u);
+    if (u.type() === UnitType.RoadNode) {
+      this.updateRoadNetwork(u.tile());
+    }
   }
   updateUnitTile(u: Unit) {
     this.unitGrid.updateUnitCell(u);
@@ -889,6 +897,44 @@ export class GameImpl implements Game {
   }
   public alliances(): AllianceImpl[] {
     return this.alliances_;
+  }
+
+  public updateRoadNetwork(tile: TileRef): void {
+    const owner = this.owner(tile);
+    if (!owner.isPlayer()) {
+      return;
+    }
+
+    const nearbyNodes = this.nearbyUnits(
+      tile,
+      5, // ROAD_CONNECTION_RADIUS
+      [UnitType.RoadNode, UnitType.City, UnitType.Port],
+      ({ unit }) => unit.owner() === owner,
+    );
+
+    const connections = nearbyNodes.map(({ unit }) => unit.tile());
+    this.roadConnections.set(tile, connections);
+
+    // Update the other nodes as well
+    for (const { unit } of nearbyNodes) {
+      const otherConnections = this.roadConnections.get(unit.tile()) || [];
+      if (!otherConnections.includes(tile)) {
+        otherConnections.push(tile);
+        this.roadConnections.set(unit.tile(), otherConnections);
+      }
+    }
+  }
+
+  public getConnectedRoadNodes(origin: TileRef): TileRef[] {
+    return this.roadConnections.get(origin) || [];
+  }
+
+  public areTilesConnectedViaRoad(from: TileRef, to: TileRef): boolean {
+    const fromConnections = this.roadConnections.get(from);
+    if (fromConnections) {
+      return fromConnections.includes(to);
+    }
+    return false;
   }
 }
 

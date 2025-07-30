@@ -706,6 +706,12 @@ export interface Game extends GameMap {
   // Optional as it's not initialized before the end of spawn phase
   stats(): Stats;
   bomberExplosion(tile: TileRef, radius: number, owner: Player): void;
+
+  // Road Network
+  roadConnections: Map<TileRef, TileRef[]>;
+  updateRoadNetwork(tile: TileRef): void;
+  getConnectedRoadNodes(origin: TileRef): TileRef[];
+  areTilesConnectedViaRoad(from: TileRef, to: TileRef): boolean;
 }
 
 export interface PlayerActions {
