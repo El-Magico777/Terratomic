@@ -122,6 +122,13 @@ const buildTable: BuildItemDisplay[][] = [
       key: "unit_type.defense_post",
       countable: true,
     },
+    {
+      unitType: UnitType.RoadNode,
+      icon: shieldIcon,
+      description: "build_menu.desc.road_node",
+      key: "unit_type.road_node",
+      countable: true,
+    },
   ],
 ];
 

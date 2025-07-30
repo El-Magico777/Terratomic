@@ -590,6 +590,14 @@ export class DefaultConfig implements Config {
           territoryBound: false,
           maxHealth: 750,
         };
+      case UnitType.RoadNode:
+        return {
+          cost: (p: Player) =>
+            p.type() === PlayerType.Human && this.infiniteGold() ? 0n : 50n,
+          territoryBound: true,
+          constructionDuration: 1,
+          maxHealth: 500,
+        };
       default:
         assertNever(type);
     }

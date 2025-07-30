@@ -251,7 +251,8 @@
     "hospital": "Hospital",
     "academy": "Military Academy",
     "airfield": "Airfield",
-    "fighter_jet": "Fighter Jet"
+    "fighter_jet": "Fighter Jet",
+    "road_node": "Road Node"
   },
   "user_setting": {
     "title": "User Settings",
@@ -416,7 +417,8 @@
       "hospital": "Lowers troop casualties from combat",
       "academy": "Increases troop speed and enemy losses in combat",
       "airfield": "Sends bomber planes to bomb other players",
-      "fighter_jet": "Destroys bombers and fighters jets"
+      "fighter_jet": "Destroys bombers and fighters jets",
+      "road_node": "Connects structures to enable land trade and faster troop movement."
     },
     "not_enough_money": "Not enough money"
   },

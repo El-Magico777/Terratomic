@@ -994,6 +994,8 @@ export class PlayerImpl implements Player {
       case UnitType.Construction:
       case UnitType.Airfield:
         return this.landBasedStructureSpawn(targetTile, validTiles);
+      case UnitType.RoadNode:
+        return this.landBasedStructureSpawn(targetTile, validTiles);
       case UnitType.CargoPlane:
       case UnitType.Bomber:
         return this.cargoPlaneSpawn(targetTile);

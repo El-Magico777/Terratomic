@@ -160,6 +160,7 @@ export enum UnitType {
   CargoPlane = "Cargo Plane",
   Bomber = "Bomber",
   FighterJet = "Fighter Jet", // Represents a Fighter Jet unit.
+  RoadNode = "Road Node",
 }
 
 const _structureTypes: ReadonlySet<UnitType> = new Set([
@@ -172,6 +173,7 @@ const _structureTypes: ReadonlySet<UnitType> = new Set([
   UnitType.Airfield,
   UnitType.Hospital,
   UnitType.Academy,
+  UnitType.RoadNode,
 ]);
 
 export function isStructureType(type: UnitType): boolean {
@@ -244,6 +246,8 @@ export interface UnitParamsMap {
   [UnitType.FighterJet]: {
     patrolTile: TileRef;
   };
+
+  [UnitType.RoadNode]: {};
 }
 
 // Type helper to get params type for a specific unit type
