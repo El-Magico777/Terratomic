@@ -8,6 +8,9 @@ export class RoadLayer implements Layer {
   ) {}
 
   tick(): void {
+    if (!this.game.config().debugRoads()) {
+      return;
+    }
     const ctx = this.canvas.getContext("2d");
     if (!ctx) {
       return;

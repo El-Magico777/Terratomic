@@ -179,6 +179,7 @@ export interface Config {
   roadNodeConnectionRadius(): number;
   roadGoldMultiplier(): number;
   roadAttackSpeedBoost(): number;
+  debugRoads(): boolean;
 }
 
 export interface Theme {

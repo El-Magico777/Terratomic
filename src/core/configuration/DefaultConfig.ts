@@ -1011,5 +1011,8 @@ export class DefaultConfig implements Config {
   roadAttackSpeedBoost(): number {
     return 0.7;
   }
+
+  debugRoads(): boolean {
+    return false;
   }
 }

@@ -147,6 +147,9 @@ export class ConstructionExecution implements Execution {
       case UnitType.Airfield:
         this.mg.addExecution(new AirfieldExecution(player, this.tile));
         break;
+      case UnitType.RoadNode:
+        player.buildUnit(this.constructionType, this.tile, {});
+        break;
       default:
         // Try to build the unit directly if it has no specific execution
         const spawnTile = this.player.canBuild(
