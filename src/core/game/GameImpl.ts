@@ -1,4 +1,5 @@
 import { Config } from "../configuration/Config";
+import { LandTradeExecution } from "../execution/LandTradeExecution";
 import { AllPlayersStats, ClientID, Winner } from "../Schemas";
 import { simpleHash } from "../Util";
 import { AllianceImpl } from "./AllianceImpl";
@@ -97,6 +98,7 @@ export class GameImpl implements Game {
       this.populateTeams();
     }
     this.addPlayers();
+    this.addExecution(new LandTradeExecution(this));
   }
 
   private populateTeams() {
