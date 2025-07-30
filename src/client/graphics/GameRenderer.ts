@@ -23,6 +23,7 @@ import { PlayerInfoOverlay } from "./layers/PlayerInfoOverlay";
 import { PlayerPanel } from "./layers/PlayerPanel";
 import { RadialMenu } from "./layers/RadialMenu";
 import { ReplayPanel } from "./layers/ReplayPanel";
+import { RoadLayer } from "./layers/RoadLayer";
 import { SpawnTimer } from "./layers/SpawnTimer";
 import { StructureLayer } from "./layers/StructureLayer";
 import { TeamStats } from "./layers/TeamStats";
@@ -217,6 +218,7 @@ export function createRenderer(
   const layers: Layer[] = [
     new TerrainLayer(game, transformHandler),
     new TerritoryLayer(game, eventBus, transformHandler),
+    new RoadLayer(game, canvas),
     structureLayer,
     new UnitLayer(game, eventBus, transformHandler),
     new FxLayer(game),

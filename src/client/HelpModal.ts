@@ -473,6 +473,11 @@ export class HelpModal extends LitElement {
                 <td><div class="icon mirv-icon"></div></td>
                 <td>${translateText("help_modal.build_mirv_desc")}</td>
               </tr>
+              <tr>
+                <td>${translateText("unit_type.road_node")}</td>
+                <td><div class="icon shield-icon"></div></td>
+                <td>${translateText("build_menu.desc.road_node")}</td>
+              </tr>
             </tbody>
           </table>
         </div>
