@@ -162,6 +162,7 @@ export interface Config {
   // 0-1
   traitorDefenseDebuff(): number;
   traitorDuration(): number;
+  maxInvestmentRate(): number;
   nukeMagnitudes(unitType: UnitType): NukeMagnitude;
   // Number of tiles destroyed to break an alliance
   nukeAllianceBreakThreshold(): number;

@@ -812,7 +812,10 @@ export class PlayerImpl implements Player {
   }
 
   setInvestmentRate(rate: number): void {
-    this._investmentRate = Math.min(1, Math.max(0, rate));
+    this._investmentRate = Math.min(
+      this.mg.config().maxInvestmentRate(),
+      Math.max(0, rate),
+    );
   }
 
   troops(): number {

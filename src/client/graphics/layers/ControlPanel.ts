@@ -448,6 +448,9 @@ export class ControlPanel extends LitElement implements Layer {
   }
 
   render() {
+    if (!this.game) {
+      return html``;
+    }
     return html`
       <style>
         input[type="range"] {
@@ -656,12 +659,14 @@ export class ControlPanel extends LitElement implements Layer {
                     ></div>
                     <div
                       class="absolute left-0 top-3 h-2 bg-green-400/60 rounded transition-all duration-300"
-                      style="width: ${this.investmentRate * 100}%"
+                      style="width: ${(this.investmentRate /
+                        this.game.config().maxInvestmentRate()) *
+                      100}%"
                     ></div>
                     <input
                       type="range"
                       min="0"
-                      max="100"
+                      max="${this.game?.config()?.maxInvestmentRate() * 100}"
                       .value=${(this.investmentRate * 100).toString()}
                       @input=${(e: Event) => {
                         this.investmentRate =

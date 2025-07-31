@@ -979,6 +979,10 @@ export class DefaultConfig implements Config {
   }
 
   maxProductivity(): number {
-    return 10; // 1000%
+    return 5; // 500%
+  }
+
+  maxInvestmentRate(): number {
+    return 0.5; // 50%
   }
 }
