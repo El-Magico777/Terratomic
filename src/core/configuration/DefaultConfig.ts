@@ -384,6 +384,7 @@ export class DefaultConfig implements Config {
       case UnitType.TransportShip:
         return {
           cost: () => 0n,
+
           territoryBound: false,
         };
       case UnitType.Warship:
@@ -1003,7 +1004,7 @@ export class DefaultConfig implements Config {
 
   // Road Network
   roadNodeConnectionRadius(): number {
-    return 5;
+    return 200;
   }
   roadGoldMultiplier(): number {
     return 1;
@@ -1013,6 +1014,6 @@ export class DefaultConfig implements Config {
   }
 
   debugRoads(): boolean {
-    return false;
+    return true;
   }
 }

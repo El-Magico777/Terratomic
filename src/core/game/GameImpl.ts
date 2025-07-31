@@ -752,8 +752,12 @@ export class GameImpl implements Game {
 
   addUnit(u: Unit) {
     this.unitGrid.addUnit(u);
-    if (u.type() === UnitType.RoadNode) {
-      this.updateRoadNetwork(u.tile());
+    if (
+      u.type() === UnitType.RoadNode ||
+      u.type() === UnitType.City ||
+      u.type() === UnitType.Port
+    ) {
+      this.recalculateRoadNetwork(u.owner());
     }
   }
   unitsAt(tile: TileRef): Unit[] {
@@ -762,8 +766,12 @@ export class GameImpl implements Game {
   removeUnit(u: Unit) {
     u.owner().invalidateEffectiveUnitsCache(u.type());
     this.unitGrid.removeUnit(u);
-    if (u.type() === UnitType.RoadNode) {
-      this.updateRoadNetwork(u.tile());
+    if (
+      u.type() === UnitType.RoadNode ||
+      u.type() === UnitType.City ||
+      u.type() === UnitType.Port
+    ) {
+      this.recalculateRoadNetwork(u.owner());
     }
   }
   updateUnitTile(u: Unit) {
@@ -926,11 +934,6 @@ export class GameImpl implements Game {
         this.roadConnections.set(unit.tile(), otherConnections);
       }
     }
-
-    this.addUpdate({
-      type: GameUpdateType.RoadConnections,
-      connections: Array.from(this.roadConnections.entries()),
-    } as RoadConnectionsUpdate);
   }
 
   public getConnectedRoadNodes(origin: TileRef): TileRef[] {
@@ -943,6 +946,54 @@ export class GameImpl implements Game {
       return fromConnections.includes(to);
     }
     return false;
+  }
+
+  private recalculateRoadNetwork(player: Player) {
+    // Clear all road connections for this player
+    this.roadConnections.clear();
+
+    // Recalculate connections for all relevant units of all players
+    for (const p of this.allPlayers()) {
+      if (!p.isPlayer()) continue;
+      const relevantUnits = p.units(
+        UnitType.RoadNode,
+        UnitType.City,
+        UnitType.Port,
+      );
+      for (const unit of relevantUnits) {
+        const nearbyNodes = this.nearbyUnits(
+          unit.tile(),
+          this.config().roadNodeConnectionRadius(),
+          [UnitType.RoadNode, UnitType.City, UnitType.Port],
+          ({ unit: otherUnit }) =>
+            otherUnit.owner().id() === p.id() && otherUnit.id() !== unit.id(),
+        );
+
+        const connections = nearbyNodes.map(({ unit: otherUnit }) =>
+          otherUnit.tile(),
+        );
+        this.roadConnections.set(unit.tile(), connections);
+
+        // Ensure bidirectional connections
+        for (const connectedTile of connections) {
+          const existingConnections =
+            this.roadConnections.get(connectedTile) || [];
+          if (!existingConnections.includes(unit.tile())) {
+            existingConnections.push(unit.tile());
+            this.roadConnections.set(connectedTile, existingConnections);
+          }
+        }
+      }
+    }
+
+    this.addUpdate({
+      type: GameUpdateType.RoadConnections,
+      connections: Array.from(this.roadConnections.entries()),
+    } as RoadConnectionsUpdate);
+    console.log(
+      "Server-side roadConnections before sending:",
+      this.roadConnections,
+    );
   }
 }
 

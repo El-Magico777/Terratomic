@@ -218,7 +218,7 @@ export function createRenderer(
   const layers: Layer[] = [
     new TerrainLayer(game, transformHandler),
     new TerritoryLayer(game, eventBus, transformHandler),
-    new RoadLayer(game, canvas),
+    new RoadLayer(game),
     structureLayer,
     new UnitLayer(game, eventBus, transformHandler),
     new FxLayer(game),
