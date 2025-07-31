@@ -977,4 +977,8 @@ export class DefaultConfig implements Config {
   allianceExtensionPromptOffset(): number {
     return 300; // 30 seconds before expiration
   }
+
+  maxProductivity(): number {
+    return 10; // 1000%
+  }
 }

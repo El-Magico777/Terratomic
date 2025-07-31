@@ -172,6 +172,7 @@ export interface Config {
   structureMinDist(): number;
   isReplay(): boolean;
   allianceExtensionPromptOffset(): number;
+  maxProductivity(): number;
 }
 
 export interface Theme {

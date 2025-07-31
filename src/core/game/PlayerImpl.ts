@@ -864,6 +864,10 @@ export class PlayerImpl implements Player {
     }
 
     this._productivity *= 1 + growth;
+    if (this._productivity >= this.mg.config().maxProductivity()) {
+      this._productivity = this.mg.config().maxProductivity();
+      this.setInvestmentRate(0);
+    }
     // Store per-minute growth for display
     this._productivityGrowthPerMinute =
       ((1 + growth) ** 600 - 1) * this._productivity;
