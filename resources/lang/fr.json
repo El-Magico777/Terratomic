@@ -5,10 +5,14 @@
     "svg": "fr",
     "lang_code": "fr"
   },
+  "common": {
+    "close": "Fermer"
+  },
   "main": {
     "title": "Terratomic (ALPHA)",
     "join_discord": "Rejoignez le Discord !",
     "login_discord": "Se connecter avec Discord",
+    "checking_login": "Vérification de la connexion...",
     "logged_in": "Connecté !",
     "log_out": "Se déconnecter",
     "create_lobby": "Créer un salon",
@@ -16,7 +20,13 @@
     "single_player": "Mode solo",
     "instructions": "Instructions",
     "how_to_play": "Comment jouer ?",
+    "advertise": "Faire de la publicité",
     "wiki": "Wiki"
+  },
+  "news": {
+    "full_changelog": "Voir le journal des modifications complet",
+    "github_link": "sur Github",
+    "title": "Notes de version"
   },
   "help_modal": {
     "hotkeys": "Raccourcis clavier",
@@ -33,6 +43,7 @@
     "action_reset_gfx": "Réinitialiser les graphismes",
     "ui_section": "IU du jeu",
     "ui_leaderboard": "Classement",
+    "ui_your_team": "Votre équipe :",
     "ui_leaderboard_desc": "Montre les meilleurs joueurs du jeu et leurs noms, leur % de terres occupée, leur or et leurs troupes. Utiliser « Show All » montre tous les joueurs du jeu. Si vous ne voulez pas voir le classement, cliquez sur Masquer.",
     "ui_control": "Panneau de contrôle",
     "ui_control_desc": "Le panneau de contrôle contient les éléments suivants :",
@@ -49,6 +60,7 @@
     "ui_options_desc": "Les éléments suivants peuvent être trouvés à l'intérieur :",
     "ui_playeroverlay": "Informations sur le joueur",
     "ui_playeroverlay_desc": "Lorsque vous survolez un pays, le panneau d'informations sur le joueur s'affichent dans Options. Il montre le type de joueur : Humain, Nation (bot intelligent), ou Bot ; l'attitude d'une nation à votre égard. allant de l'Hostile à l'Amical ; et les troupes en défense, l'or, le nombre de navires de guerre et les différents bâtiments que le joueur possède.",
+    "ui_wilderness": "Région sauvage",
     "option_pause": "Mettre en pause/Continuer la partie - Disponible uniquement dans le mode solo.",
     "option_timer": "Chronomètre - Temps écoulé depuis le début du jeu.",
     "option_exit": "Bouton de sortie.",
@@ -78,6 +90,8 @@
     "build_desc": "Description",
     "build_city": "Ville",
     "build_city_desc": "Utile quand vous ne pouvez agrandir votre territoire ou quand vous atteignez votre limite de population.",
+    "build_factory": "Usine",
+    "build_factory_desc": "Crée automatiquement des chemins de fer avec les structures à proximité, et fait apparaître des trains sporadiquement.",
     "build_defense": "Poste de défense",
     "build_defense_desc": "Augmente les défenses autour des frontières voisines, qui montrent un motif en damier. Les attaques des ennemis sont plus lentes et font plus de blessés.",
     "build_port": "Port",
@@ -101,7 +115,8 @@
     "icon_ally": "Poignée de main - Allié. Ce joueur est votre allié.",
     "icon_embargo": "Signe dollar barré - Embargo. Ce joueur a cessé de commercer avec vous automatiquement ou manuellement.",
     "icon_request": "Enveloppe - Demande d'alliance. Ce joueur vous a envoyé une demande d'alliance.",
-    "info_enemy_panel": "Panneau d'information de l'ennemi"
+    "info_enemy_panel": "Panneau d'information de l'ennemi",
+    "exit_confirmation": "Êtes-vous sûr de vouloir quitter le jeu ?"
   },
   "single_modal": {
     "title": "Joueur seul",
@@ -120,6 +135,7 @@
   "map": {
     "map": "Carte",
     "world": "Monde",
+    "giantworldmap": "Carte du monde géante",
     "europe": "Europe",
     "mena": "MOAN",
     "northamerica": "Amérique du Nord",
@@ -135,19 +151,24 @@
     "random": "Aléatoire",
     "iceland": "Islande",
     "pangaea": "Pangée",
+    "eastasia": "Asie de l'Est",
     "betweentwoseas": "Entre deux mers",
-    "knownworld": "Monde connu",
     "faroeislands": "Îles Féroé",
     "deglaciatedantarctica": "Antarctique Déglacée",
     "europeclassic": "Europe (classique)",
     "falklandislands": "Îles Malouines",
     "baikal": "Lac Baïkal",
-    "halkidiki": "Chalcidique"
+    "halkidiki": "Chalcidique",
+    "straitofgibraltar": "Détroit de Gibraltar",
+    "italia": "Italie"
   },
   "map_categories": {
     "continental": "Continental",
     "regional": "Régional",
     "fantasy": "Autre"
+  },
+  "map_component": {
+    "loading": "Chargement..."
   },
   "private_lobby": {
     "title": "Rejoindre un salon privé",
@@ -163,6 +184,9 @@
   "public_lobby": {
     "join": "Rejoindre la prochaine partie",
     "waiting": "joueurs en attente",
+    "teams_Duos": "Duos (équipes de 2)",
+    "teams_Trios": "Trios (équipes de 3)",
+    "teams_Quads": "Quatuors (équipes de 4)",
     "teams": "{num} équipes"
   },
   "username": {
@@ -188,6 +212,16 @@
     "players": "Joueurs",
     "waiting": "En attente de joueurs...",
     "start": "Commencer la partie"
+  },
+  "team_colors": {
+    "red": "Rouge",
+    "blue": "Bleu",
+    "teal": "Turquoise",
+    "purple": "Violet",
+    "yellow": "Jaune",
+    "orange": "Orange",
+    "green": "Vert",
+    "bot": "Bot"
   },
   "game_starting_modal": {
     "title": "La partie est en train de commencer...",
@@ -216,26 +250,42 @@
     "sam_launcher": "Lanceur de SAM",
     "atom_bomb": "Bombe atomique",
     "hydrogen_bomb": "Bombe à hydrogène",
-    "mirv": "MIRV"
+    "mirv": "MIRV",
+    "factory": "Usine"
   },
   "user_setting": {
     "title": "Paramètres utilisateur",
     "tab_basic": "Réglages de base",
     "tab_keybinds": "Raccourcis clavier",
-    "dark_mode_label": "🌙 Mode nuit",
+    "dark_mode_label": "Mode sombre",
     "dark_mode_desc": "Basculer l'apparence du site entre les thèmes clairs et sombres",
-    "emojis_label": "😊 Émojis",
+    "dark_mode_enabled": "Mode sombre activé",
+    "light_mode_enabled": "Mode jour activé",
+    "emojis_label": "Émojis",
+    "emojis_visible": "Les émojis sont visibles",
+    "emojis_hidden": "Les émojis sont masqués",
     "emojis_desc": "Afficher/Masquer les émoticônes dans le jeu",
-    "special_effects_label": "💥 Effets spéciaux",
+    "alert_frame_label": "Fenêtre d'alertes",
+    "alert_frame_desc": "Activer/désactiver la fenêtre d'alertes. Lorsqu'elle est activée, la fenêtre s'affichera lorsque vous serez trahi.",
+    "special_effects_label": "Effets spéciaux",
     "special_effects_desc": "Activer/désactiver les effets spéciaux. Désactiver pour améliorer les performances",
-    "anonymous_names_label": "🥷 Noms masqués",
+    "special_effects_enabled": "Effets spéciaux activés",
+    "special_effects_disabled": "Effets spéciaux désactivés",
+    "anonymous_names_label": "Noms masqués",
     "anonymous_names_desc": "Cacher le vrai nom des joueurs avec des noms aléatoires sur votre écran.",
-    "left_click_label": "🖱️ Clic gauche pour ouvrir le menu",
+    "anonymous_names_enabled": "Noms anonymes activés",
+    "real_names_shown": "Noms réels affichés",
+    "left_click_label": "Clic gauche pour ouvrir le menu",
     "left_click_desc": "Activé, un clic gauche ouvre le menu et le bouton épée d'attaque. Désactivé, un clic gauche attaque directement.",
+    "left_click_menu": "Menu Clic gauche",
+    "left_click_opens_menu": "Un clic gauche ouvre le menu",
+    "right_click_opens_menu": "Un clic droit ouvre le menu",
     "attack_ratio_label": "⚔️ Ratio d'attaque",
     "attack_ratio_desc": "Quel pourcentage de vos troupes envoyer dans une attaque (1–100%)",
     "troop_ratio_label": "🪖🛠️ Ratio des troupes et des ouvriers",
     "troop_ratio_desc": "Ajuster l'équilibre entre les troupes (pour le combat) et les ouvriers (pour la production d'or) (1–100%)",
+    "territory_patterns_label": "🏳️ Modèles de territoire",
+    "territory_patterns_desc": "Choisissez si vous voulez afficher les motifs de territoire en jeu",
     "easter_writing_speed_label": "Multiplicateur de vitesse d'écriture",
     "easter_writing_speed_desc": "Ajuster la vitesse à laquelle vous prétendez coder (x1–x100)",
     "easter_bug_count_label": "Nombre de bugs",
@@ -243,6 +293,16 @@
     "view_options": "Options d'affichage",
     "toggle_view": "Activer/désactiver l'affichage",
     "toggle_view_desc": "Vue alternative (terrain/pays)",
+    "attack_ratio_controls": "Contrôles du ratio d'attaque",
+    "attack_ratio_up": "Augmenter le ratio d'attaque",
+    "attack_ratio_up_desc": "Augmenter le ratio d'attaque de 10%",
+    "attack_ratio_down": "Diminuer le ratio d'attaque",
+    "attack_ratio_down_desc": "Diminuer le ratio d'attaque de 10%",
+    "attack_keybinds": "Raccourcis d'attaque",
+    "boat_attack": "Attaque navale",
+    "boat_attack_desc": "Envoyer une attaque navale à la tuile sous votre curseur.",
+    "ground_attack": "Attaque au sol",
+    "ground_attack_desc": "Envoyez une attaque au sol sur la tuile sous votre curseur.",
     "zoom_controls": "Contrôles de zoom",
     "zoom_out": "Zoom arrière",
     "zoom_out_desc": "Dézoom de la carte",
@@ -260,7 +320,14 @@
     "move_right": "Caméra Droite",
     "move_right_desc": "Déplacer la caméra vers la droite",
     "reset": "Réinitialiser",
-    "unbind": "Détacher"
+    "unbind": "Détacher",
+    "on": "Activé",
+    "off": "Désactivé",
+    "toggle_terrain": "Activer/désactiver le terrain",
+    "terrain_enabled": "Affichage du terrain activé",
+    "terrain_disabled": "Affichage du terrain désactivé",
+    "exit_game_label": "Quitter la partie",
+    "exit_game_info": "Retour au menu principal"
   },
   "chat": {
     "title": "Discussion",
@@ -344,8 +411,9 @@
       "sam_launcher": "Protège contre les bombes nucléaires",
       "warship": "Capture les navires commerciaux, détruit les navires de guerre et les bateaux",
       "port": "Envoie des navires commerciaux pour produire de l'or",
-      "defense_post": "Augmente les défenses des frontières voisines",
-      "city": "Augmente la population maximale"
+      "defense_post": "Augmente les défenses des frontières proches",
+      "city": "Augmente la population maximale",
+      "factory": "Crée des chemins de fer et fait apparaître des trains"
     },
     "not_enough_money": "Pas assez d'argent"
   },
@@ -356,13 +424,15 @@
     "you_won": "Vous avez gagné !",
     "other_won": "{player} a gagné !",
     "exit": "Quitter la partie",
-    "keep": "Continuer à jouer"
+    "keep": "Continuer à jouer",
+    "wishlist": "Liste de souhaits sur Steam !"
   },
   "leaderboard": {
     "title": "Classement",
     "hide": "Masquer",
     "rank": "Rang",
     "player": "Joueur",
+    "team": "Équipe",
     "owned": "Possédé",
     "gold": "Or",
     "troops": "Troupes"
@@ -382,7 +452,39 @@
     "sams": "SAMs",
     "warships": "Navires de guerre",
     "health": "Santé",
-    "attitude": "Attitude"
+    "attitude": "Attitude",
+    "levels": "Niveaux"
+  },
+  "events_display": {
+    "retreating": "en retraite",
+    "boat": "Bateau",
+    "alliance_request_status": "{name} {status} votre demande d'alliance",
+    "alliance_accepted": "a accepté",
+    "alliance_rejected": "a refusé",
+    "duration_second": "1 seconde",
+    "betrayal_description": "Vous avez rompu votre alliance avec {name}, ce qui fait de vous un TRAÎTRE (affaiblissement de défense de {malusPercent}% pendant {durationText})",
+    "duration_seconds_plural": "{seconds} secondes",
+    "betrayed_you": "{name} a rompu son alliance avec vous",
+    "about_to_expire": "Votre alliance avec {name} est sur le point d'expirer!",
+    "alliance_expired": "Votre alliance avec {name} a expiré",
+    "attack_request": "{name} vous demande d'attaquer {target}",
+    "sent_emoji": "Envoyé à {name} : {emoji}",
+    "renew_alliance": "Demander le renouvellement",
+    "request_alliance": "{name} demande une alliance !",
+    "focus": "Focaliser",
+    "accept_alliance": "Accepter",
+    "reject_alliance": "Refuser",
+    "alliance_renewed": "Votre alliance avec {name} a été renouvelée",
+    "ignore": "Ignorer"
+  },
+  "unit_info_modal": {
+    "structure_info": "Infos sur la structure",
+    "unit_type_unknown": "Inconnu",
+    "close": "Fermer",
+    "cooldown": "Rechargement",
+    "type": "Type",
+    "upgrade": "Mettre à niveau",
+    "level": "Niveau"
   },
   "relation": {
     "hostile": "Hostile",
@@ -401,13 +503,81 @@
   "player_panel": {
     "gold": "Or",
     "troops": "Troupes",
+    "betrayals": "Nombre de trahisons",
     "traitor": "Traître",
-    "alliance_time_remaining": "Temps restant",
+    "alliance_time_remaining": "L'alliance expire dans",
     "embargo": "A cessé le commerce avec vous",
     "nuke": "Bombes nucléaires qu'ils vous envoient",
     "start_trade": "Commencer le commerce",
     "stop_trade": "Arrêter le commerce",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "none": "Aucun",
+    "alliances": "Alliances"
+  },
+  "replay_panel": {
+    "replay_speed": "Vitesse de relecture",
+    "game_speed": "Vitesse de jeu",
+    "fastest_game_speed": "max"
+  },
+  "error_modal": {
+    "crashed": "Le jeu a planté !",
+    "connection_error": "Erreur de connexion !",
+    "paste_discord": "Veuillez coller ce qui suit dans votre rapport de bogue dans Discord :",
+    "copy_clipboard": "Copier dans le presse-papier",
+    "copied": "Copié !",
+    "failed_copy": "Échec de la copie",
+    "desync_notice": "Vous êtes désynchronisé des autres joueurs. Ce que vous voyez peut être différent des autres joueurs."
+  },
+  "heads_up_message": {
+    "choose_spawn": "Choisissez un emplacement de départ"
+  },
+  "territory_patterns": {
+    "title": "Sélectionnez un motif de territoire",
+    "purchase": "Acheter",
+    "blocked": {
+      "login": "Vous devez être connecté pour accéder à ce motif.",
+      "purchase": "Acheter ce motif pour le déverrouiller."
+    },
+    "pattern": {
+      "default": "Par défaut",
+      "custom": "Personnalisé",
+      "stripes_v": "Vertical",
+      "stripes_h": "Horizontal",
+      "horizontal_stripes": "Horizontal (Alt)",
+      "vertical_bars": "Vertical (Alt)",
+      "checkerboard": "Damier",
+      "choco": "Choco",
+      "diagonal": "Diagonal",
+      "cross": "Croix",
+      "mini_cross": "Petite croix",
+      "sword": "Épée",
+      "sparse_dots": "Points épars",
+      "evan": "Evan",
+      "diagonal_stripe": "Bande diagonale",
+      "mountain_ridge": "Crête de montagne",
+      "scattered_dots": "Pointillés",
+      "circuit_board": "Circuit imprimé",
+      "shells": "Coquilles",
+      "-w-": ".w.",
+      "white_rabbit": "Lapin blanc",
+      "goat": "Chèvre",
+      "cats": "Chats",
+      "cursor": "Curseur",
+      "hand": "Main",
+      "radiation": "Radiation",
+      "openfront_qr": "QR code OpenFront.io",
+      "openfront": "OpenFront",
+      "t_rex": "T-Rex",
+      "embelem": "Emblème",
+      "grogu_head": "Tête de Grogu",
+      "grogu": "Grogu"
+    }
+  },
+  "auth": {
+    "login_required": "La connexion est nécessaire pour accéder à ce site Web.",
+    "redirecting": "Vous êtes en cours de redirection...",
+    "not_authorized": "Vous n'êtes pas autorisé à accéder à ce site web.",
+    "contact_admin": "Si vous pensez que vous voyez ce message par erreur, veuillez contacter l'administrateur du site."
   }
 }

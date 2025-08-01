@@ -21,7 +21,9 @@
     "instructions": "Instructions",
     "how_to_play": "How to Play",
     "advertise": "Advertise",
-    "wiki": "Wiki"
+    "wiki": "Wiki",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service"
   },
   "news": {
     "title": "Version 23 released!"
@@ -41,6 +43,7 @@
     "action_reset_gfx": "Reset graphics",
     "ui_section": "Game UI",
     "ui_leaderboard": "Leaderboard",
+    "ui_your_team": "Your team:",
     "ui_leaderboard_desc": "Shows the top players of the game and their names, % owned land, gold and troops. Using Show All shows all players in the game. If you don't want to see the leaderboard, click Hide.",
     "ui_control": "Control panel",
     "ui_control_desc": "The control panel contains the following elements:",
@@ -57,6 +60,7 @@
     "ui_options_desc": "The following elements can be found inside:",
     "ui_playeroverlay": "Player info overlay",
     "ui_playeroverlay_desc": "When you hover over a country, the Player info overlay is displayed under Options. It shows the type of player: Human, Nation (smart bot), or Bot. A Nation's attitude towards you, ranging from Hostile to Friendly. And defending troops, gold, plus the number of Warships and various buildings the player has.",
+    "ui_wilderness": "Wilderness",
     "option_pause": "Pause/Unpause the game - Only available in single player mode.",
     "option_timer": "Timer - Time passed since the start of the game.",
     "option_exit": "Exit button.",
@@ -111,7 +115,8 @@
     "icon_ally": "Handshake - Ally. This player is your ally.",
     "icon_embargo": "Dollar stop sign - Embargo. This player has stopped trading with you automatically or manually.",
     "icon_request": "Envelope - Alliance request. This player has sent you an alliance request.",
-    "info_enemy_panel": "Enemy info panel"
+    "info_enemy_panel": "Enemy info panel",
+    "exit_confirmation": "Are you sure you want to exit the game?"
   },
   "single_modal": {
     "title": "Single Player",
@@ -153,7 +158,9 @@
     "europeclassic": "Europe (classic)",
     "falklandislands": "Falkland Islands",
     "baikal": "Baikal",
-    "halkidiki": "Halkidiki"
+    "halkidiki": "Halkidiki",
+    "straitofgibraltar": "Strait of Gibraltar",
+    "italia": "Italia"
   },
   "map_categories": {
     "continental": "Continental",
@@ -174,6 +181,9 @@
   "public_lobby": {
     "join": "Join next Game",
     "waiting": "players waiting",
+    "teams_Duos": "Duos (teams of 2)",
+    "teams_Trios": "Trios (teams of 3)",
+    "teams_Quads": "Quads (teams of 4)",
     "teams": "{num} teams"
   },
   "username": {
@@ -199,6 +209,16 @@
     "players": "Players",
     "waiting": "Waiting for players...",
     "start": "Start Game"
+  },
+  "team_colors": {
+    "red": "Red",
+    "blue": "Blue",
+    "teal": "Teal",
+    "purple": "Purple",
+    "yellow": "Yellow",
+    "orange": "Orange",
+    "green": "Green",
+    "bot": "Bot"
   },
   "game_starting_modal": {
     "title": "Game is Starting...",
@@ -240,6 +260,10 @@
     "dark_mode_label": "🌙 Dark Mode",
     "dark_mode_desc": "Toggle the site’s appearance between light and dark themes",
     "emojis_label": "😊 Emojis",
+    "dark_mode_enabled": "Dark mode enabled",
+    "light_mode_enabled": "Light mode enabled",
+    "emojis_visible": "Emojis are visible",
+    "emojis_hidden": "Emojis are hidden",
     "emojis_desc": "Toggle whether emojis are shown in game",
     "alert_frame_label": "🚨 Alert Frame",
     "alert_frame_desc": "Toggle the alert frame. When enabled, the frame will be displayed when you are betrayed.",
@@ -248,7 +272,16 @@
     "anonymous_names_label": "🥷 Hidden Names",
     "anonymous_names_desc": "Hide real player names with random ones on your screen.",
     "left_click_label": "🖱️ Left Click to Open Menu",
+    "special_effects_enabled": "Special effects enabled",
+    "special_effects_disabled": "Special effects disabled",
+    "anonymous_names_enabled": "Anonymous names enabled",
+    "lobby_id_visibility_label": "Hidden Lobby IDs",
+    "lobby_id_visibility_desc": "Hide Lobby ID in private lobby creation",
+    "real_names_shown": "Real names shown",
     "left_click_desc": "When ON, left-click opens menu and sword button attacks. When OFF, left-click attacks directly.",
+    "left_click_menu": "Left Click Menu",
+    "left_click_opens_menu": "Left click opens menu",
+    "right_click_opens_menu": "Right click opens menu",
     "attack_ratio_label": "⚔️ Attack Ratio",
     "attack_ratio_desc": "What percentage of your troops to send in an attack (1–100%)",
     "troop_ratio_label": "🪖🛠️ Troops and Workers Ratio",
@@ -287,7 +320,14 @@
     "move_right": "Move Camera Right",
     "move_right_desc": "Move the camera to the right",
     "reset": "Reset",
-    "unbind": "Unbind"
+    "unbind": "Unbind",
+    "on": "On",
+    "off": "Off",
+    "toggle_terrain": "Toggle Terrain",
+    "terrain_enabled": "Terrain view enabled",
+    "terrain_disabled": "Terrain view disabled",
+    "exit_game_label": "Exit Game",
+    "exit_game_info": "Return to main menu"
   },
   "chat": {
     "title": "Quick Chat",
@@ -395,6 +435,7 @@
     "hide": "Hide",
     "rank": "Rank",
     "player": "Player",
+    "team": "Team",
     "owned": "Owned",
     "gold": "Gold",
     "troops": "Troops"
@@ -423,7 +464,25 @@
   },
   "events_display": {
     "retreating": "retreating",
-    "boat": "Boat"
+    "boat": "Boat",
+    "alliance_request_status": "{name} {status} your alliance request",
+    "alliance_accepted": "accepted",
+    "alliance_rejected": "rejected",
+    "duration_second": "1 second",
+    "betrayal_description": "You broke your alliance with {name}, making you a TRAITOR ({malusPercent}% defense debuff for {durationText})",
+    "duration_seconds_plural": "{seconds} seconds",
+    "betrayed_you": "{name} broke their alliance with you",
+    "about_to_expire": "Your alliance with {name} is about to expire!",
+    "alliance_expired": "Your alliance with {name} expired",
+    "attack_request": "{name} requests you attack {target}",
+    "sent_emoji": "Sent {name}: {emoji}",
+    "renew_alliance": "Request to renew",
+    "request_alliance": "{name} requests an alliance!",
+    "focus": "Focus",
+    "accept_alliance": "Accept",
+    "reject_alliance": "Reject",
+    "alliance_renewed": "Your alliance with {name} has been renewed",
+    "ignore": "Ignore"
   },
   "unit_info_modal": {
     "structure_info": "Structure Info",
@@ -463,7 +522,8 @@
   },
   "replay_panel": {
     "replay_speed": "Replay speed",
-    "game_speed": "Game speed"
+    "game_speed": "Game speed",
+    "fastest_game_speed": "max"
   },
   "error_modal": {
     "crashed": "Game crashed!",

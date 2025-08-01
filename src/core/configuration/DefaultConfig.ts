@@ -1,5 +1,5 @@
 import { JWK } from "jose";
-import { z } from "zod/v4";
+import { z } from "zod";
 import {
   Difficulty,
   Duos,
@@ -11,16 +11,18 @@ import {
   Player,
   PlayerInfo,
   PlayerType,
+  Quads,
   TerrainType,
   TerraNullius,
   Tick,
+  Trios,
   UnitInfo,
   UnitType,
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { PlayerView } from "../game/GameView";
 import { UserSettings } from "../game/UserSettings";
-import { GameConfig, GameID } from "../Schemas";
+import { GameConfig, GameID, TeamCountConfig } from "../Schemas";
 import { assertNever, simpleHash, within } from "../Util";
 import { Config, GameEnv, NukeMagnitude, ServerConfig, Theme } from "./Config";
 import { PastelTheme } from "./PastelTheme";
@@ -63,6 +65,8 @@ const numPlayersConfig = {
   [GameMapType.World]: [150, 80, 50],
   [GameMapType.GiantWorldMap]: [150, 100, 60],
   [GameMapType.Halkidiki]: [50, 40, 30],
+  [GameMapType.StraitOfGibraltar]: [50, 40, 30],
+  [GameMapType.Italia]: [50, 40, 30],
 } as const satisfies Record<GameMapType, [number, number, number]>;
 
 const TERRAIN_EFFECTS = {
@@ -151,14 +155,26 @@ export abstract class DefaultServerConfig implements ServerConfig {
   lobbyMaxPlayers(
     map: GameMapType,
     mode: GameMode,
-    numPlayerTeams: number | undefined,
+    numPlayerTeams: TeamCountConfig | undefined,
   ): number {
     const [l, m, s] = numPlayersConfig[map] ?? [50, 30, 20];
     const r = Math.random();
     const base = r < 0.3 ? l : r < 0.6 ? m : s;
     let p = Math.min(mode === GameMode.Team ? Math.ceil(base * 1.5) : base, l);
-    if (numPlayerTeams !== undefined) {
-      p -= p % numPlayerTeams;
+    if (numPlayerTeams === undefined) return p;
+    switch (numPlayerTeams) {
+      case Duos:
+        p -= p % 2;
+        break;
+      case Trios:
+        p -= p % 3;
+        break;
+      case Quads:
+        p -= p % 4;
+        break;
+      default:
+        p -= p % numPlayerTeams;
+        break;
     }
     return p;
   }
@@ -268,7 +284,7 @@ export class DefaultConfig implements Config {
   defensePostSpeedMultiplier(): number {
     return 4;
   }
-  playerTeams(): number | typeof Duos {
+  playerTeams(): TeamCountConfig {
     return this._gameConfig.playerTeams ?? 0;
   }
 
@@ -333,6 +349,9 @@ export class DefaultConfig implements Config {
   bomberExplosionRadius(): number {
     return 4;
   }
+  bomberSpeed(): number {
+    return 3;
+  }
 
   // Fighter Jets
   fighterJetPatrolRange(): number {
@@ -345,7 +364,7 @@ export class DefaultConfig implements Config {
     return 15;
   }
   fighterJetSpeed(): number {
-    return 2;
+    return 3;
   }
   fighterJetHealingAmount(): number {
     return 1;
@@ -405,7 +424,7 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.AtomBomb:
         return {
@@ -428,7 +447,7 @@ export class DefaultConfig implements Config {
           cost: (p: Player) =>
             p.type() === PlayerType.Human && this.infiniteGold()
               ? 0n
-              : 25_000_000n,
+              : 35_000_000n,
           territoryBound: false,
         };
       case UnitType.MIRVWarhead:
@@ -449,7 +468,7 @@ export class DefaultConfig implements Config {
               : 1_000_000n,
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 10 * 10,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.DefensePost:
         return {
@@ -464,7 +483,7 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 5 * 10,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.SAMLauncher:
         return {
@@ -479,7 +498,7 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 30 * 10,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.City:
         return {
@@ -494,7 +513,7 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.Construction:
         return {
@@ -515,7 +534,7 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.Academy:
         return {
@@ -531,7 +550,7 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 2 * 10,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.Airfield:
         return {
@@ -547,7 +566,7 @@ export class DefaultConfig implements Config {
                 ),
           territoryBound: true,
           constructionDuration: this.instantBuild() ? 0 : 2 * 20,
-          maxHealth: 1000,
+          maxHealth: 750,
         };
       case UnitType.CargoPlane:
         return {
@@ -892,13 +911,17 @@ export class DefaultConfig implements Config {
   nukeMagnitudes(unitType: UnitType): NukeMagnitude {
     switch (unitType) {
       case UnitType.MIRVWarhead:
-        return { inner: 25, outer: 30 };
+        return { inner: 12, outer: 18 };
       case UnitType.AtomBomb:
         return { inner: 12, outer: 30 };
       case UnitType.HydrogenBomb:
         return { inner: 80, outer: 100 };
     }
     throw new Error(`Unknown nuke type: ${unitType}`);
+  }
+
+  nukeAllianceBreakThreshold(): number {
+    return 100;
   }
 
   defaultNukeSpeed(): number {

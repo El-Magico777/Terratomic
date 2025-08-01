@@ -3,6 +3,7 @@ import { html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { GameMode } from "../../../core/game/Game";
 import { GameView } from "../../../core/game/GameView";
+import { translateText } from "../../Utils";
 import "../icons/LeaderboardRegularIcon";
 import "../icons/LeaderboardSolidIcon";
 import "../icons/TeamRegularIcon";
@@ -21,6 +22,7 @@ export class GameLeftSidebar extends LitElement implements Layer {
 
   private playerColor: Colord = new Colord("#FFFFFF");
   public game: GameView;
+  private _shownOnInit = false;
 
   createRenderRoot() {
     return this;
@@ -30,6 +32,11 @@ export class GameLeftSidebar extends LitElement implements Layer {
     this.isVisible = true;
     if (this.isTeamGame) {
       this.isPlayerTeamLabelVisible = true;
+    }
+    // Make it visible by default on large screens
+    if (window.innerWidth >= 1024) {
+      // lg breakpoint
+      this._shownOnInit = true;
     }
     this.requestUpdate();
   }
@@ -46,6 +53,12 @@ export class GameLeftSidebar extends LitElement implements Layer {
           .teamColor(this.playerTeam);
         this.requestUpdate();
       }
+    }
+
+    if (this._shownOnInit && !this.game.inSpawnPhase()) {
+      this._shownOnInit = false;
+      this.isLeaderboardShow = true;
+      this.requestUpdate();
     }
 
     if (!this.game.inSpawnPhase()) {
@@ -66,6 +79,13 @@ export class GameLeftSidebar extends LitElement implements Layer {
     return this.game?.config().gameConfig().gameMode === GameMode.Team;
   }
 
+  private getTranslatedPlayerTeamLabel(): string {
+    if (!this.playerTeam) return "";
+    const translationKey = `team_colors.${this.playerTeam.toLowerCase()}`;
+    const translated = translateText(translationKey);
+    return translated === translationKey ? this.playerTeam : translated;
+  }
+
   render() {
     return html`
       <aside
@@ -79,9 +99,9 @@ export class GameLeftSidebar extends LitElement implements Layer {
                 class="flex items-center w-full h-8 lg:h-10 text-white py-1 lg:p-2"
                 @contextmenu=${(e: Event) => e.preventDefault()}
               >
-                Your team:
+                ${translateText("help_modal.ui_your_team")}
                 <span style="color: ${this.playerColor.toRgbString()}">
-                  ${this.playerTeam} &#10687;
+                  ${this.getTranslatedPlayerTeamLabel()} &#10687;
                 </span>
               </div>
             `

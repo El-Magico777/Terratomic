@@ -7,7 +7,6 @@ import {
   GameStartInfo,
   PlayerRecord,
   ServerMessage,
-  Winner,
 } from "../core/Schemas";
 import { createGameRecord } from "../core/Util";
 import { ServerConfig } from "../core/configuration/Config";
@@ -104,7 +103,7 @@ export function joinLobby(
     if (message.type === "error") {
       showErrorModal(
         message.error,
-        "",
+        message.message,
         lobbyConfig.gameID,
         lobbyConfig.clientID,
         true,
@@ -201,13 +200,6 @@ export class ClientGameRunner {
     this.lastMessageTime = Date.now();
   }
 
-  private getWinner(update: WinUpdate): Winner {
-    if (update.winner[0] !== "player") return update.winner;
-    const clientId = this.gameView.playerBySmallID(update.winner[1]).clientID();
-    if (clientId === null) return;
-    return ["player", clientId];
-  }
-
   private saveGame(update: WinUpdate) {
     if (this.myPlayer === null) {
       return;
@@ -220,7 +212,6 @@ export class ClientGameRunner {
         stats: update.allPlayersStats[this.lobby.clientID],
       },
     ];
-    const winner = this.getWinner(update);
 
     if (this.lobby.gameStartInfo === undefined) {
       throw new Error("missing gameStartInfo");
@@ -233,7 +224,7 @@ export class ClientGameRunner {
       [],
       startTime(),
       Date.now(),
-      winner,
+      update.winner,
     );
     endGame(record);
   }
@@ -345,7 +336,7 @@ export class ClientGameRunner {
       if (message.type === "error") {
         showErrorModal(
           message.error,
-          "",
+          message.message,
           this.lobby.gameID,
           this.lobby.clientID,
           true,
@@ -431,7 +422,7 @@ export class ClientGameRunner {
       !this.gameView.hasOwner(tile) &&
       this.gameView.inSpawnPhase()
     ) {
-      this.eventBus.emit(new SendSpawnIntentEvent(cell));
+      this.eventBus.emit(new SendSpawnIntentEvent(tile));
       return;
     }
     if (this.gameView.inSpawnPhase()) {
@@ -624,27 +615,31 @@ export class ClientGameRunner {
 }
 
 function showErrorModal(
-  errMsg: string,
-  stack: string,
+  error: string,
+  message: string | undefined,
   gameID: GameID,
   clientID: ClientID,
   closable = false,
   showDiscord = true,
   heading = "error_modal.crashed",
 ) {
-  const errorText = `Error: ${errMsg}\nStack: ${stack}`;
-
   if (document.querySelector("#error-modal")) {
     return;
   }
 
   const modal = document.createElement("div");
-
   modal.id = "error-modal";
 
-  const discord = showDiscord ? translateText("error_modal.paste_discord") : "";
-
-  const content = `${discord}\n${translateText(heading)}\n game id: ${gameID}, client id: ${clientID}\n${errorText}`;
+  const content = [
+    showDiscord ? translateText("error_modal.paste_discord") : null,
+    translateText(heading),
+    `game id: ${gameID}`,
+    `client id: ${clientID}`,
+    `Error: ${error}`,
+    message ? `Message: ${message}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   // Create elements
   const pre = document.createElement("pre");

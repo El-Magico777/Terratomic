@@ -1,9 +1,8 @@
 import { Colord } from "colord";
 import { JWK } from "jose";
-import { GameConfig, GameID } from "../Schemas";
+import { GameConfig, GameID, TeamCountConfig } from "../Schemas";
 import {
   Difficulty,
-  Duos,
   Game,
   GameMapType,
   GameMode,
@@ -32,7 +31,7 @@ export interface ServerConfig {
   lobbyMaxPlayers(
     map: GameMapType,
     mode: GameMode,
-    numPlayerTeams: number | undefined,
+    numPlayerTeams: TeamCountConfig | undefined,
   ): number;
   numWorkers(): number;
   workerIndex(gameID: GameID): number;
@@ -81,7 +80,7 @@ export interface Config {
   instantBuild(): boolean;
   numSpawnPhaseTurns(): number;
   userSettings(): UserSettings;
-  playerTeams(): number | typeof Duos;
+  playerTeams(): TeamCountConfig;
 
   startManpower(playerInfo: PlayerInfo): number;
   populationIncreaseRate(player: Player | PlayerView): number;
@@ -137,6 +136,7 @@ export interface Config {
   bomberSpawnInterval(): number;
   bomberTargetRange(): number;
   bomberExplosionRadius(): number;
+  bomberSpeed(): number;
   safeFromPiratesCooldownMax(): number;
   defensePostRange(): number;
   SAMNukeCooldown(): number;
@@ -163,6 +163,8 @@ export interface Config {
   traitorDefenseDebuff(): number;
   traitorDuration(): number;
   nukeMagnitudes(unitType: UnitType): NukeMagnitude;
+  // Number of tiles destroyed to break an alliance
+  nukeAllianceBreakThreshold(): number;
   defaultNukeSpeed(): number;
   defaultNukeTargetableRange(): number;
   defaultSamRange(): number;

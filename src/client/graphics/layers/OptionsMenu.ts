@@ -7,13 +7,14 @@ import { GameView } from "../../../core/game/GameView";
 import { UserSettings } from "../../../core/game/UserSettings";
 import { AlternateViewEvent, RefreshGraphicsEvent } from "../../InputHandler";
 import { PauseGameEvent } from "../../Transport";
+import { translateText } from "../../Utils";
 import { Layer } from "./Layer";
 
 const button = ({
   classes = "",
   onClick = () => {},
   title = "",
-  children,
+  children = "",
 }) => html`
   <button
     class="flex items-center justify-center p-1
@@ -74,7 +75,9 @@ export class OptionsMenu extends LitElement implements Layer {
   private onExitButtonClick() {
     const isAlive = this.game.myPlayer()?.isAlive();
     if (isAlive) {
-      const isConfirmed = confirm("Are you sure you want to exit the game?");
+      const isConfirmed = confirm(
+        translateText("help_modal.exit_confirmation"),
+      );
       if (!isConfirmed) return;
     }
     // redirect to the home page
@@ -159,7 +162,7 @@ export class OptionsMenu extends LitElement implements Layer {
     return html`
       <div
         class="top-0 lg:top-4 right-0 lg:right-4 z-50 pointer-events-auto"
-        @contextmenu=${(e) => e.preventDefault()}
+        @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         <div
           class="bg-opacity-60 bg-gray-900 p-1 lg:p-2 rounded-es-sm lg:rounded-lg backdrop-blur-md"

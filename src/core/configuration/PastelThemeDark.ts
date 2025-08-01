@@ -3,13 +3,8 @@ import { PseudoRandom } from "../PseudoRandom";
 import { PlayerType, Team, TerrainType } from "../game/Game";
 import { GameMap, TileRef } from "../game/GameMap";
 import { PlayerView } from "../game/GameView";
-import {
-  botColors,
-  ColorAllocator,
-  fallbackColors,
-  humanColors,
-  nationColors,
-} from "./Colors";
+import { ColorAllocator } from "./ColorAllocator";
+import { botColors, fallbackColors, humanColors, nationColors } from "./Colors";
 import { Theme } from "./Config";
 
 type ColorCache = Map<string, Colord>;
@@ -47,7 +42,7 @@ export class PastelThemeDark implements Theme {
   territoryColor(player: PlayerView): Colord {
     const team = player.team();
     if (team !== null) {
-      return this.teamColor(team);
+      return this.teamColorAllocator.assignTeamPlayerColor(team, player.id());
     }
     if (player.type() === PlayerType.Human) {
       return this.humanColorAllocator.assignColor(player.id());

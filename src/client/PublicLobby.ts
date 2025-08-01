@@ -92,7 +92,7 @@ export class PublicLobby extends LitElement {
 
     const teamCount =
       lobby.gameConfig.gameMode === GameMode.Team
-        ? lobby.gameConfig.playerTeams || 0
+        ? (lobby.gameConfig.playerTeams ?? 0)
         : null;
 
     return html`
@@ -136,9 +136,11 @@ export class PublicLobby extends LitElement {
               >
                 ${
                   lobby.gameConfig.gameMode === GameMode.Team
-                    ? translateText("public_lobby.teams", {
-                        num: teamCount ?? 0,
-                      })
+                    ? typeof teamCount === "string"
+                      ? translateText(`public_lobby.teams_${teamCount}`)
+                      : translateText("public_lobby.teams", {
+                          num: teamCount ?? 0,
+                        })
                     : translateText("game_mode.ffa")
                 }</span
               >

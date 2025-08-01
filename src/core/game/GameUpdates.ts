@@ -1,4 +1,4 @@
-import { AllPlayersStats, ClientID } from "../Schemas";
+import { AllPlayersStats, ClientID, Winner } from "../Schemas";
 import {
   EmojiMessage,
   GameUpdates,
@@ -188,6 +188,7 @@ export interface DisplayMessageUpdate {
   messageType: MessageType;
   goldAmount?: bigint;
   playerID: number | null;
+  params?: Record<string, string | number>;
 }
 
 export type DisplayChatMessageUpdate = {
@@ -203,8 +204,7 @@ export type DisplayChatMessageUpdate = {
 export interface WinUpdate {
   type: GameUpdateType.Win;
   allPlayersStats: AllPlayersStats;
-  // Player id or team name.
-  winner: ["player", number] | ["team", Team];
+  winner: Winner;
 }
 
 export interface HashUpdate {

@@ -1,5 +1,6 @@
-import { z } from "zod/v4";
+import { z } from "zod";
 import quickChatData from "../../resources/QuickChat.json" with { type: "json" };
+import countries from "../client/data/countries.json" with { type: "json" };
 import {
   AllPlayers,
   Difficulty,
@@ -8,6 +9,8 @@ import {
   GameMode,
   GameType,
   PlayerType,
+  Quads,
+  Trios,
   UnitType,
 } from "./game/Game";
 import { PlayerStatsSchema } from "./StatsSchemas";
@@ -132,6 +135,14 @@ export enum LogSeverity {
 // Utility types
 //
 
+const TeamCountConfigSchema = z.union([
+  z.number(),
+  z.literal(Duos),
+  z.literal(Trios),
+  z.literal(Quads),
+]);
+export type TeamCountConfig = z.infer<typeof TeamCountConfigSchema>;
+
 export const GameConfigSchema = z.object({
   gameMap: z.enum(GameMapType),
   difficulty: z.enum(Difficulty),
@@ -144,7 +155,7 @@ export const GameConfigSchema = z.object({
   instantBuild: z.boolean(),
   maxPlayers: z.number().optional(),
   disabledUnits: z.enum(UnitType).array().optional(),
-  playerTeams: z.union([z.number(), z.literal(Duos)]).optional(),
+  playerTeams: TeamCountConfigSchema.optional(),
 });
 
 export const TeamSchema = z.string();
@@ -152,7 +163,7 @@ export const TeamSchema = z.string();
 const SafeString = z
   .string()
   .regex(
-    /^([a-zA-Z0-9\s.,!?@#$%&*()\-_+=\[\]{}|;:"'\/\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|üÜ])*$/,
+    /^([a-zA-Z0-9\s.,!?@#$%&*()\-_+=[\]{}|;:"'/\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]|üÜ])*$/,
   )
   .max(1000);
 
@@ -181,7 +192,19 @@ export const ID = z
 export const AllPlayersStatsSchema = z.record(ID, PlayerStatsSchema);
 
 export const UsernameSchema = SafeString;
-export const FlagSchema = z.string().max(128).optional();
+const countryCodes = countries.map((c) => c.code);
+export const FlagSchema = z
+  .string()
+  .max(128)
+  .optional()
+  .refine(
+    (val) => {
+      if (val === undefined || val === "") return true;
+      if (val.startsWith("!")) return true;
+      return countryCodes.includes(val);
+    },
+    { message: "Invalid flag: must be a valid country code or start with !" },
+  );
 
 export const QuickChatKeySchema = z.enum(
   Object.entries(quickChatData).flatMap(([category, entries]) =>
@@ -200,7 +223,7 @@ const BaseIntentSchema = z.object({
 export const AttackIntentSchema = BaseIntentSchema.extend({
   type: z.literal("attack"),
   targetID: ID.nullable(),
-  troops: z.number().nullable(),
+  troops: z.number().nonnegative().nullable(),
 });
 
 export const SpawnIntentSchema = BaseIntentSchema.extend({
@@ -208,14 +231,13 @@ export const SpawnIntentSchema = BaseIntentSchema.extend({
   name: UsernameSchema,
   flag: FlagSchema,
   playerType: PlayerTypeSchema,
-  x: z.number(),
-  y: z.number(),
+  tile: z.number(),
 });
 
 export const BoatAttackIntentSchema = BaseIntentSchema.extend({
   type: z.literal("boat"),
   targetID: ID.nullable(),
-  troops: z.number(),
+  troops: z.number().nonnegative(),
   dst: z.number(),
   src: z.number().nullable(),
 });
@@ -287,8 +309,7 @@ export const InvestmentRateIntentSchema = BaseIntentSchema.extend({
 export const BuildUnitIntentSchema = BaseIntentSchema.extend({
   type: z.literal("build_unit"),
   unit: z.enum(UnitType),
-  x: z.number(),
-  y: z.number(),
+  tile: z.number(),
 });
 
 export const CancelAttackIntentSchema = BaseIntentSchema.extend({
@@ -386,8 +407,8 @@ export const GameStartInfoSchema = z.object({
 
 export const WinnerSchema = z
   .union([
-    z.tuple([z.literal("player"), ID]),
-    z.tuple([z.literal("team"), SafeString]),
+    z.tuple([z.literal("player"), ID]).rest(ID),
+    z.tuple([z.literal("team"), SafeString]).rest(ID),
   ])
   .optional();
 export type Winner = z.infer<typeof WinnerSchema>;
@@ -429,6 +450,7 @@ export const ServerDesyncSchema = z.object({
 export const ServerErrorSchema = z.object({
   type: z.literal("error"),
   error: z.string(),
+  message: z.string().optional(),
 });
 
 export const ServerMessageSchema = z.discriminatedUnion("type", [

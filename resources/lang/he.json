@@ -5,10 +5,14 @@
     "svg": "il",
     "lang_code": "he"
   },
+  "common": {
+    "close": "סגור"
+  },
   "main": {
     "title": "Terratomic (ALPHA)",
     "join_discord": "הצטרף לשרת הדיסקורד!",
     "login_discord": "התחבר עם דיסקורד",
+    "checking_login": "בודק התחברות...",
     "logged_in": "מחובר!",
     "log_out": "התנתק",
     "create_lobby": "צור לובי",
@@ -16,7 +20,13 @@
     "single_player": "שחקן יחיד",
     "instructions": "הוראות",
     "how_to_play": "כיצד לשחק",
+    "advertise": "פרסם",
     "wiki": "ויקי"
+  },
+  "news": {
+    "full_changelog": "ראה את פרטי הגרסה המלאים",
+    "github_link": "בגיטהאב",
+    "title": "פרטי הגרסה"
   },
   "help_modal": {
     "hotkeys": "מקשי קיצור",
@@ -33,6 +43,7 @@
     "action_reset_gfx": "אפס גרפיקה",
     "ui_section": "ממשק המשחק",
     "ui_leaderboard": "לוח מובילים",
+    "ui_your_team": "הקבוצה שלך:",
     "ui_leaderboard_desc": "מציג את השחקנים המובילים במשחק ואת שמותיהם, אחוז הקרקע שבבעלותם, כמות הזהב וכמות החיילים שלהם. לחיצה על \"הצג הכול\" תציג את כל השחקנים במשחק. אם אינך מעוניין לראות את טבלת הדירוג, לחץ על \"הסתר\".",
     "ui_control": "לוח הבקרה",
     "ui_control_desc": "לוח הבקרה מכיל את האלמנטים הבאים:",
@@ -120,6 +131,7 @@
   "map": {
     "map": "מפה",
     "world": "עולם",
+    "giantworldmap": "מפת עולם ענקית",
     "europe": "אירופה",
     "mena": "המזרח התיכון וצפון אפריקה",
     "northamerica": "צפון אמריקה",
@@ -135,19 +147,24 @@
     "random": "רנדומלי",
     "iceland": "איסלנד",
     "pangaea": "פנגיאה",
+    "eastasia": "מזרח אסיה",
     "betweentwoseas": "בין שני ימים",
-    "knownworld": "העולם הידוע",
     "faroeislands": "איי פארו",
     "deglaciatedantarctica": "אנטארקטיקה נטולת קרח",
     "europeclassic": "אירופה (קלאסי)",
     "falklandislands": "איי פוקלנד",
     "baikal": "באיקל",
-    "halkidiki": "כלקידיקי"
+    "halkidiki": "כלקידיקי",
+    "straitofgibraltar": "מיצרי גיברלטר",
+    "italia": "איטליה"
   },
   "map_categories": {
     "continental": "יבשתי",
     "regional": "אזורי",
     "fantasy": "אחר"
+  },
+  "map_component": {
+    "loading": "טוען..."
   },
   "private_lobby": {
     "title": "הצטרף ללובי פרטי",
@@ -163,6 +180,9 @@
   "public_lobby": {
     "join": "הצטרף למשחק הבא",
     "waiting": "שחקנים מחכים",
+    "teams_Duos": "זוגות (קבוצות של 2)",
+    "teams_Trios": "שלישיות (קבוצות של 3)",
+    "teams_Quads": "רביעיות (קבוצות של 4)",
     "teams": "{num} קבוצות"
   },
   "username": {
@@ -188,6 +208,16 @@
     "players": "שחקנים",
     "waiting": "מחכה לשחקנים...",
     "start": "התחל משחק"
+  },
+  "team_colors": {
+    "red": "אדום",
+    "blue": "כחול",
+    "teal": "תכלת",
+    "purple": "סגול",
+    "yellow": "צהוב",
+    "orange": "כתום",
+    "green": "ירוק",
+    "bot": "בוט"
   },
   "game_starting_modal": {
     "title": "המשחק מתחיל...",
@@ -216,26 +246,31 @@
     "sam_launcher": "טיל קרקע-אויר",
     "atom_bomb": "פצצת אטום",
     "hydrogen_bomb": "פצצת מימן",
-    "mirv": "MIRV"
+    "mirv": "MIRV",
+    "factory": "מפעל"
   },
   "user_setting": {
     "title": "הגדרות משתמש",
     "tab_basic": "הגדרות בסיסיות",
     "tab_keybinds": "קיצורי מקלדת",
-    "dark_mode_label": "מצב כהה 🌙 ",
+    "dark_mode_label": "מצב כהה",
     "dark_mode_desc": "החלף את הנראות של האתר בין מצב כהה לבהיר.",
-    "emojis_label": "אימוג'ים 😊",
+    "emojis_label": "אימוג'ים",
     "emojis_desc": "מאפשר הצגה של אימוג'ים במשחק",
-    "special_effects_label": "אפקטים מיוחדים 💥",
+    "alert_frame_label": "מסגרת אזהרה",
+    "alert_frame_desc": "הפעל את מסגרת האזהרה. כשהיא מופעלת, המסגרת תופיע כשבן ברית בוגד בך.",
+    "special_effects_label": "אפקטים מיוחדים",
     "special_effects_desc": "מאפשר הצגה של אפקטים מיוחדים. בטל כדי לשפר את הביצועים של המשחק.",
-    "anonymous_names_label": "🥷 שמות חבויים",
+    "anonymous_names_label": "שמות חבויים",
     "anonymous_names_desc": "החלף את שמות השחקנים האמיתיים עם שמות רנדומליים במסך שלך.",
-    "left_click_label": "לחצן שמאלי לפתיחת תפריט 🖱️",
+    "left_click_label": "לחצן שמאלי לפתיחת תפריט",
     "left_click_desc": "כאשר מופעל, הלחצן השמאלי פותח את התפריט וכפתור החרב תוקף. כאשר מכובה, הלחצן השמאלי תוקף ישירות.",
     "attack_ratio_label": "יחס תקיפה ⚔️",
     "attack_ratio_desc": "כמה אחוז מהחיילים שלך לשלוח בהתקפה (1-100%)",
     "troop_ratio_label": "יחס חיילים ועובדים 🪖🛠️",
     "troop_ratio_desc": "בחר את היחס בין חיילים (לקרב) והעובדים (כדי לייצר זהב) (1-100%)",
+    "territory_patterns_label": "🏳️דפוס שטח",
+    "territory_patterns_desc": "בחר האם להראות דפוסי שטח במשחק",
     "easter_writing_speed_label": "מכפיל כמות הקלדה",
     "easter_writing_speed_desc": "תאם כמה מהר אתה מעמיד פנים שאתה כותב קוד (x1-x100)",
     "easter_bug_count_label": "מספר באגים",
@@ -243,6 +278,16 @@
     "view_options": "אפשרויות תצוגה",
     "toggle_view": "החלף תצוגה",
     "toggle_view_desc": "צפיה חלופית (שטח\\מדינות)",
+    "attack_ratio_controls": "שליטת יחס התקפה",
+    "attack_ratio_up": "העלה יחס התקפה",
+    "attack_ratio_up_desc": "העלה יחס התקפה ב-10%",
+    "attack_ratio_down": "הורד יחס התקפה",
+    "attack_ratio_down_desc": "הורד יחס התקפה ב-10%",
+    "attack_keybinds": "קיצורי מקשים להתקפה",
+    "boat_attack": "התקפת סירה",
+    "boat_attack_desc": "שלח ספינת התקפה היכן שאתה לוחץ עם העכבר.",
+    "ground_attack": "התקפת קרקע",
+    "ground_attack_desc": "שלח ספינת התקפה היכן שאתה לוחץ עם העכבר.",
     "zoom_controls": "שליטת זום",
     "zoom_out": "זום החוצה",
     "zoom_out_desc": "התרחק מהמפה",
@@ -356,16 +401,20 @@
     "you_won": "זכית!",
     "other_won": "{player} זכה!",
     "exit": "צא מהמשחק",
-    "keep": "המשך לשחק"
+    "keep": "המשך לשחק",
+    "wishlist": "הוסף ל-wishlist ב-Steam!"
   },
   "leaderboard": {
     "title": "שחקנים מובילים",
     "hide": "הסתר",
     "rank": "מיקום",
     "player": "שחקן",
+    "team": "קבוצה",
     "owned": "שטח",
     "gold": "זהב",
-    "troops": "חיילים"
+    "troops": "חיילים",
+    "show_top_5": "הצג את החמישה העליונים",
+    "show_all": "הצג הכול"
   },
   "player_info_overlay": {
     "type": "סוג",
@@ -382,7 +431,26 @@
     "sams": "טילי קרקע-אויר",
     "warships": "ספינות קרב",
     "health": "חיים",
-    "attitude": "יחסים"
+    "attitude": "יחסים",
+    "levels": "שלבים"
+  },
+  "events_display": {
+    "retreating": "נסיגה",
+    "boat": "סירה",
+    "about_to_expire": "הברית שלך עם {name} הולכת להסתיים!",
+    "renew_alliance": "בקשה לחידוש",
+    "focus": "מיקוד",
+    "alliance_renewed": "הברית שלך עם {name} התחדשה",
+    "ignore": "התעלם"
+  },
+  "unit_info_modal": {
+    "structure_info": "מידע מבנה",
+    "unit_type_unknown": "לא ידוע",
+    "close": "סגור",
+    "cooldown": "השהיה",
+    "type": "סוג",
+    "upgrade": "שדרג",
+    "level": "רמה"
   },
   "relation": {
     "hostile": "עוין",
@@ -401,13 +469,74 @@
   "player_panel": {
     "gold": "זהב",
     "troops": "חיילים",
+    "betrayals": "מספר בגידות",
     "traitor": "בוגד",
-    "alliance_time_remaining": "זמן שנותר",
+    "alliance_time_remaining": "ברית מתבטל בעוד",
     "embargo": "הפסיק לסחור איתך",
     "nuke": "כמות פצצות אטום ששלח אליך",
     "start_trade": "התחל סחר",
     "stop_trade": "הפסק סחר",
     "yes": "כן",
-    "no": "לא"
+    "no": "לא",
+    "none": "ללא",
+    "alliances": "בריתות"
+  },
+  "replay_panel": {
+    "replay_speed": "מהירות שידור חוזר",
+    "game_speed": "מהירות המשחק"
+  },
+  "error_modal": {
+    "crashed": "המשחק קרס!",
+    "connection_error": "שגיאת חיבור!",
+    "paste_discord": "בבקשה הדבק את החלק הזה בדיווח הבאג בדיסקורד:",
+    "copy_clipboard": "העתק ל-clipboard",
+    "copied": "הועתק!",
+    "failed_copy": "ההעתקה נכשלה",
+    "desync_notice": "אתה לא מסונכרן עם שאר השחקנים. מה שאתה רואה עלול להיות שונה משאר השחקנים."
+  },
+  "heads_up_message": {
+    "choose_spawn": "בחר מיקום התחלתי"
+  },
+  "territory_patterns": {
+    "title": "בחר דפוס שטח",
+    "purchase": "קניה",
+    "blocked": {
+      "login": "אתה חייב להיות מחובר כדי להשתמש בדפוס הזה",
+      "purchase": "קנה את הדפוס הזה כדי להשתמש בו."
+    },
+    "pattern": {
+      "default": "בחירת מחדל",
+      "custom": "מותאם אישית",
+      "stripes_v": "אנכי",
+      "stripes_h": "אופקי",
+      "horizontal_stripes": "אופקי (אלטרנטיבי)",
+      "vertical_bars": "אנכי (אלטרנטיבי)",
+      "checkerboard": "לוח דמקה",
+      "choco": "שוקו",
+      "diagonal": "אלכסוני",
+      "cross": "צלב",
+      "mini_cross": "צלב קטן",
+      "sword": "חרב",
+      "sparse_dots": "נקודות מרוחקות",
+      "evan": "אוון",
+      "diagonal_stripe": "פס אלכסוני",
+      "mountain_ridge": "רכס הרים",
+      "scattered_dots": "נקודות מפוזרות",
+      "circuit_board": "לוח מגעים",
+      "shells": "קליפות",
+      "-w-": ".w.",
+      "white_rabbit": "ארנב לבן",
+      "goat": "עז",
+      "cats": "חתולים",
+      "cursor": "סמן",
+      "hand": "יד",
+      "radiation": "קרינה",
+      "openfront_qr": "קוד QR של OpenFront.io",
+      "openfront": "OpenFront",
+      "t_rex": "טי-רקס",
+      "embelem": "סמל",
+      "grogu_head": "ראש גרוגו",
+      "grogu": "גרוגו"
+    }
   }
 }
