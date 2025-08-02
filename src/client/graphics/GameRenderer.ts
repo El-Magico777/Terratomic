@@ -210,13 +210,11 @@ export function createRenderer(
     new NameLayer(game, transformHandler, eventBus),
     eventsDisplay,
     chatDisplay,
-    buildMenu,
     new RadialMenu(
       eventBus,
       game,
       transformHandler,
       emojiTable as EmojiTable,
-      buildMenu,
       uiState,
       playerInfo,
       playerPanel,

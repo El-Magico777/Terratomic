@@ -3,8 +3,13 @@ import { customElement, state } from "lit/decorators.js";
 import { translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
 import { Gold, PlayerID, PlayerType, UnitType } from "../../../core/game/Game";
+import { TileRef } from "../../../core/game/GameMap";
 import { GameView, PlayerView } from "../../../core/game/GameView";
-import { AttackRatioEvent } from "../../InputHandler";
+import {
+  AttackRatioEvent,
+  CloseViewEvent,
+  ShowBuildMenuInControlPanelEvent,
+} from "../../InputHandler";
 import {
   SendBomberIntentEvent,
   SendSetAutoBombingEvent,
@@ -76,7 +81,10 @@ export class ControlPanel extends LitElement implements Layer {
   private init_: boolean = false;
 
   @state()
-  private activeTab: "Controls" | "Bombers" | "Options" = "Controls";
+  private activeTab: "Controls" | "Bombers" | "Options" | "Build" = "Controls";
+
+  @state()
+  private buildTile: TileRef | null = null;
 
   @state()
   private _lastAirfieldCount: number = 0;
@@ -130,7 +138,20 @@ export class ControlPanel extends LitElement implements Layer {
     this.init_ = true;
     this.uiState.attackRatio = this.attackRatio;
     this.currentTroopRatio = this.targetTroopRatio;
-    this.eventBus.on(AttackRatioEvent, (event) => {
+    this.eventBus.on(CloseViewEvent, () => {
+      this.buildTile = null;
+      this.activeTab = "Controls";
+    });
+
+    this.eventBus.on(
+      ShowBuildMenuInControlPanelEvent,
+      (event: ShowBuildMenuInControlPanelEvent) => {
+        this.buildTile = event.tile;
+        this.activeTab = "Build";
+      },
+    );
+
+    this.eventBus.on(AttackRatioEvent, (event: AttackRatioEvent) => {
       let newAttackRatio =
         (parseInt(
           (document.getElementById("attack-ratio") as HTMLInputElement).value,
@@ -504,7 +525,7 @@ export class ControlPanel extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible
-          ? "w-full text-sm lg:text-m lg:w-72 bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg"
+          ? `w-full text-sm lg:text-m ${this.activeTab === "Build" ? "lg:w-[80vw]" : "lg:w-72"} bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
@@ -531,6 +552,14 @@ export class ControlPanel extends LitElement implements Layer {
                 </button>
               `
             : ""}
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Build"
+              ? "bg-gray-700 text-white"
+              : "text-white"}"
+            @click=${() => (this.activeTab = "Build")}
+          >
+            Build
+          </button>
         </div>
 
         <div class="tab-content min-h-[320px]">
@@ -804,6 +833,15 @@ export class ControlPanel extends LitElement implements Layer {
                   <h2>Options Tab Content</h2>
                   <p>This is where general options will go.</p>
                 </div>
+              `
+            : ""}
+          ${this.activeTab === "Build"
+            ? html`
+                <build-menu
+                  .game=${this.game}
+                  .eventBus=${this.eventBus}
+                  .clickedTile=${this.buildTile}
+                ></build-menu>
               `
             : ""}
         </div>
