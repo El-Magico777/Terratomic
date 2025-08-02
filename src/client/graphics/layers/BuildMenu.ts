@@ -199,52 +199,48 @@ export class BuildMenu extends LitElement {
       text-align: center;
     }
     .build-menu {
-      background-color: #1e1e1e;
-      padding: 15px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
+      background-color: transparent;
+      padding: 0px;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
       max-width: 95vw;
       max-height: 95vh;
       overflow-y: auto;
     }
-    .build-description {
-      font-size: 0.6rem;
-    }
     .build-row {
       display: flex;
-      justify-content: center;
+      justify-content: left;
       flex-wrap: wrap;
       width: 100%;
     }
     .build-button {
       position: relative;
-      width: 120px;
-      height: 140px;
+      width: 100px; /* Compact width */
+      height: 100px; /* Compact height */
       border: 2px solid #444;
       background-color: #2c2c2c;
       color: white;
-      border-radius: 12px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
-      flex-direction: column;
+      flex-direction: column; /* Stack elements vertically */
       justify-content: center;
       align-items: center;
-      margin: 8px;
-      padding: 10px;
-      gap: 5px;
+      margin: 4px;
+      padding: 5px;
+      gap: 2px; /* Reduced gap */
+      text-align: center; /* Center text */
     }
     .build-button:not(:disabled):hover {
       background-color: #3a3a3a;
-      transform: scale(1.05);
+      transform: scale(1.02);
       border-color: #666;
     }
     .build-button:not(:disabled):active {
       background-color: #4a4a4a;
-      transform: scale(0.95);
+      transform: scale(0.98);
     }
     .build-button:disabled {
       background-color: #1a1a1a;
@@ -259,31 +255,31 @@ export class BuildMenu extends LitElement {
       color: #ff4444;
     }
     .build-icon {
-      font-size: 40px;
-      margin-bottom: 5px;
+      width: 28px; /* Smaller icon size */
+      height: 28px; /* Smaller icon size */
+      margin-bottom: 2px; /* Space between icon and name */
     }
     .build-name {
-      font-size: 14px;
+      font-size: 13px; /* Slightly bigger font size */
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 2px; /* Space between name and cost */
       text-align: center;
+      line-height: 1.2; /* Adjust line height for better fit */
     }
     .build-cost {
-      font-size: 14px;
-    }
-    .hidden {
-      display: none !important;
+      font-size: 12px; /* Adjusted font size */
+      white-space: nowrap;
     }
     .build-count-chip {
       position: absolute;
-      top: -10px;
-      right: -10px;
+      top: -8px; /* Positioned top-right */
+      right: -8px; /* Positioned top-right */
       background-color: #2c2c2c;
       color: white;
-      padding: 2px 10px;
+      padding: 1px 5px; /* Adjusted padding */
       border-radius: 10000px;
       transition: all 0.3s ease;
-      font-size: 12px;
+      font-size: 9px; /* Adjusted font size */
       display: flex;
       justify-content: center;
       align-content: center;
@@ -303,73 +299,56 @@ export class BuildMenu extends LitElement {
     }
     .build-count {
       font-weight: bold;
-      font-size: 14px;
+      font-size: 11px; /* Adjusted font size */
     }
 
     @media (max-width: 768px) {
-      .build-menu {
-        padding: 10px;
-        max-height: 80vh;
-        width: 80vw;
-      }
       .build-button {
-        width: 140px;
-        height: 120px;
+        width: calc(33.33% - 8px); /* Three columns on medium screens */
+        height: 90px;
         margin: 4px;
-        padding: 6px;
-        gap: 5px;
+        padding: 5px;
       }
       .build-icon {
-        font-size: 28px;
+        width: 24px;
+        height: 24px;
       }
       .build-name {
         font-size: 12px;
-        margin-bottom: 3px;
       }
       .build-cost {
         font-size: 11px;
       }
-      .build-count {
-        font-weight: bold;
-        font-size: 10px;
-      }
       .build-count-chip {
-        padding: 1px 5px;
+        padding: 0 4px;
+        font-size: 8px;
       }
     }
 
     @media (max-width: 480px) {
-      .build-menu {
-        padding: 8px;
-        max-height: 70vh;
-      }
       .build-button {
-        width: calc(50% - 6px);
-        height: 100px;
-        margin: 3px;
+        width: calc(50% - 8px); /* Two columns on small screens */
+        height: 80px;
+        margin: 4px;
         padding: 4px;
-        border-width: 1px;
       }
       .build-icon {
-        font-size: 24px;
+        width: 20px;
+        height: 20px;
       }
       .build-name {
-        font-size: 10px;
-        margin-bottom: 2px;
+        font-size: 11px;
       }
       .build-cost {
-        font-size: 9px;
-      }
-      .build-count {
-        font-weight: bold;
-        font-size: 8px;
+        font-size: 10px;
       }
       .build-count-chip {
         padding: 0 3px;
+        font-size: 7px;
       }
       .build-button img {
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
       }
       .build-cost img {
         width: 10px;
@@ -458,15 +437,11 @@ export class BuildMenu extends LitElement {
                     <img
                       src=${item.icon}
                       alt="${item.unitType}"
-                      width="40"
-                      height="40"
+                      width="28"
+                      height="28"
                     />
                     <span class="build-name"
                       >${item.key && translateText(item.key)}</span
-                    >
-                    <span class="build-description"
-                      >${item.description &&
-                      translateText(item.description)}</span
                     >
                     <span class="build-cost" translate="no">
                       ${renderNumber(
