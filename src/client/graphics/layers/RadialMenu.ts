@@ -19,7 +19,7 @@ import {
   CloseViewEvent,
   ContextMenuEvent,
   MouseUpEvent,
-  ShowBuildMenuEvent,
+  ShowBuildMenuInControlPanelEvent,
 } from "../../InputHandler";
 import {
   SendAllianceRequestIntentEvent,
@@ -30,7 +30,6 @@ import {
 } from "../../Transport";
 import { TransformHandler } from "../TransformHandler";
 import { UIState } from "../UIState";
-import { BuildMenu } from "./BuildMenu";
 import { EmojiTable } from "./EmojiTable";
 import { Layer } from "./Layer";
 import { PlayerInfoOverlay } from "./PlayerInfoOverlay";
@@ -97,7 +96,6 @@ export class RadialMenu implements Layer {
     private g: GameView,
     private transformHandler: TransformHandler,
     private emojiTable: EmojiTable,
-    private buildMenu: BuildMenu,
     private uiState: UIState,
     private playerInfoOverlay: PlayerInfoOverlay,
     private playerPanel: PlayerPanel,
@@ -106,25 +104,6 @@ export class RadialMenu implements Layer {
   init() {
     this.eventBus.on(ContextMenuEvent, (e) => this.onContextMenu(e));
     this.eventBus.on(MouseUpEvent, (e) => this.onPointerUp(e));
-    this.eventBus.on(ShowBuildMenuEvent, (e) => {
-      const clickedCell = this.transformHandler.screenToWorldCoordinates(
-        e.x,
-        e.y,
-      );
-      if (clickedCell === null) {
-        return;
-      }
-      if (!this.g.isValidCoord(clickedCell.x, clickedCell.y)) {
-        return;
-      }
-      const tile = this.g.ref(clickedCell.x, clickedCell.y);
-      const p = this.g.myPlayer();
-      if (p === null) {
-        return;
-      }
-      this.buildMenu.showMenu(tile);
-    });
-
     this.eventBus.on(CloseViewEvent, () => this.closeMenu());
 
     this.createMenuElement();
@@ -133,10 +112,6 @@ export class RadialMenu implements Layer {
   private closeMenu() {
     if (this.isVisible) {
       this.hideRadialMenu();
-    }
-
-    if (this.buildMenu.isVisible) {
-      this.buildMenu.hideMenu();
     }
   }
 
@@ -311,10 +286,6 @@ export class RadialMenu implements Layer {
 
   private onContextMenu(event: ContextMenuEvent) {
     if (this.lastClosed + 200 > new Date().getTime()) return;
-    if (this.buildMenu.isVisible) {
-      this.buildMenu.hideMenu();
-      return;
-    }
     if (this.isVisible) {
       this.hideRadialMenu();
       return;
@@ -358,7 +329,7 @@ export class RadialMenu implements Layer {
   ) {
     if (!this.g.inSpawnPhase()) {
       this.activateMenuElement(Slot.Build, "#ebe250", buildIcon, () => {
-        this.buildMenu.showMenu(tile);
+        this.eventBus.emit(new ShowBuildMenuInControlPanelEvent(tile));
       });
     }
 
@@ -428,7 +399,6 @@ export class RadialMenu implements Layer {
   private onPointerUp(event: MouseUpEvent) {
     this.hideRadialMenu();
     this.emojiTable.hideTable();
-    this.buildMenu.hideMenu();
     this.playerInfoOverlay.hide();
   }
 

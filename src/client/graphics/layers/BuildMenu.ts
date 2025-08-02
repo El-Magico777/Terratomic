@@ -1,5 +1,5 @@
 import { LitElement, css, html } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import airfieldIcon from "../../../../resources/images/AirfieldIcon.svg";
 import warshipIcon from "../../../../resources/images/BattleshipIconWhite.svg";
 import academyIcon from "../../../../resources/images/buildings/academy_icon.png";
@@ -21,7 +21,6 @@ import { TileRef } from "../../../core/game/GameMap";
 import { GameView } from "../../../core/game/GameView";
 import { BuildUnitIntentEvent } from "../../Transport";
 import { renderNumber } from "../../Utils";
-import { Layer } from "./Layer";
 
 interface BuildItemDisplay {
   unitType: UnitType;
@@ -129,16 +128,60 @@ const buildTable: BuildItemDisplay[][] = [
 ];
 
 @customElement("build-menu")
-export class BuildMenu extends LitElement implements Layer {
-  public game: GameView;
-  public eventBus: EventBus;
-  private clickedTile: TileRef;
+export class BuildMenu extends LitElement {
+  constructor() {
+    super();
+  }
+
+  @property({ type: Object })
+  game: GameView;
+
+  @property({ type: Object })
+  eventBus: EventBus;
+
+  @property({ type: Object })
+  clickedTile: TileRef | null;
+
+  @state()
   private playerActions: PlayerActions | null;
+
+  @state()
   private filteredBuildTable: BuildItemDisplay[][] = buildTable;
 
-  tick() {
-    if (!this._hidden) {
-      this.refresh();
+  updated(changedProperties: Map<string | number | symbol, unknown>) {
+    if (changedProperties.has("clickedTile")) {
+      if (this.clickedTile) {
+        if (!this.game) {
+          console.warn("BuildMenu: Game object is null.");
+          return;
+        }
+
+        // Filter buildable units based on game config (synchronous)
+        this.filteredBuildTable = buildTable.map((row) =>
+          row.filter(
+            (item) => !this.game!.config().isUnitDisabled(item.unitType),
+          ),
+        );
+
+        // Fetch player actions asynchronously
+        this.game
+          .myPlayer()
+          ?.actions(this.clickedTile)
+          .then((actions) => {
+            this.playerActions = actions;
+            this.requestUpdate();
+          })
+          .catch((error) => {
+            console.error("BuildMenu: Error fetching player actions:", error);
+            this.playerActions = null;
+            this.requestUpdate();
+          });
+      } else {
+        // If clickedTile is null, clear player actions and filtered table
+        this.playerActions = null;
+        this.filteredBuildTable = buildTable;
+        this.requestUpdate();
+      }
     }
   }
 
@@ -146,12 +189,16 @@ export class BuildMenu extends LitElement implements Layer {
     :host {
       display: block;
     }
+    .build-menu-prompt {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      color: white;
+      font-size: 1.2rem;
+      text-align: center;
+    }
     .build-menu {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 9999;
       background-color: #1e1e1e;
       padding: 15px;
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
@@ -331,9 +378,6 @@ export class BuildMenu extends LitElement implements Layer {
     }
   `;
 
-  @state()
-  private _hidden = true;
-
   private canBuild(item: BuildItemDisplay): boolean {
     if (this.game?.myPlayer() === null || this.playerActions === null) {
       return false;
@@ -365,23 +409,44 @@ export class BuildMenu extends LitElement implements Layer {
   }
 
   public onBuildSelected = (item: BuildItemDisplay) => {
+    if (!this.clickedTile) {
+      return;
+    }
     this.eventBus.emit(
       new BuildUnitIntentEvent(item.unitType, this.clickedTile),
     );
-    this.hideMenu();
   };
 
   render() {
+    if (!this.clickedTile) {
+      return html`
+        <div class="build-menu-prompt">
+          <p>
+            Right-click a tile you own and select the build icon to see options
+            here.
+          </p>
+        </div>
+      `;
+    }
+
+    if (!this.playerActions) {
+      return html`
+        <div class="build-menu-prompt">
+          <p>Loading build options...</p>
+        </div>
+      `;
+    }
+
     return html`
       <div
-        class="build-menu ${this._hidden ? "hidden" : ""}"
+        class="build-menu"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         ${this.filteredBuildTable.map(
           (row) => html`
             <div class="build-row">
-              ${row.map(
-                (item) => html`
+              ${row.map((item) => {
+                return html`
                   <button
                     class="build-button"
                     @click=${() => this.onBuildSelected(item)}
@@ -421,8 +486,8 @@ export class BuildMenu extends LitElement implements Layer {
                         </div>`
                       : ""}
                   </button>
-                `,
-              )}
+                `;
+              })}
             </div>
           `,
         )}
@@ -430,37 +495,9 @@ export class BuildMenu extends LitElement implements Layer {
     `;
   }
 
-  hideMenu() {
-    this._hidden = true;
-    this.requestUpdate();
-  }
-
-  showMenu(clickedTile: TileRef) {
-    this.clickedTile = clickedTile;
-    this._hidden = false;
-    this.refresh();
-  }
-
-  private refresh() {
-    this.game
-      .myPlayer()
-      ?.actions(this.clickedTile)
-      .then((actions) => {
-        this.playerActions = actions;
-        this.requestUpdate();
-      });
-
-    // removed disabled buildings from the buildtable
-    this.filteredBuildTable = this.getBuildableUnits();
-  }
-
   private getBuildableUnits(): BuildItemDisplay[][] {
     return buildTable.map((row) =>
       row.filter((item) => !this.game?.config()?.isUnitDisabled(item.unitType)),
     );
-  }
-
-  get isVisible() {
-    return !this._hidden;
   }
 }

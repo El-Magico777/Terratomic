@@ -1,4 +1,5 @@
 import { EventBus, GameEvent } from "../core/EventBus";
+import { TileRef } from "../core/game/GameMap";
 import { UnitView } from "../core/game/GameView";
 import { UserSettings } from "../core/game/UserSettings";
 import { ReplaySpeedMultiplier } from "./utilities/ReplaySpeedMultiplier";
@@ -76,6 +77,10 @@ export class ShowBuildMenuEvent implements GameEvent {
     public readonly x: number,
     public readonly y: number,
   ) {}
+}
+
+export class ShowBuildMenuInControlPanelEvent implements GameEvent {
+  constructor(public readonly tile: TileRef) {}
 }
 export class ShowEmojiMenuEvent implements GameEvent {
   constructor(
