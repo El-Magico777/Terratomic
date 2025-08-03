@@ -348,8 +348,8 @@ export class BuildMenu extends LitElement {
 
     @media (max-width: 480px) {
       .build-button {
-        width: calc(50% - 8px); /* Two columns on small screens */
-        height: 70px; /* Adjusted height */
+        width: calc(33.33% - 8px); /* Three columns on small screens */
+        height: 80px; /* Adjusted height */
         margin: 4px;
         padding: 4px;
       }
