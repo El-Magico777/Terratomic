@@ -217,7 +217,7 @@
     </div>
 
     <div
-      class="bottom-0 w-full flex-col-reverse sm:flex-row z-50 md:w-[320px]"
+      class="bottom-0 w-full flex-col-reverse sm:flex-row z-50"
       style="position: fixed; pointer-events: none"
     >
       <div
@@ -227,8 +227,9 @@
         <chat-display></chat-display>
         <events-display></events-display>
       </div>
-      <div class="w-full sm:w-1/3 md:max-w-72" style="pointer-events: auto">
-        <control-panel></control-panel>
+      <div class="w-full flex" style="pointer-events: auto">
+        <control-panel class="w-1/2"></control-panel>
+        <control-panel2 class="w-1/2"></control-panel2>
       </div>
     </div>
 

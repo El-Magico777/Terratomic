@@ -8,6 +8,7 @@ import { BuildMenu } from "./layers/BuildMenu";
 import { ChatDisplay } from "./layers/ChatDisplay";
 import { ChatModal } from "./layers/ChatModal";
 import { ControlPanel } from "./layers/ControlPanel";
+import { ControlPanel2 } from "./layers/ControlPanel2";
 import { EmojiTable } from "./layers/EmojiTable";
 import { EventsDisplay } from "./layers/EventsDisplay";
 import { FxLayer } from "./layers/FxLayer";
@@ -97,6 +98,16 @@ export function createRenderer(
   controlPanel.eventBus = eventBus;
   controlPanel.uiState = uiState;
   controlPanel.game = game;
+
+  const controlPanel2 = document.querySelector(
+    "control-panel2",
+  ) as ControlPanel2;
+  if (!(controlPanel2 instanceof ControlPanel2)) {
+    console.error("ControlPanel2 element not found in the DOM");
+  }
+  controlPanel2.eventBus = eventBus;
+  controlPanel2.uiState = uiState;
+  controlPanel2.game = game;
 
   const eventsDisplay = document.querySelector(
     "events-display",
@@ -223,6 +234,7 @@ export function createRenderer(
     leaderboard,
     gameLeftSidebar,
     controlPanel,
+    controlPanel2,
     playerInfo,
     winModel,
     optionsMenu,
