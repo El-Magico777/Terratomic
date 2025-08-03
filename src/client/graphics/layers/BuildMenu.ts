@@ -142,6 +142,9 @@ export class BuildMenu extends LitElement {
   @property({ type: Object })
   clickedTile: TileRef | null;
 
+  @property({ type: Array })
+  unitFilter: UnitType[] | null = null;
+
   @state()
   private playerActions: PlayerActions | null;
 
@@ -149,21 +152,29 @@ export class BuildMenu extends LitElement {
   private filteredBuildTable: BuildItemDisplay[][] = buildTable;
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
-    if (changedProperties.has("clickedTile")) {
+    if (
+      changedProperties.has("clickedTile") ||
+      changedProperties.has("unitFilter")
+    ) {
       if (this.clickedTile) {
         if (!this.game) {
           console.warn("BuildMenu: Game object is null.");
           return;
         }
 
-        // Filter buildable units based on game config (synchronous)
-        this.filteredBuildTable = buildTable.map((row) =>
+        let currentBuildTable = buildTable;
+        if (this.unitFilter && this.unitFilter.length > 0) {
+          currentBuildTable = buildTable.map((row) =>
+            row.filter((item) => this.unitFilter!.includes(item.unitType)),
+          );
+        }
+
+        this.filteredBuildTable = currentBuildTable.map((row) =>
           row.filter(
             (item) => !this.game!.config().isUnitDisabled(item.unitType),
           ),
         );
 
-        // Fetch player actions asynchronously
         this.game
           .myPlayer()
           ?.actions(this.clickedTile)
@@ -177,7 +188,6 @@ export class BuildMenu extends LitElement {
             this.requestUpdate();
           });
       } else {
-        // If clickedTile is null, clear player actions and filtered table
         this.playerActions = null;
         this.filteredBuildTable = buildTable;
         this.requestUpdate();
@@ -210,14 +220,14 @@ export class BuildMenu extends LitElement {
     }
     .build-row {
       display: flex;
-      justify-content: left;
+      justify-content: left; /* Align buttons to the left */
       flex-wrap: wrap;
       width: 100%;
     }
     .build-button {
       position: relative;
-      width: 100px; /* Compact width */
-      height: 100px; /* Compact height */
+      width: 110px; /* Adjusted width for 4 columns */
+      height: 90px; /* Adjusted height to accommodate description */
       border: 2px solid #444;
       background-color: #2c2c2c;
       color: white;
@@ -255,19 +265,30 @@ export class BuildMenu extends LitElement {
       color: #ff4444;
     }
     .build-icon {
-      width: 28px; /* Smaller icon size */
-      height: 28px; /* Smaller icon size */
+      width: 20px; /* Even smaller icon size */
+      height: 20px; /* Even smaller icon size */
       margin-bottom: 2px; /* Space between icon and name */
     }
     .build-name {
-      font-size: 13px; /* Slightly bigger font size */
+      font-size: 11px; /* Smaller font size */
       font-weight: bold;
       margin-bottom: 2px; /* Space between name and cost */
       text-align: center;
       line-height: 1.2; /* Adjust line height for better fit */
     }
+    .build-description {
+      font-size: 0.6rem;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2; /* Limit to 2 lines */
+      -webkit-box-orient: vertical;
+      word-break: break-word; /* Break long words */
+      max-height: 2.4em; /* Max height for 2 lines */
+    }
     .build-cost {
-      font-size: 12px; /* Adjusted font size */
+      font-size: 10px; /* Smaller font size */
       white-space: nowrap;
     }
     .build-count-chip {
@@ -299,60 +320,60 @@ export class BuildMenu extends LitElement {
     }
     .build-count {
       font-weight: bold;
-      font-size: 11px; /* Adjusted font size */
+      font-size: 10px; /* Smaller font size */
     }
 
     @media (max-width: 768px) {
       .build-button {
-        width: calc(33.33% - 8px); /* Three columns on medium screens */
-        height: 90px;
+        width: calc(25% - 8px); /* Four columns on medium screens */
+        height: 80px; /* Adjusted height */
         margin: 4px;
         padding: 5px;
       }
       .build-icon {
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
       }
       .build-name {
-        font-size: 12px;
+        font-size: 10px;
       }
       .build-cost {
-        font-size: 11px;
+        font-size: 9px;
       }
       .build-count-chip {
         padding: 0 4px;
-        font-size: 8px;
+        font-size: 7px;
       }
     }
 
     @media (max-width: 480px) {
       .build-button {
-        width: calc(50% - 8px); /* Two columns on small screens */
-        height: 80px;
+        width: calc(33.33% - 8px); /* Three columns on small screens */
+        height: 80px; /* Adjusted height */
         margin: 4px;
         padding: 4px;
       }
       .build-icon {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
       }
       .build-name {
-        font-size: 11px;
+        font-size: 9px;
       }
       .build-cost {
-        font-size: 10px;
+        font-size: 8px;
       }
       .build-count-chip {
         padding: 0 3px;
-        font-size: 7px;
+        font-size: 6px;
       }
       .build-button img {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
       }
       .build-cost img {
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
       }
     }
   `;
@@ -430,8 +451,8 @@ export class BuildMenu extends LitElement {
                     class="build-button"
                     @click=${() => this.onBuildSelected(item)}
                     ?disabled=${!this.canBuild(item)}
-                    title=${!this.canBuild(item)
-                      ? translateText("build_menu.not_enough_money")
+                    title=${item.description
+                      ? translateText(item.description)
                       : ""}
                   >
                     <img
@@ -471,8 +492,6 @@ export class BuildMenu extends LitElement {
   }
 
   private getBuildableUnits(): BuildItemDisplay[][] {
-    return buildTable.map((row) =>
-      row.filter((item) => !this.game?.config()?.isUnitDisabled(item.unitType)),
-    );
+    return buildTable;
   }
 }

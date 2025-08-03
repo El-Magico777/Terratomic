@@ -81,7 +81,13 @@ export class ControlPanel extends LitElement implements Layer {
   private init_: boolean = false;
 
   @state()
-  private activeTab: "Controls" | "Bombers" | "Options" | "Build" = "Controls";
+  private activeTab:
+    | "Controls"
+    | "Build"
+    | "Nukes"
+    | "Units"
+    | "Bombers"
+    | "Options" = "Controls";
 
   @state()
   private buildTile: TileRef | null = null;
@@ -123,6 +129,28 @@ export class ControlPanel extends LitElement implements Layer {
     "Air Field": "/images/AirfieldIcon.svg",
     "Defense Post": "/images/ShieldIconWhite.svg",
   };
+
+  private readonly NukeTypes: UnitType[] = [
+    UnitType.AtomBomb,
+    UnitType.MIRV,
+    UnitType.HydrogenBomb,
+  ];
+
+  private readonly CombatUnitTypes: UnitType[] = [
+    UnitType.FighterJet,
+    UnitType.Warship,
+  ];
+
+  private readonly StructureTypes: UnitType[] = [
+    UnitType.Airfield,
+    UnitType.Port,
+    UnitType.MissileSilo,
+    UnitType.SAMLauncher,
+    UnitType.DefensePost,
+    UnitType.Hospital,
+    UnitType.Academy,
+    UnitType.City,
+  ];
 
   init() {
     this.attackRatio = Number(
@@ -525,7 +553,7 @@ export class ControlPanel extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible
-          ? `w-full text-sm lg:text-m ${this.activeTab === "Build" ? "lg:w-[80vw]" : "lg:w-72"} bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg`
+          ? `w-full text-sm lg:text-m ${this.activeTab === "Build" || this.activeTab === "Nukes" || this.activeTab === "Units" ? "lg:w-[400px]" : "lg:w-96"} bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
@@ -559,6 +587,22 @@ export class ControlPanel extends LitElement implements Layer {
             @click=${() => (this.activeTab = "Build")}
           >
             Build
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Nukes"
+              ? "bg-gray-700 text-white"
+              : "text-white"}"
+            @click=${() => (this.activeTab = "Nukes")}
+          >
+            Nukes
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Units"
+              ? "bg-gray-700 text-white"
+              : "text-white"}"
+            @click=${() => (this.activeTab = "Units")}
+          >
+            Units
           </button>
         </div>
 
@@ -841,6 +885,27 @@ export class ControlPanel extends LitElement implements Layer {
                   .game=${this.game}
                   .eventBus=${this.eventBus}
                   .clickedTile=${this.buildTile}
+                  .unitFilter=${this.StructureTypes}
+                ></build-menu>
+              `
+            : ""}
+          ${this.activeTab === "Nukes"
+            ? html`
+                <build-menu
+                  .game=${this.game}
+                  .eventBus=${this.eventBus}
+                  .clickedTile=${this.buildTile}
+                  .unitFilter=${this.NukeTypes}
+                ></build-menu>
+              `
+            : ""}
+          ${this.activeTab === "Units"
+            ? html`
+                <build-menu
+                  .game=${this.game}
+                  .eventBus=${this.eventBus}
+                  .clickedTile=${this.buildTile}
+                  .unitFilter=${this.CombatUnitTypes}
                 ></build-menu>
               `
             : ""}
