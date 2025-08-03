@@ -948,9 +948,7 @@ export class EventsDisplay extends LitElement implements Layer {
           `
         : html`
             <!-- Main Events Display -->
-            <div
-              class="relative w-full lg:bottom-2.5 lg:right-2.5 z-50 lg:w-96 backdrop-blur"
-            >
+            <div class="relative w-full h-full backdrop-blur">
               <!-- Button Bar -->
               <div
                 class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md bg-gray-800/70"
