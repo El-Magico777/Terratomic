@@ -557,7 +557,7 @@ export class ControlPanel2 extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible
-          ? `w-full h-[270px] text-sm lg:text-m bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg flex flex-col mt-[50px]`
+          ? `w-full h-[310px] text-sm lg:text-m bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg flex flex-col mt-[10px]`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
@@ -634,35 +634,35 @@ export class ControlPanel2 extends LitElement implements Layer {
           </button>
         </div>
 
-        <div class="tab-content min-h-[320px]">
+        <div class="tab-content flex-grow overflow-y-auto">
           ${this.activeTab === "Bombers"
             ? html`
-                <div class="text-tan flex">
+                <div class="text-white flex">
                   <!-- Column 1: Auto-Bombing -->
                   <div class="w-1/3 pr-2">
                     <h3 class="font-bold text-base mb-2">Auto-Bombing</h3>
                     <div class="flex flex-col gap-2">
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm bg-olive-green hover:bg-green-700 text-white border border-gray-700 rounded-sm"
+                        class="w-full px-2 py-1 text-sm bg-green-600 hover:bg-green-500 text-white border border-gray-500 rounded"
                         @click=${this._startAutoBombing}
                       >
                         Start Auto Bombing
                       </button>
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm bg-muted-red hover:bg-red-700 text-white border border-gray-700 rounded-sm"
+                        class="w-full px-2 py-1 text-sm bg-red-600 hover:bg-red-500 text-white border border-gray-500 rounded"
                         @click=${this._stopAutoBombing}
                       >
                         Stop Auto Bombing
                       </button>
                     </div>
-                    <p class="text-xs mt-3 text-gray-400">
+                    <p class="text-xs mt-3 text-gray-300">
                       Autobombing sends bombers to nearby non-allied territory
                       and bombs their structures.
                     </p>
                     <div
-                      class="mt-4 text-crt-green font-bold ${!this
+                      class="mt-4 text-green-400 font-bold ${!this
                         ._isAutoBombingEnabled
                         ? "hidden"
                         : ""}"
@@ -686,7 +686,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                         Select Target
                         <select
                           id="bomber-player-select"
-                          class="ml-1 p-1 bg-gray-700 text-tan border border-gray-500 rounded-sm w-full truncate"
+                          class="ml-1 p-1 bg-gray-700 text-white border border-gray-500 rounded w-full truncate"
                         ></select>
                       </label>
 
@@ -704,7 +704,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                         ].map((s) => {
                           return html`
                             <label
-                              class="flex items-center space-x-1 p-1 border border-gray-700 rounded-sm cursor-pointer has-checked:border-crt-green"
+                              class="flex items-center space-x-1 p-1 border border-gray-700 rounded cursor-pointer has-checked:border-blue-500"
                             >
                               <img
                                 src="${this.unitIconMap[s]}"
@@ -716,7 +716,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                                 name="structure"
                                 value="${s}"
                                 ?checked=${s === UnitType.City}
-                                class="form-checkbox h-4 w-4 text-crt-green bg-gray-700 border-gray-500 rounded-sm focus:ring-crt-green"
+                                class="form-checkbox h-4 w-4 text-blue-600 bg-gray-700 border-gray-500 rounded focus:ring-blue-500"
                                 @change=${this.handleStructureChange}
                               />
                             </label>
@@ -733,10 +733,10 @@ export class ControlPanel2 extends LitElement implements Layer {
                       : ""}"
                   >
                     <h3 class="font-bold text-base mb-2">Target Actions</h3>
-                    <div class="text-tan text-sm min-h-[20px]">
+                    <div class="text-white text-sm min-h-[20px]">
                       ${this._currentTargetPlayerId &&
                       this._currentTargetStructureType
-                        ? html`<span class="text-muted-red font-bold"
+                        ? html`<span class="text-red-500 font-bold"
                               >Target:</span
                             >
                             ${this._currentTargetPlayerName}
@@ -753,14 +753,14 @@ export class ControlPanel2 extends LitElement implements Layer {
                     <div class="flex gap-2 mt-auto">
                       <button
                         type="button"
-                        class="flex-1 p-1 bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
+                        class="flex-1 p-1 bg-blue-600 hover:bg-blue-500 text-white border border-gray-500 rounded"
                         @click=${this.handleBomberIntent}
                       >
                         Set Target
                       </button>
                       <button
                         type="button"
-                        class="flex-1 p-1 bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
+                        class="flex-1 p-1 bg-gray-600 hover:bg-gray-500 text-white border border-gray-500 rounded"
                         @click=${() => this.sendBomberIntent(null, null)}
                       >
                         Clear Target
