@@ -948,11 +948,11 @@ export class EventsDisplay extends LitElement implements Layer {
           `
         : html`
             <!-- Main Events Display -->
-            <div class="relative w-full h-full backdrop-blur">
+            <div
+              class="relative w-full bg-gray-900 border-2 border-gray-700 shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg"
+            >
               <!-- Button Bar -->
-              <div
-                class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md bg-gray-800/70"
-              >
+              <div class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md">
                 <div class="flex justify-between items-center">
                   <div class="flex gap-4">
                     ${this.renderButton({
@@ -967,7 +967,7 @@ export class EventsDisplay extends LitElement implements Layer {
                       />`,
                       onClick: () =>
                         this.toggleEventFilter(MessageCategory.ATTACK),
-                      className: "cursor-pointer pointer-events-auto",
+                      className: "cursor-pointer pointer-events-auto text-tan",
                     })}
                     ${this.renderButton({
                       content: html`<img
@@ -981,7 +981,7 @@ export class EventsDisplay extends LitElement implements Layer {
                       />`,
                       onClick: () =>
                         this.toggleEventFilter(MessageCategory.TRADE),
-                      className: "cursor-pointer pointer-events-auto",
+                      className: "cursor-pointer pointer-events-auto text-tan",
                     })}
                     ${this.renderButton({
                       content: html`<img
@@ -995,7 +995,7 @@ export class EventsDisplay extends LitElement implements Layer {
                       />`,
                       onClick: () =>
                         this.toggleEventFilter(MessageCategory.ALLIANCE),
-                      className: "cursor-pointer pointer-events-auto",
+                      className: "cursor-pointer pointer-events-auto text-tan",
                     })}
                     ${this.renderButton({
                       content: html`<img
@@ -1009,13 +1009,13 @@ export class EventsDisplay extends LitElement implements Layer {
                       />`,
                       onClick: () =>
                         this.toggleEventFilter(MessageCategory.CHAT),
-                      className: "cursor-pointer pointer-events-auto",
+                      className: "cursor-pointer pointer-events-auto text-tan",
                     })}
                   </div>
                   <div class="flex items-center gap-3">
                     ${this.latestGoldAmount !== null
                       ? html`<span
-                          class="text-green-400 font-semibold transition-all duration-300 ${this
+                          class="text-crt-green font-semibold transition-all duration-300 ${this
                             .goldAmountAnimating
                             ? "animate-pulse scale-110"
                             : "scale-100"}"
@@ -1028,8 +1028,7 @@ export class EventsDisplay extends LitElement implements Layer {
                     ${this.renderButton({
                       content: translateText("leaderboard.hide"),
                       onClick: this.toggleHidden,
-                      className:
-                        "text-white cursor-pointer pointer-events-auto",
+                      className: "text-tan cursor-pointer pointer-events-auto",
                     })}
                   </div>
                 </div>
@@ -1037,11 +1036,11 @@ export class EventsDisplay extends LitElement implements Layer {
 
               <!-- Content Area -->
               <div
-                class="rounded-b-none md:rounded-b-md bg-gray-800/70 max-h-[30vh] flex flex-col-reverse overflow-y-auto w-full h-full"
+                class="rounded-b-none md:rounded-b-md flex flex-col-reverse overflow-y-auto w-full h-[236px]"
               >
                 <div>
                   <table
-                    class="w-full max-h-none border-collapse text-white shadow-lg lg:text-base text-md md:text-xs"
+                    class="w-full max-h-none border-collapse text-tan shadow-lg lg:text-base text-md md:text-xs"
                     style="pointer-events: auto;"
                   >
                     <tbody>
@@ -1060,7 +1059,7 @@ export class EventsDisplay extends LitElement implements Layer {
                                       event.focusID &&
                                         this.emitGoToPlayerEvent(event.focusID);
                                     },
-                                    className: "text-left",
+                                    className: "text-left text-tan",
                                   })
                                 : event.unitView
                                   ? this.renderButton({
@@ -1071,7 +1070,7 @@ export class EventsDisplay extends LitElement implements Layer {
                                             event.unitView,
                                           );
                                       },
-                                      className: "text-left",
+                                      className: "text-left text-tan",
                                     })
                                   : this.getEventDescription(event)}
                               <!-- Events with buttons (Alliance requests) -->
@@ -1083,12 +1082,12 @@ export class EventsDisplay extends LitElement implements Layer {
                                           <button
                                             class="inline-block px-3 py-1 text-white rounded text-md md:text-sm cursor-pointer transition-colors duration-300
                             ${btn.className.includes("btn-info")
-                                              ? "bg-blue-500 hover:bg-blue-600"
+                                              ? "bg-muted-red hover:bg-red-700" /* Muted Red for info */
                                               : btn.className.includes(
                                                     "btn-gray",
                                                   )
-                                                ? "bg-gray-500 hover:bg-gray-600"
-                                                : "bg-green-600 hover:bg-green-700"}"
+                                                ? "bg-dark-gray hover:bg-gray-700" /* Dark Gray for gray */
+                                                : "bg-olive-green hover:bg-green-700"} /* Olive Green for primary */"
                                             @click=${() => {
                                               btn.action();
                                               if (!btn.preventClose) {
@@ -1120,7 +1119,9 @@ export class EventsDisplay extends LitElement implements Layer {
                       ${this.incomingAttacks.length > 0
                         ? html`
                             <tr class="lg:px-2 lg:py-1 p-1">
-                              <td class="lg:px-2 lg:py-1 p-1 text-left">
+                              <td
+                                class="lg:px-2 lg:py-1 p-1 text-left text-muted-red"
+                              >
                                 ${this.renderIncomingAttacks()}
                               </td>
                             </tr>
@@ -1131,7 +1132,9 @@ export class EventsDisplay extends LitElement implements Layer {
                       ${this.outgoingAttacks.length > 0
                         ? html`
                             <tr class="lg:px-2 lg:py-1 p-1">
-                              <td class="lg:px-2 lg:py-1 p-1 text-left">
+                              <td
+                                class="lg:px-2 lg:py-1 p-1 text-left text-steel"
+                              >
                                 ${this.renderOutgoingAttacks()}
                               </td>
                             </tr>
@@ -1142,7 +1145,9 @@ export class EventsDisplay extends LitElement implements Layer {
                       ${this.outgoingLandAttacks.length > 0
                         ? html`
                             <tr class="lg:px-2 lg:py-1 p-1">
-                              <td class="lg:px-2 lg:py-1 p-1 text-left">
+                              <td
+                                class="lg:px-2 lg:py-1 p-1 text-left text-tan"
+                              >
                                 ${this.renderOutgoingLandAttacks()}
                               </td>
                             </tr>
@@ -1153,7 +1158,9 @@ export class EventsDisplay extends LitElement implements Layer {
                       ${this.outgoingBoats.length > 0
                         ? html`
                             <tr class="lg:px-2 lg:py-1 p-1">
-                              <td class="lg:px-2 lg:py-1 p-1 text-left">
+                              <td
+                                class="lg:px-2 lg:py-1 p-1 text-left text-steel"
+                              >
                                 ${this.renderBoats()}
                               </td>
                             </tr>
@@ -1169,7 +1176,7 @@ export class EventsDisplay extends LitElement implements Layer {
                         ? html`
                             <tr>
                               <td
-                                class="lg:px-2 lg:py-1 p-1 min-w-72 text-left"
+                                class="lg:px-2 lg:py-1 p-1 min-w-72 text-left text-tan"
                               >
                                 &nbsp;
                               </td>

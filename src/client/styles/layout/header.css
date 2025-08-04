@@ -1,6 +1,4 @@
 .l-header {
-  background: var(--boxBackgroundColor);
-  backdrop-filter: blur(var(--blur-md));
   display: flex;
   justify-content: center;
   padding: 24px 24px 12px;

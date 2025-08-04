@@ -1,15 +1,22 @@
 .c-button {
-  background: var(--primaryColor);
-  color: #fff;
+  background: linear-gradient(
+    to bottom,
+    #36454f,
+    #2c3e50
+  ); /* Dark Gray to Steel gradient */
+  color: var(--tan); /* Tan text */
   cursor: pointer;
   outline: none;
-  display: inline-block; /* Revert to inline-block for the button itself */
+  display: inline-block;
   font-size: 16px;
-  border: 1px solid transparent;
+  border: 1px solid var(--steel); /* Steel border */
   text-align: center;
   padding: 0.8rem 1rem;
-  border-radius: 8px;
-  transition: var(--transition);
+  border-radius: 4px; /* Slightly sharper corners */
+  transition: all 0.2s ease-in-out;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.6); /* Subtle inner and outer shadow */
 
   @media (min-width: 1024px) {
     font-size: 18px;
@@ -23,35 +30,58 @@
 }
 
 .c-button__icon {
-  /* Styles for the icon */
   width: 24px;
   height: 24px;
   margin-right: 8px;
+  filter: brightness(1.2); /* Slightly brighten icons */
 }
 
 .c-button:hover,
 .c-button:active,
 .c-button:focus {
-  background: var(--primaryColorHover);
-  transition: var(--transition);
+  background: linear-gradient(
+    to bottom,
+    var(--primaryColorHover),
+    #222831
+  ); /* Darker hover state */
+  box-shadow:
+    0 0 8px var(--crt-green),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.6); /* CRT green glow */
+  border-color: var(--crt-green); /* Green border on hover */
 }
 
 .c-button:disabled {
   background: var(--primaryColorDisabled);
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
-  transition: var(--transition);
+  box-shadow: none;
+  border-color: #4a4a4a; /* Darker border for disabled */
 }
 
 .c-button--secondary {
-  background: var(--secondaryColor);
-  color: var(--fontColor);
+  background: linear-gradient(
+    to bottom,
+    var(--secondaryColor),
+    #a9a9a9
+  ); /* Tan to darker gray gradient */
+  color: var(--accentTextColor); /* Darker text for secondary */
+  border-color: #808080; /* Gray border */
 }
 
 .c-button--secondary:hover,
 .c-button--secondary:active,
 .c-button--secondary:focus {
-  background: var(--secondaryColorHover);
+  background: linear-gradient(
+    to bottom,
+    var(--secondaryColorHover),
+    #909090
+  ); /* Darker tan hover */
+  box-shadow:
+    0 0 8px var(--crt-green),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.6); /* CRT green glow */
+  border-color: var(--crt-green);
 }
 
 .c-button--block {

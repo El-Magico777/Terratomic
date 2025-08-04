@@ -206,7 +206,7 @@ export class ControlPanel extends LitElement implements Layer {
           appearance: none;
           width: 16px;
           height: 16px;
-          background: white;
+          background: #333;
           border-width: 2px;
           border-style: solid;
           border-radius: 50%;
@@ -215,44 +215,49 @@ export class ControlPanel extends LitElement implements Layer {
         input[type="range"]::-moz-range-thumb {
           width: 16px;
           height: 16px;
-          background: white;
+          background: #333;
           border-width: 2px;
           border-style: solid;
           border-radius: 50%;
           cursor: pointer;
         }
         .targetTroopRatio::-webkit-slider-thumb {
-          border-color: rgb(59 130 246);
+          border-color: #00ff00; /* CRT Green */
         }
         .targetTroopRatio::-moz-range-thumb {
-          border-color: rgb(59 130 246);
+          border-color: #00ff00; /* CRT Green */
         }
         .attackRatio::-webkit-slider-thumb {
-          border-color: rgb(239 68 68);
+          border-color: #cc0000; /* Muted Red */
         }
         .attackRatio::-moz-range-thumb {
-          border-color: rgb(239 68 68);
+          border-color: #cc0000; /* Muted Red */
         }
         .highlight-tab {
           animation: pulse 1s infinite alternate;
         }
         @keyframes pulse {
           from {
-            background-color: rgba(59, 130, 246, 0.5);
+            background-color: rgba(
+              0,
+              255,
+              0,
+              0.5
+            ); /* CRT Green with transparency */
           }
           to {
-            background-color: rgba(59, 130, 246, 1);
+            background-color: rgba(0, 255, 0, 1); /* Solid CRT Green */
           }
         }
       </style>
       <div
         class="${this._isVisible
-          ? `w-full h-full text-sm lg:text-m bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg`
+          ? `w-full h-[320px] text-sm lg:text-m bg-gray-900 border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         <div class="tab-content flex flex-col h-full">
-          <div class="hidden lg:block bg-black/30 text-white mb-4 p-2 rounded">
+          <div class="hidden lg:block bg-gray-800 text-tan mb-4 p-2 rounded-sm">
             <div class="flex justify-between mb-1">
               <span class="font-bold"
                 >${translateText("control_panel.pop")}:</span
@@ -262,8 +267,8 @@ export class ControlPanel extends LitElement implements Layer {
                 ${renderTroops(this._maxPopulation)}
                 <span
                   class="${this._popRateIsIncreasing
-                    ? "text-green-500"
-                    : "text-yellow-500"}"
+                    ? "text-crt-green"
+                    : "text-orange-400"}"
                   translate="no"
                 >
                   (+${renderTroops(this.popRate)}${this._hospitalReturns > 0
@@ -273,10 +278,10 @@ export class ControlPanel extends LitElement implements Layer {
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="font-bold"
+              <span class="font-bold text-tan"
                 >${translateText("control_panel.gold")}:</span
               >
-              <span translate="no"
+              <span translate="no" class="text-tan"
                 >${renderNumber(this._gold)}
                 (+${renderNumber(this._goldPerSecond)})</span
               >
@@ -284,7 +289,7 @@ export class ControlPanel extends LitElement implements Layer {
           </div>
 
           <div class="relative mb-4 lg:mb-4">
-            <label class="block text-white mb-1" translate="no"
+            <label class="block text-tan mb-1" translate="no"
               >${translateText("control_panel.troops")}:
               <span translate="no">${renderTroops(this._troops)}</span>
               | ${translateText("control_panel.workers")}:
@@ -293,11 +298,11 @@ export class ControlPanel extends LitElement implements Layer {
             <div class="relative h-8">
               <!-- Background track -->
               <div
-                class="absolute left-0 right-0 top-3 h-2 bg-white/20 rounded"
+                class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
               ></div>
               <!-- Fill track -->
               <div
-                class="absolute left-0 top-3 h-2 bg-blue-500/60 rounded transition-all duration-300"
+                class="absolute left-0 top-3 h-2 bg-crt-green/60 rounded transition-all duration-300"
                 style="width: ${this.currentTroopRatio * 100}%"
               ></div>
               <!-- Range input - exactly overlaying the visual elements -->
@@ -317,7 +322,7 @@ export class ControlPanel extends LitElement implements Layer {
           </div>
 
           <div class="relative mb-0 lg:mb-4">
-            <label class="block text-white mb-1" translate="no"
+            <label class="block text-tan mb-1" translate="no"
               >${translateText("control_panel.attack_ratio")}:
               ${(this.attackRatio * 100).toFixed(0)}%
               (${renderTroops(
@@ -327,11 +332,11 @@ export class ControlPanel extends LitElement implements Layer {
             <div class="relative h-8">
               <!-- Background track -->
               <div
-                class="absolute left-0 right-0 top-3 h-2 bg-white/20 rounded"
+                class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
               ></div>
               <!-- Fill track -->
               <div
-                class="absolute left-0 top-3 h-2 bg-red-500/60 rounded transition-all duration-300"
+                class="absolute left-0 top-3 h-2 bg-muted-red/60 rounded transition-all duration-300"
                 style="width: ${this.attackRatio * 100}%"
               ></div>
               <!-- Range input - exactly overlaying the visual elements -->
@@ -350,13 +355,13 @@ export class ControlPanel extends LitElement implements Layer {
               />
             </div>
           </div>
-          <div class="relative mt-4 lg:mb-4">
-            <label class="block text-white mb-1" translate="no">
+          <div class="relative lg:mb-4">
+            <label class="block text-tan mb-1" translate="no">
               Production Investment Rate:
               ${(this.investmentRate * 100).toFixed(0)}%
             </label>
             <div
-              class="text-white text-right text-xs opacity-60 mt-1"
+              class="text-tan text-right text-xs opacity-60 mt-1"
               translate="no"
             >
               Prod: ${Math.round(this._productivity * 100)}%
@@ -366,10 +371,10 @@ export class ControlPanel extends LitElement implements Layer {
             </div>
             <div class="relative h-8">
               <div
-                class="absolute left-0 right-0 top-3 h-2 bg-white/20 rounded"
+                class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
               ></div>
               <div
-                class="absolute left-0 top-3 h-2 bg-green-400/60 rounded transition-all duration-300"
+                class="absolute left-0 top-3 h-2 bg-crt-green/60 rounded transition-all duration-300"
                 style="width: ${(this.investmentRate /
                   this.game.config().maxInvestmentRate()) *
                 100}%"

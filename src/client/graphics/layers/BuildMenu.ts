@@ -40,13 +40,6 @@ const buildTable: BuildItemDisplay[][] = [
       countable: false,
     },
     {
-      unitType: UnitType.MIRV,
-      icon: mirvIcon,
-      description: "build_menu.desc.mirv",
-      key: "unit_type.mirv",
-      countable: false,
-    },
-    {
       unitType: UnitType.HydrogenBomb,
       icon: hydrogenBombIcon,
       description: "build_menu.desc.hydrogen_bomb",
@@ -54,11 +47,11 @@ const buildTable: BuildItemDisplay[][] = [
       countable: false,
     },
     {
-      unitType: UnitType.Airfield,
-      icon: airfieldIcon,
-      description: "build_menu.desc.airfield",
-      key: "unit_type.airfield",
-      countable: true,
+      unitType: UnitType.MIRV,
+      icon: mirvIcon,
+      description: "build_menu.desc.mirv",
+      key: "unit_type.mirv",
+      countable: false,
     },
     {
       unitType: UnitType.FighterJet,
@@ -75,10 +68,38 @@ const buildTable: BuildItemDisplay[][] = [
       countable: true,
     },
     {
+      unitType: UnitType.City,
+      icon: cityIcon,
+      description: "build_menu.desc.city",
+      key: "unit_type.city",
+      countable: true,
+    },
+    {
       unitType: UnitType.Port,
       icon: portIcon,
       description: "build_menu.desc.port",
       key: "unit_type.port",
+      countable: true,
+    },
+    {
+      unitType: UnitType.Airfield,
+      icon: airfieldIcon,
+      description: "build_menu.desc.airfield",
+      key: "unit_type.airfield",
+      countable: true,
+    },
+    {
+      unitType: UnitType.Hospital,
+      icon: hospitalIcon,
+      description: "build_menu.desc.hospital",
+      key: "unit_type.hospital",
+      countable: true,
+    },
+    {
+      unitType: UnitType.Academy,
+      icon: academyIcon,
+      description: "build_menu.desc.academy",
+      key: "unit_type.academy",
       countable: true,
     },
     {
@@ -101,27 +122,6 @@ const buildTable: BuildItemDisplay[][] = [
       icon: shieldIcon,
       description: "build_menu.desc.defense_post",
       key: "unit_type.defense_post",
-      countable: true,
-    },
-    {
-      unitType: UnitType.Hospital,
-      icon: hospitalIcon,
-      description: "build_menu.desc.hospital",
-      key: "unit_type.hospital",
-      countable: true,
-    },
-    {
-      unitType: UnitType.Academy,
-      icon: academyIcon,
-      description: "build_menu.desc.academy",
-      key: "unit_type.academy",
-      countable: true,
-    },
-    {
-      unitType: UnitType.City,
-      icon: cityIcon,
-      description: "build_menu.desc.city",
-      key: "unit_type.city",
       countable: true,
     },
   ],
@@ -226,8 +226,8 @@ export class BuildMenu extends LitElement {
     }
     .build-button {
       position: relative;
-      width: 110px; /* Adjusted width for 4 columns */
-      height: 90px; /* Adjusted height to accommodate description */
+      width: 120px; /* More rectangular */
+      height: 50px; /* More rectangular */
       border: 2px solid #444;
       background-color: #2c2c2c;
       color: white;
@@ -235,13 +235,12 @@ export class BuildMenu extends LitElement {
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
-      flex-direction: column; /* Stack elements vertically */
-      justify-content: center;
+      flex-direction: row; /* Icon next to text */
+      justify-content: flex-start; /* Align items to the start */
       align-items: center;
       margin: 4px;
-      padding: 5px;
-      gap: 2px; /* Reduced gap */
-      text-align: center; /* Center text */
+      padding: 5px; /* Reduced padding */
+      gap: 8px; /* Space between icon and text block */
     }
     .build-button:not(:disabled):hover {
       background-color: #3a3a3a;
@@ -265,16 +264,21 @@ export class BuildMenu extends LitElement {
       color: #ff4444;
     }
     .build-icon {
-      width: 20px; /* Even smaller icon size */
-      height: 20px; /* Even smaller icon size */
-      margin-bottom: 2px; /* Space between icon and name */
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0; /* Prevent icon from shrinking */
+    }
+    .build-item-details {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start; /* Align text to the left */
+      gap: 2px;
     }
     .build-name {
-      font-size: 11px; /* Smaller font size */
+      font-size: 11px;
       font-weight: bold;
-      margin-bottom: 2px; /* Space between name and cost */
-      text-align: center;
-      line-height: 1.2; /* Adjust line height for better fit */
+      text-align: left;
+      line-height: 1.2;
     }
     .build-description {
       font-size: 0.6rem;
@@ -288,22 +292,19 @@ export class BuildMenu extends LitElement {
       max-height: 2.4em; /* Max height for 2 lines */
     }
     .build-cost {
-      font-size: 10px; /* Smaller font size */
+      font-size: 10px;
       white-space: nowrap;
+      text-align: left;
     }
     .build-count-chip {
       position: absolute;
-      top: -8px; /* Positioned top-right */
-      right: -8px; /* Positioned top-right */
+      top: -5px;
+      right: -5px;
       background-color: #2c2c2c;
       color: white;
-      padding: 1px 5px; /* Adjusted padding */
-      border-radius: 10000px;
-      transition: all 0.3s ease;
-      font-size: 9px; /* Adjusted font size */
-      display: flex;
-      justify-content: center;
-      align-content: center;
+      padding: 1px 5px;
+      border-radius: 10px;
+      font-size: 9px;
       border: 1px solid #444;
     }
     .build-button:not(:disabled):hover > .build-count-chip {
@@ -320,61 +321,7 @@ export class BuildMenu extends LitElement {
     }
     .build-count {
       font-weight: bold;
-      font-size: 10px; /* Smaller font size */
-    }
-
-    @media (max-width: 768px) {
-      .build-button {
-        width: calc(25% - 8px); /* Four columns on medium screens */
-        height: 80px; /* Adjusted height */
-        margin: 4px;
-        padding: 5px;
-      }
-      .build-icon {
-        width: 20px;
-        height: 20px;
-      }
-      .build-name {
-        font-size: 10px;
-      }
-      .build-cost {
-        font-size: 9px;
-      }
-      .build-count-chip {
-        padding: 0 4px;
-        font-size: 7px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .build-button {
-        width: calc(33.33% - 8px); /* Three columns on small screens */
-        height: 80px; /* Adjusted height */
-        margin: 4px;
-        padding: 4px;
-      }
-      .build-icon {
-        width: 18px;
-        height: 18px;
-      }
-      .build-name {
-        font-size: 9px;
-      }
-      .build-cost {
-        font-size: 8px;
-      }
-      .build-count-chip {
-        padding: 0 3px;
-        font-size: 6px;
-      }
-      .build-button img {
-        width: 18px;
-        height: 18px;
-      }
-      .build-cost img {
-        width: 8px;
-        height: 8px;
-      }
+      font-size: 10px;
     }
   `;
 
@@ -456,26 +403,29 @@ export class BuildMenu extends LitElement {
                       : ""}
                   >
                     <img
+                      class="build-icon"
                       src=${item.icon}
                       alt="${item.unitType}"
-                      width="28"
-                      height="28"
                     />
-                    <span class="build-name"
-                      >${item.key && translateText(item.key)}</span
-                    >
-                    <span class="build-cost" translate="no">
-                      ${renderNumber(
-                        this.game && this.game.myPlayer() ? this.cost(item) : 0,
-                      )}
-                      <img
-                        src=${goldCoinIcon}
-                        alt="gold"
-                        width="12"
-                        height="12"
-                        style="vertical-align: middle;"
-                      />
-                    </span>
+                    <div class="build-item-details">
+                      <span class="build-name"
+                        >${item.key && translateText(item.key)}</span
+                      >
+                      <span class="build-cost" translate="no">
+                        ${renderNumber(
+                          this.game && this.game.myPlayer()
+                            ? this.cost(item)
+                            : 0,
+                        )}
+                        <img
+                          src=${goldCoinIcon}
+                          alt="gold"
+                          width="12"
+                          height="12"
+                          style="vertical-align: middle;"
+                        />
+                      </span>
+                    </div>
                     ${item.countable
                       ? html`<div class="build-count-chip">
                           <span class="build-count">${this.count(item)}</span>

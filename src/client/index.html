@@ -37,7 +37,7 @@
 
       .bg-image {
         content: "";
-        background-image: url("/images/EuropeBackground.webp");
+        background-image: url("/images/ColdwarBackground.webp");
         background-position: center;
         background-attachment: fixed;
         background-size: cover;
@@ -46,7 +46,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        filter: blur(4px);
+        filter: blur(0px);
         z-index: -1;
       }
 
@@ -58,6 +58,10 @@
       .component-hideable:has(> .parent-hidden) {
         display: none;
       }
+
+      .drop-shadow-glow {
+        filter: drop-shadow(0 0 5px #00ff00) drop-shadow(0 0 15px #00ff00);
+      }
     </style>
 
     <!-- Immediate execution to prevent FOUC -->
@@ -67,34 +71,17 @@
   </head>
 
   <body
-    class="h-full select-none font-sans min-h-screen bg-opacity-0 bg-cover bg-center bg-fixed transition-opacity duration-300 ease-in-out flex flex-col"
+    class="h-full select-none font-military min-h-screen bg-dark-gray text-tan bg-opacity-0 bg-cover bg-center bg-fixed transition-opacity duration-300 ease-in-out flex flex-col"
   >
     <header class="l-header">
-      <div
-        class="l-header__content"
-        style="
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-        "
-      >
+      <div class="l-header__content flex flex-col items-center gap-2">
         <img
-          src="../../resources/images/TerratomicLogoHorizontal.png"
+          src="../../resources/images/TerratomicLogoMagic.png"
           alt="Terratomic Logo"
-          style="max-width: 260px; height: auto"
+          class="max-w-xs h-auto filter drop-shadow-glow"
         />
         <div
-          class="l-header__highlightText"
-          style="
-            color: #e5c07b;
-            font-family: &quot;Bebas Neue&quot;, sans-serif;
-            font-size: 1.25rem;
-            letter-spacing: 0.05em;
-            text-shadow:
-              1px 1px 0 #000,
-              -1px -1px 0 #000;
-          "
+          class="l-header__highlightText text-crt-green font-ocr text-lg tracking-wider"
         >
           v0.1.5
         </div>
@@ -104,7 +91,7 @@
 
     <!-- Main container with responsive padding -->
     <main class="flex justify-center flex-grow">
-      <div class="container pt-12">
+      <div class="container pt-12 flex flex-col flex-grow">
         <!--
         <o-button
           id="login-discord"
