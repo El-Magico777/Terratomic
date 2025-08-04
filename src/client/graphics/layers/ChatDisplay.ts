@@ -127,11 +127,11 @@ export class ChatDisplay extends LitElement implements Layer {
       <div
         class="${this._hidden
           ? "w-fit px-[10px] py-[5px]"
-          : ""} rounded-md bg-black bg-opacity-60 relative flex flex-col-reverse overflow-y-auto w-full h-full"
+          : ""} bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg relative flex flex-col-reverse overflow-y-auto w-full h-[270px] border border-steel"
         style="pointer-events: auto"
       >
         <div>
-          <div class="w-full bg-black/80 sticky top-0 px-[10px]">
+          <div class="w-full bg-slate-800/40 sticky top-0 px-[10px]">
             <button
               class="text-white cursor-pointer pointer-events-auto ${this
                 ._hidden

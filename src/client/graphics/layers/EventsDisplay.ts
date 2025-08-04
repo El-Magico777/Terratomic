@@ -949,7 +949,7 @@ export class EventsDisplay extends LitElement implements Layer {
         : html`
             <!-- Main Events Display -->
             <div
-              class="relative w-full bg-gray-900 border-2 border-gray-700 shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg"
+              class="relative w-full bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg border border-steel"
             >
               <!-- Button Bar -->
               <div class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md">
@@ -1037,7 +1037,7 @@ export class EventsDisplay extends LitElement implements Layer {
 
               <!-- Content Area -->
               <div
-                class="rounded-b-none md:rounded-b-md flex flex-col-reverse overflow-y-auto w-full h-[236px]"
+                class="rounded-b-none md:rounded-b-md flex flex-col-reverse overflow-y-auto w-full h-[240px]"
               >
                 <div>
                   <table

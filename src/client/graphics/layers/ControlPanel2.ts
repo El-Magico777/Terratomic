@@ -557,7 +557,7 @@ export class ControlPanel2 extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible
-          ? `w-full h-[270px] text-sm lg:text-m bg-gray-900 border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col mt-[50px]`
+          ? `w-full h-[270px] text-sm lg:text-m bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg flex flex-col mt-[50px]`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
