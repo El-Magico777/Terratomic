@@ -247,7 +247,7 @@ export class ControlPanel extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible
-          ? `w-full h-full text-sm lg:text-m bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg`
+          ? `w-full h-[320px] text-sm lg:text-m bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg flex flex-col`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
@@ -350,7 +350,7 @@ export class ControlPanel extends LitElement implements Layer {
               />
             </div>
           </div>
-          <div class="relative mt-4 lg:mb-4">
+          <div class="relative lg:mb-4">
             <label class="block text-white mb-1" translate="no">
               Production Investment Rate:
               ${(this.investmentRate * 100).toFixed(0)}%
