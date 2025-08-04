@@ -58,6 +58,10 @@
       .component-hideable:has(> .parent-hidden) {
         display: none;
       }
+
+      .drop-shadow-glow {
+        filter: drop-shadow(0 0 5px #00ff00) drop-shadow(0 0 15px #00ff00);
+      }
     </style>
 
     <!-- Immediate execution to prevent FOUC -->
@@ -67,34 +71,17 @@
   </head>
 
   <body
-    class="h-full select-none font-sans min-h-screen bg-opacity-0 bg-cover bg-center bg-fixed transition-opacity duration-300 ease-in-out flex flex-col"
+    class="h-full select-none font-military min-h-screen bg-dark-gray text-tan bg-opacity-0 bg-cover bg-center bg-fixed transition-opacity duration-300 ease-in-out flex flex-col"
   >
-    <header class="l-header">
-      <div
-        class="l-header__content"
-        style="
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-        "
-      >
+    <header class="l-header bg-dark-gray/80 p-4 shadow-lg">
+      <div class="l-header__content flex flex-col items-center gap-2">
         <img
           src="../../resources/images/TerratomicLogoHorizontal.png"
           alt="Terratomic Logo"
-          style="max-width: 260px; height: auto"
+          class="max-w-xs h-auto filter drop-shadow-glow"
         />
         <div
-          class="l-header__highlightText"
-          style="
-            color: #e5c07b;
-            font-family: &quot;Bebas Neue&quot;, sans-serif;
-            font-size: 1.25rem;
-            letter-spacing: 0.05em;
-            text-shadow:
-              1px 1px 0 #000,
-              -1px -1px 0 #000;
-          "
+          class="l-header__highlightText text-crt-green font-ocr text-lg tracking-wider"
         >
           v0.1.5
         </div>
