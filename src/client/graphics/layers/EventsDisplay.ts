@@ -949,12 +949,10 @@ export class EventsDisplay extends LitElement implements Layer {
         : html`
             <!-- Main Events Display -->
             <div
-              class="relative w-full backdrop-blur bg-dark-gray border border-steel shadow-glow-green"
+              class="relative w-full bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg border border-steel"
             >
               <!-- Button Bar -->
-              <div
-                class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md bg-dark-gray/90"
-              >
+              <div class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md">
                 <div class="flex justify-between items-center">
                   <div class="flex gap-4">
                     ${this.renderButton({
@@ -1038,7 +1036,7 @@ export class EventsDisplay extends LitElement implements Layer {
 
               <!-- Content Area -->
               <div
-                class="rounded-b-none md:rounded-b-md bg-dark-gray/80 flex flex-col-reverse overflow-y-auto w-full h-full"
+                class="rounded-b-none md:rounded-b-md flex flex-col-reverse overflow-y-auto w-full h-[240px]"
               >
                 <div>
                   <table
