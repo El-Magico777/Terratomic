@@ -285,7 +285,23 @@ export class BuildMenu extends LitElement {
     if (!this.game || !this.game.myPlayer()) {
       return false;
     }
-    return this.game.myPlayer()!.gold() >= this.cost(item);
+    const player = this.game.myPlayer()!;
+    if (player.gold() < this.cost(item)) {
+      return false;
+    }
+
+    switch (item.unitType) {
+      case UnitType.Warship:
+        return player.unitsOwned(UnitType.Port) > 0;
+      case UnitType.FighterJet:
+        return player.unitsOwned(UnitType.Airfield) > 0;
+      case UnitType.AtomBomb:
+      case UnitType.HydrogenBomb:
+      case UnitType.MIRV:
+        return player.unitsOwned(UnitType.MissileSilo) > 0;
+      default:
+        return true;
+    }
   }
 
   private cost(item: BuildItemDisplay): Gold {

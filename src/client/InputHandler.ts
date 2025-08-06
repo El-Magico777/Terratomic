@@ -208,20 +208,6 @@ export class InputHandler {
     });
     this._pendingBuildUnitType = null; // Initialize the backing field
 
-    // Listen for changes in pendingBuildUnitType to update cursor
-    Object.defineProperty(this.uiState, "pendingBuildUnitType", {
-      set: (value) => {
-        this._pendingBuildUnitType = value;
-        if (value) {
-          this.canvas.style.cursor = "crosshair"; // Or a custom image cursor
-        } else {
-          this.canvas.style.cursor = "default";
-        }
-      },
-      get: () => this._pendingBuildUnitType,
-    });
-    this._pendingBuildUnitType = null; // Initialize the backing field
-
     this.moveInterval = setInterval(() => {
       let deltaX = 0;
       let deltaY = 0;
@@ -401,10 +387,25 @@ export class InputHandler {
       const player = this.game.myPlayer();
       const unitType = this.uiState.pendingBuildUnitType;
 
+      // Client-side validation for UX feedback
       if (
         player &&
         player.gold() >= this.game.config().unitInfo(unitType).cost(player) &&
-        this.game.owner(tile) === player
+        this.game.owner(tile) === player &&
+        // Additional checks for specific unit types
+        ((unitType === UnitType.Warship && this.game.isOcean(tile)) ||
+          (unitType === UnitType.FighterJet && this.game.isLand(tile)) ||
+          (unitType === UnitType.AtomBomb && this.game.isLand(tile)) ||
+          (unitType === UnitType.HydrogenBomb && this.game.isLand(tile)) ||
+          (unitType === UnitType.MIRV && this.game.isLand(tile)) ||
+          (unitType === UnitType.Port && this.game.isOceanShore(tile)) ||
+          (unitType === UnitType.Airfield && this.game.isLand(tile)) ||
+          (unitType === UnitType.MissileSilo && this.game.isLand(tile)) ||
+          (unitType === UnitType.SAMLauncher && this.game.isLand(tile)) ||
+          (unitType === UnitType.DefensePost && this.game.isLand(tile)) ||
+          (unitType === UnitType.Hospital && this.game.isLand(tile)) ||
+          (unitType === UnitType.Academy && this.game.isLand(tile)) ||
+          (unitType === UnitType.City && this.game.isLand(tile)))
       ) {
         this.eventBus.emit(new BuildUnitIntentEvent(unitType, tile));
       }
@@ -490,7 +491,7 @@ export class InputHandler {
   private onContextMenu(event: MouseEvent) {
     if (this.uiState.pendingBuildUnitType) {
       this.uiState.pendingBuildUnitType = null;
-      event.preventDefault();
+      event.preventDefault(); // Prevent radial menu from opening
       return;
     }
     event.preventDefault();
