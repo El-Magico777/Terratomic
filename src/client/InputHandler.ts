@@ -398,7 +398,9 @@ export class InputHandler {
           (unitType === UnitType.AtomBomb && this.game.isLand(tile)) ||
           (unitType === UnitType.HydrogenBomb && this.game.isLand(tile)) ||
           (unitType === UnitType.MIRV && this.game.isLand(tile)) ||
-          (unitType === UnitType.Port && this.game.isOceanShore(tile)) ||
+          (unitType === UnitType.Port &&
+            this.game.isLand(tile) &&
+            this.game.owner(tile) === player) ||
           (unitType === UnitType.Airfield && this.game.isLand(tile)) ||
           (unitType === UnitType.MissileSilo && this.game.isLand(tile)) ||
           (unitType === UnitType.SAMLauncher && this.game.isLand(tile)) ||
