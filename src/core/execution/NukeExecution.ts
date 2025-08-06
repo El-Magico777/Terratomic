@@ -169,6 +169,9 @@ export class NukeExecution implements Execution {
     } else {
       this.updateNukeTargetable();
       this.nuke.move(nextTile);
+      console.log(
+        `Nuke ${this.nuke.id()} moving to tile: ${this.mg.x(this.nuke.tile())}, ${this.mg.y(this.nuke.tile())}`,
+      );
     }
   }
 
