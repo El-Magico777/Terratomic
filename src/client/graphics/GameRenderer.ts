@@ -1,7 +1,10 @@
 import { EventBus } from "../../core/EventBus";
 import { GameView } from "../../core/game/GameView";
 import { GameStartingModal } from "../GameStartingModal";
-import { RefreshGraphicsEvent as RedrawGraphicsEvent } from "../InputHandler";
+import {
+  InputHandler,
+  RefreshGraphicsEvent as RedrawGraphicsEvent,
+} from "../InputHandler";
 import { TransformHandler } from "./TransformHandler";
 import { UIState } from "./UIState";
 import { BuildMenu } from "./layers/BuildMenu";
@@ -44,6 +47,7 @@ export function createRenderer(
   const uiState: UIState = {
     attackRatio: 0.2, // 20% as a float
     investmentRate: 0.5, // 50% default investment rate
+    pendingBuildUnitType: null,
   };
 
   //hide when the game renders
@@ -68,6 +72,8 @@ export function createRenderer(
   }
   buildMenu.game = game;
   buildMenu.eventBus = eventBus;
+  buildMenu.uiState = uiState;
+  buildMenu.uiState = uiState;
 
   const leaderboard = document.querySelector("leader-board") as Leaderboard;
   if (!leaderboard || !(leaderboard instanceof Leaderboard)) {
@@ -254,6 +260,7 @@ export function createRenderer(
     transformHandler,
     uiState,
     layers,
+    new InputHandler(canvas, eventBus, uiState, game, transformHandler),
   );
 }
 
@@ -267,6 +274,7 @@ export class GameRenderer {
     public transformHandler: TransformHandler,
     public uiState: UIState,
     private layers: Layer[],
+    private inputHandler: InputHandler,
   ) {
     const context = canvas.getContext("2d");
     if (context === null) throw new Error("2d context not supported");
@@ -283,6 +291,7 @@ export class GameRenderer {
     });
 
     this.layers.forEach((l) => l.init?.());
+    this.inputHandler.initialize();
 
     document.body.appendChild(this.canvas);
     window.addEventListener("resize", () => this.resizeCanvas());

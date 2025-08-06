@@ -2,12 +2,8 @@ import { html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { EventBus } from "../../../core/EventBus";
 import { Gold, PlayerID, PlayerType, UnitType } from "../../../core/game/Game";
-import { TileRef } from "../../../core/game/GameMap";
 import { GameView, PlayerView } from "../../../core/game/GameView";
-import {
-  AttackRatioEvent,
-  ShowBuildMenuInControlPanelEvent,
-} from "../../InputHandler";
+import { AttackRatioEvent } from "../../InputHandler";
 import {
   SendBomberIntentEvent,
   SendSetAutoBombingEvent,
@@ -80,9 +76,6 @@ export class ControlPanel2 extends LitElement implements Layer {
   @state()
   private activeTab: "Build" | "Nukes" | "Units" | "Bombers" | "Options" =
     "Bombers";
-
-  @state()
-  private buildTile: TileRef | null = null;
 
   @state()
   private _lastAirfieldCount: number = 0;
@@ -158,13 +151,6 @@ export class ControlPanel2 extends LitElement implements Layer {
     this.init_ = true;
     this.uiState.attackRatio = this.attackRatio;
     this.currentTroopRatio = this.targetTroopRatio;
-    this.eventBus.on(
-      ShowBuildMenuInControlPanelEvent,
-      (event: ShowBuildMenuInControlPanelEvent) => {
-        this.buildTile = event.tile;
-        this.activeTab = "Build";
-      },
-    );
 
     this.eventBus.on(AttackRatioEvent, (event: AttackRatioEvent) => {
       let newAttackRatio =
@@ -734,7 +720,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                 <build-menu
                   .game=${this.game}
                   .eventBus=${this.eventBus}
-                  .clickedTile=${this.buildTile}
+                  .uiState=${this.uiState}
                   .unitFilter=${this.StructureTypes}
                 ></build-menu>
               `
@@ -744,7 +730,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                 <build-menu
                   .game=${this.game}
                   .eventBus=${this.eventBus}
-                  .clickedTile=${this.buildTile}
+                  .uiState=${this.uiState}
                   .unitFilter=${this.NukeTypes}
                 ></build-menu>
               `
@@ -754,7 +740,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                 <build-menu
                   .game=${this.game}
                   .eventBus=${this.eventBus}
-                  .clickedTile=${this.buildTile}
+                  .uiState=${this.uiState}
                   .unitFilter=${this.CombatUnitTypes}
                 ></build-menu>
               `

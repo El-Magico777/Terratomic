@@ -105,7 +105,14 @@ export class CenterCameraEvent implements GameEvent {
   constructor() {}
 }
 
+import { UnitType } from "../core/game/Game";
+import { GameView } from "../core/game/GameView";
+import { TransformHandler } from "./graphics/TransformHandler";
+import { UIState } from "./graphics/UIState";
+import { BuildUnitIntentEvent } from "./Transport";
+
 export class InputHandler {
+  private _pendingBuildUnitType: UnitType | null = null;
   private lastPointerX: number = 0;
   private lastPointerY: number = 0;
 
@@ -132,6 +139,9 @@ export class InputHandler {
   constructor(
     private canvas: HTMLCanvasElement,
     private eventBus: EventBus,
+    public uiState: UIState,
+    public game: GameView,
+    public transformHandler: TransformHandler,
   ) {}
 
   initialize() {
@@ -178,6 +188,20 @@ export class InputHandler {
       }
     });
     this.pointers.clear();
+
+    // Listen for changes in pendingBuildUnitType to update cursor
+    Object.defineProperty(this.uiState, "pendingBuildUnitType", {
+      set: (value) => {
+        this._pendingBuildUnitType = value;
+        if (value) {
+          this.canvas.style.cursor = "crosshair"; // Or a custom image cursor
+        } else {
+          this.canvas.style.cursor = "default";
+        }
+      },
+      get: () => this._pendingBuildUnitType,
+    });
+    this._pendingBuildUnitType = null; // Initialize the backing field
 
     this.moveInterval = setInterval(() => {
       let deltaX = 0;
@@ -332,6 +356,41 @@ export class InputHandler {
     this.pointerDown = false;
     this.pointers.clear();
 
+    if (this.uiState.pendingBuildUnitType) {
+      const cell = this.transformHandler.screenToWorldCoordinates(
+        event.x,
+        event.y,
+      );
+      const tile = this.game.ref(cell.x, cell.y);
+      const player = this.game.myPlayer();
+      const unitType = this.uiState.pendingBuildUnitType;
+
+      // Client-side validation for UX feedback
+      if (
+        player &&
+        player.gold() >= this.game.config().unitInfo(unitType).cost(player) &&
+        this.game.owner(tile) === player &&
+        // Additional checks for specific unit types
+        ((unitType === UnitType.Warship && this.game.isOcean(tile)) ||
+          (unitType === UnitType.FighterJet && this.game.isLand(tile)) ||
+          (unitType === UnitType.AtomBomb && this.game.isLand(tile)) ||
+          (unitType === UnitType.HydrogenBomb && this.game.isLand(tile)) ||
+          (unitType === UnitType.MIRV && this.game.isLand(tile)) ||
+          (unitType === UnitType.Port && this.game.isOceanShore(tile)) ||
+          (unitType === UnitType.Airfield && this.game.isLand(tile)) ||
+          (unitType === UnitType.MissileSilo && this.game.isLand(tile)) ||
+          (unitType === UnitType.SAMLauncher && this.game.isLand(tile)) ||
+          (unitType === UnitType.DefensePost && this.game.isLand(tile)) ||
+          (unitType === UnitType.Hospital && this.game.isLand(tile)) ||
+          (unitType === UnitType.Academy && this.game.isLand(tile)) ||
+          (unitType === UnitType.City && this.game.isLand(tile)))
+      ) {
+        this.eventBus.emit(new BuildUnitIntentEvent(unitType, tile));
+      }
+      this.uiState.pendingBuildUnitType = null;
+      return;
+    }
+
     if (this.isModifierKeyPressed(event)) {
       this.eventBus.emit(new ShowBuildMenuEvent(event.clientX, event.clientY));
       return;
@@ -411,6 +470,11 @@ export class InputHandler {
   }
 
   private onContextMenu(event: MouseEvent) {
+    if (this.uiState.pendingBuildUnitType) {
+      this.uiState.pendingBuildUnitType = null;
+      event.preventDefault(); // Prevent radial menu from opening
+      return;
+    }
     event.preventDefault();
     this.eventBus.emit(new ContextMenuEvent(event.clientX, event.clientY));
   }
