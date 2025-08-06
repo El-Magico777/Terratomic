@@ -1,7 +1,6 @@
 import * as d3 from "d3";
 import allianceIcon from "../../../../resources/images/AllianceIconWhite.svg";
 import boatIcon from "../../../../resources/images/BoatIconWhite.svg";
-import buildIcon from "../../../../resources/images/BuildIconWhite.svg";
 import disabledIcon from "../../../../resources/images/DisabledIcon.svg";
 import infoIcon from "../../../../resources/images/InfoIcon.svg";
 import swordIcon from "../../../../resources/images/SwordIconWhite.svg";
@@ -19,7 +18,6 @@ import {
   CloseViewEvent,
   ContextMenuEvent,
   MouseUpEvent,
-  ShowBuildMenuInControlPanelEvent,
 } from "../../InputHandler";
 import {
   SendAllianceRequestIntentEvent,
@@ -38,7 +36,6 @@ import { PlayerPanel } from "./PlayerPanel";
 enum Slot {
   Info,
   Boat,
-  Build,
   Ally,
 }
 
@@ -70,7 +67,7 @@ export class RadialMenu implements Layer {
       },
     ],
     [Slot.Ally, { name: "ally", disabled: true, action: () => {} }],
-    [Slot.Build, { name: "build", disabled: true, action: () => {} }],
+
     [
       Slot.Info,
       {
@@ -327,12 +324,6 @@ export class RadialMenu implements Layer {
     actions: PlayerActions,
     tile: TileRef,
   ) {
-    if (!this.g.inSpawnPhase()) {
-      this.activateMenuElement(Slot.Build, "#ebe250", buildIcon, () => {
-        this.eventBus.emit(new ShowBuildMenuInControlPanelEvent(tile));
-      });
-    }
-
     if (this.g.hasOwner(tile)) {
       this.activateMenuElement(Slot.Info, "#64748B", infoIcon, () => {
         this.playerPanel.show(actions, tile);
