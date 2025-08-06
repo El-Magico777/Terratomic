@@ -32,44 +32,21 @@ export class WarshipExecution implements Execution {
     if (isUnit(this.input)) {
       this.warship = this.input;
     } else {
-      let spawnTile: TileRef | false = false;
-      const player = this.input.owner;
-      const desiredTile = this.input.patrolTile;
-
-      // 1. Check if the desired tile is valid (ocean and owned by player)
-      if (
-        this.mg.isOcean(desiredTile) &&
-        this.mg.owner(desiredTile) === player
-      ) {
-        spawnTile = desiredTile;
-      } else {
-        // 2. If not, find the closest valid ocean tile near a port owned by the player
-        const ports = player.units(UnitType.Port).filter((u) => u.isActive());
-        if (ports.length > 0) {
-          for (const port of ports) {
-            const neighbors = this.mg.neighbors(port.tile());
-            for (const neighborTile of neighbors) {
-              if (
-                this.mg.isOcean(neighborTile) &&
-                this.mg.owner(neighborTile) === player
-              ) {
-                spawnTile = neighborTile;
-                break;
-              }
-            }
-            if (spawnTile) break;
-          }
-        }
-      }
-
-      if (spawnTile === false) {
+      const spawn = this.input.owner.canBuild(
+        UnitType.Warship,
+        this.input.patrolTile,
+      );
+      if (spawn === false) {
         console.warn(
-          `Failed to find a suitable spawn tile for warship for ${player.name()}`,
+          `Failed to spawn warship for ${this.input.owner.name()} at ${this.input.patrolTile}`,
         );
         return;
       }
-
-      this.warship = player.buildUnit(UnitType.Warship, spawnTile, this.input);
+      this.warship = this.input.owner.buildUnit(
+        UnitType.Warship,
+        spawn,
+        this.input,
+      );
     }
   }
 
