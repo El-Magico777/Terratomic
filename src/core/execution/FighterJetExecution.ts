@@ -24,46 +24,14 @@ export class FighterJetExecution implements Execution {
     if ("isUnit" in this.input) {
       this.fighterJet = this.input;
     } else {
-      let spawnTile: TileRef | false = false;
-      const player = this.input.owner;
-      const desiredTile = this.input.patrolTile;
-
-      // 1. Check if the desired tile is valid (land and owned by player)
-      if (
-        this.mg.isLand(desiredTile) &&
-        this.mg.owner(desiredTile) === player
-      ) {
-        spawnTile = desiredTile;
-      } else {
-        // 2. If not, find the closest valid land tile near an airfield owned by the player
-        const airfields = player
-          .units(UnitType.Airfield)
-          .filter((u) => u.isActive());
-        if (airfields.length > 0) {
-          for (const airfield of airfields) {
-            const neighbors = this.mg.neighbors(airfield.tile());
-            for (const neighborTile of neighbors) {
-              if (
-                this.mg.isLand(neighborTile) &&
-                this.mg.owner(neighborTile) === player
-              ) {
-                spawnTile = neighborTile;
-                break;
-              }
-            }
-            if (spawnTile) break;
-          }
-        }
-      }
-
-      if (spawnTile === false) {
-        console.warn(
-          `Failed to find a suitable spawn tile for fighter jet for ${player.name()}`,
-        );
+      const spawn = this.input.owner.canBuild(
+        UnitType.FighterJet,
+        this.input.patrolTile,
+      );
+      if (!spawn) {
         return;
       }
-
-      this.fighterJet = player.buildUnit(UnitType.FighterJet, spawnTile, {
+      this.fighterJet = this.input.owner.buildUnit(UnitType.FighterJet, spawn, {
         patrolTile: this.input.patrolTile,
       });
     }
