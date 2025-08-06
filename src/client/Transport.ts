@@ -163,14 +163,14 @@ export class SendHashEvent implements GameEvent {
 export class MoveWarshipIntentEvent implements GameEvent {
   constructor(
     public readonly unitId: number,
-    public readonly tile: number,
+    public readonly tile: TileRef,
   ) {}
 }
 
 export class MoveFighterJetIntentEvent implements GameEvent {
   constructor(
     public readonly unitId: number,
-    public readonly tile: number,
+    public readonly tile: TileRef,
   ) {}
 }
 

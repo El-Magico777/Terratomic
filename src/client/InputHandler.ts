@@ -105,7 +105,14 @@ export class CenterCameraEvent implements GameEvent {
   constructor() {}
 }
 
+import { UnitType } from "../core/game/Game";
+import { GameView } from "../core/game/GameView";
+import { TransformHandler } from "./graphics/TransformHandler";
+import { UIState } from "./graphics/UIState";
+import { BuildUnitIntentEvent } from "./Transport";
+
 export class InputHandler {
+  private _pendingBuildUnitType: UnitType | null = null;
   private lastPointerX: number = 0;
   private lastPointerY: number = 0;
 
@@ -134,6 +141,9 @@ export class InputHandler {
   constructor(
     private canvas: HTMLCanvasElement,
     private eventBus: EventBus,
+    public uiState: UIState,
+    public game: GameView,
+    public transformHandler: TransformHandler,
   ) {}
 
   initialize() {
@@ -183,6 +193,34 @@ export class InputHandler {
       }
     });
     this.pointers.clear();
+
+    // Listen for changes in pendingBuildUnitType to update cursor
+    Object.defineProperty(this.uiState, "pendingBuildUnitType", {
+      set: (value) => {
+        this._pendingBuildUnitType = value;
+        if (value) {
+          this.canvas.style.cursor = "crosshair"; // Or a custom image cursor
+        } else {
+          this.canvas.style.cursor = "default";
+        }
+      },
+      get: () => this._pendingBuildUnitType,
+    });
+    this._pendingBuildUnitType = null; // Initialize the backing field
+
+    // Listen for changes in pendingBuildUnitType to update cursor
+    Object.defineProperty(this.uiState, "pendingBuildUnitType", {
+      set: (value) => {
+        this._pendingBuildUnitType = value;
+        if (value) {
+          this.canvas.style.cursor = "crosshair"; // Or a custom image cursor
+        } else {
+          this.canvas.style.cursor = "default";
+        }
+      },
+      get: () => this._pendingBuildUnitType,
+    });
+    this._pendingBuildUnitType = null; // Initialize the backing field
 
     this.moveInterval = setInterval(() => {
       let deltaX = 0;
@@ -354,49 +392,26 @@ export class InputHandler {
     this.pointerDown = false;
     this.pointers.clear();
 
-    // ---------- RESTORED SAFEGUARD (drag vs click) ----------
-    // Treat as click only if the pointer barely moved since pointerdown.
-    const dist =
-      Math.abs(upX - this.lastPointerDownX) +
-      Math.abs(upY - this.lastPointerDownY);
-
-    // If moved too much, consider it a drag/pan; do NOT fire click/place actions.
-    if (dist >= 10) {
-      return;
-    }
-    // --------------------------------------------------------
-
-    // If we reach here, it's a "click" interaction.
-
-    // Pending build: place unit on click (still respects the drag-vs-click guard above)
     if (this.uiState.pendingBuildUnitType) {
       const cell = this.transformHandler.screenToWorldCoordinates(
         event.x,
         event.y,
       );
-
-      // --- ADDED VALIDATION HERE ---
-      if (!this.game.isValidCoord(cell.x, cell.y)) {
-        // If coordinates are invalid, just deselect build state and return
-        if (!this.uiState.multibuildEnabled) {
-          this.uiState.pendingBuildUnitType = null;
-        }
-        return;
-      }
-      // --- END ADDED VALIDATION ---
-
       const tile = this.game.ref(cell.x, cell.y);
-      this.eventBus.emit(
-        new BuildUnitIntentEvent(this.uiState.pendingBuildUnitType, tile),
-      );
+      const player = this.game.myPlayer();
+      const unitType = this.uiState.pendingBuildUnitType;
 
-      if (!this.uiState.multibuildEnabled) {
-        this.uiState.pendingBuildUnitType = null;
+      if (
+        player &&
+        player.gold() >= this.game.config().unitInfo(unitType).cost(player) &&
+        this.game.owner(tile) === player
+      ) {
+        this.eventBus.emit(new BuildUnitIntentEvent(unitType, tile));
       }
+      this.uiState.pendingBuildUnitType = null;
       return;
     }
 
-    // No build pending → normal “click up” behavior
     if (this.isModifierKeyPressed(event)) {
       this.eventBus.emit(new ShowBuildMenuEvent(upX, upY));
       return;
@@ -473,35 +488,11 @@ export class InputHandler {
   }
 
   private onContextMenu(event: MouseEvent) {
-    // If the previous right-click just cancelled build mode, ignore the second, immediate contextmenu.
-    if (this.suppressNextContextMenu) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      event.stopPropagation();
-      return;
-    }
-
     if (this.uiState.pendingBuildUnitType) {
-      // Cancel build state and suppress any immediate follow-up contextmenu
       this.uiState.pendingBuildUnitType = null;
       event.preventDefault();
-      event.stopImmediatePropagation();
-      event.stopPropagation();
-
-      this.suppressNextContextMenu = true;
-
-      // Clear suppression on the next frame (and as fallbacks on pointerup/next task)
-      const clear = () => {
-        this.suppressNextContextMenu = false;
-      };
-      requestAnimationFrame(clear);
-      window.addEventListener("pointerup", clear, { once: true });
-      setTimeout(clear, 0);
-
       return;
     }
-
-    // Not in build state → open radial menu
     event.preventDefault();
     this.eventBus.emit(new ContextMenuEvent(event.clientX, event.clientY));
   }

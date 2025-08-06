@@ -16,11 +16,10 @@ import samlauncherIcon from "../../../../resources/images/SamLauncherIconWhite.s
 import shieldIcon from "../../../../resources/images/ShieldIconWhite.svg";
 import { translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
-import { Gold, PlayerActions, UnitType } from "../../../core/game/Game";
-import { TileRef } from "../../../core/game/GameMap";
+import { Gold, UnitType } from "../../../core/game/Game";
 import { GameView } from "../../../core/game/GameView";
-import { BuildUnitIntentEvent } from "../../Transport";
 import { renderNumber } from "../../Utils";
+import { UIState } from "../UIState";
 
 interface BuildItemDisplay {
   unitType: UnitType;
@@ -140,60 +139,13 @@ export class BuildMenu extends LitElement {
   eventBus: EventBus;
 
   @property({ type: Object })
-  clickedTile: TileRef | null;
+  uiState: UIState;
 
   @property({ type: Array })
   unitFilter: UnitType[] | null = null;
 
   @state()
-  private playerActions: PlayerActions | null;
-
-  @state()
   private filteredBuildTable: BuildItemDisplay[][] = buildTable;
-
-  updated(changedProperties: Map<string | number | symbol, unknown>) {
-    if (
-      changedProperties.has("clickedTile") ||
-      changedProperties.has("unitFilter")
-    ) {
-      if (this.clickedTile) {
-        if (!this.game) {
-          console.warn("BuildMenu: Game object is null.");
-          return;
-        }
-
-        let currentBuildTable = buildTable;
-        if (this.unitFilter && this.unitFilter.length > 0) {
-          currentBuildTable = buildTable.map((row) =>
-            row.filter((item) => this.unitFilter!.includes(item.unitType)),
-          );
-        }
-
-        this.filteredBuildTable = currentBuildTable.map((row) =>
-          row.filter(
-            (item) => !this.game!.config().isUnitDisabled(item.unitType),
-          ),
-        );
-
-        this.game
-          .myPlayer()
-          ?.actions(this.clickedTile)
-          .then((actions) => {
-            this.playerActions = actions;
-            this.requestUpdate();
-          })
-          .catch((error) => {
-            console.error("BuildMenu: Error fetching player actions:", error);
-            this.playerActions = null;
-            this.requestUpdate();
-          });
-      } else {
-        this.playerActions = null;
-        this.filteredBuildTable = buildTable;
-        this.requestUpdate();
-      }
-    }
-  }
 
   static styles = css`
     :host {
@@ -263,6 +215,10 @@ export class BuildMenu extends LitElement {
     .build-button:disabled .build-cost {
       color: #ff4444;
     }
+    .selected-for-build {
+      border-color: #34d399; /* A bright green to indicate selection */
+      box-shadow: 0 0 10px #34d399;
+    }
     .build-icon {
       width: 28px;
       height: 28px;
@@ -326,24 +282,17 @@ export class BuildMenu extends LitElement {
   `;
 
   private canBuild(item: BuildItemDisplay): boolean {
-    if (this.game?.myPlayer() === null || this.playerActions === null) {
+    if (!this.game || !this.game.myPlayer()) {
       return false;
     }
-    const buildableUnits = this.playerActions?.buildableUnits ?? [];
-    const unit = buildableUnits.filter((u) => u.type === item.unitType);
-    if (unit.length === 0) {
-      return false;
-    }
-    return unit[0].canBuild !== false;
+    return this.game.myPlayer()!.gold() >= this.cost(item);
   }
 
   private cost(item: BuildItemDisplay): Gold {
-    for (const bu of this.playerActions?.buildableUnits ?? []) {
-      if (bu.type === item.unitType) {
-        return bu.cost;
-      }
-    }
-    return 0n;
+    return this.game
+      .config()
+      .unitInfo(item.unitType)
+      .cost(this.game.myPlayer()!);
   }
 
   private count(item: BuildItemDisplay): string {
@@ -356,46 +305,45 @@ export class BuildMenu extends LitElement {
   }
 
   public onBuildSelected = (item: BuildItemDisplay) => {
-    if (!this.clickedTile) {
-      return;
+    if (this.uiState.pendingBuildUnitType === item.unitType) {
+      this.uiState.pendingBuildUnitType = null;
+    } else {
+      this.uiState.pendingBuildUnitType = item.unitType;
     }
-    this.eventBus.emit(
-      new BuildUnitIntentEvent(item.unitType, this.clickedTile),
-    );
+    this.requestUpdate();
   };
 
   render() {
-    if (!this.clickedTile) {
-      return html`
-        <div class="build-menu-prompt">
-          <p>
-            Right-click a tile you own and select the build icon to see options
-            here.
-          </p>
-        </div>
-      `;
+    if (!this.uiState) {
+      return html`<div>Loading build options...</div>`;
     }
 
-    if (!this.playerActions) {
-      return html`
-        <div class="build-menu-prompt">
-          <p>Loading build options...</p>
-        </div>
-      `;
+    let currentBuildTable = buildTable;
+    if (this.unitFilter && this.unitFilter.length > 0) {
+      currentBuildTable = buildTable.map((row) =>
+        row.filter((item) => this.unitFilter!.includes(item.unitType)),
+      );
     }
+
+    const filteredAndDisabledCheckedTable = currentBuildTable.map((row) =>
+      row.filter((item) => !this.game!.config().isUnitDisabled(item.unitType)),
+    );
 
     return html`
       <div
         class="build-menu"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
-        ${this.filteredBuildTable.map(
+        ${filteredAndDisabledCheckedTable.map(
           (row) => html`
             <div class="build-row">
               ${row.map((item) => {
                 return html`
                   <button
-                    class="build-button"
+                    class="build-button ${this.uiState.pendingBuildUnitType ===
+                    item.unitType
+                      ? "selected-for-build"
+                      : ""}"
                     @click=${() => this.onBuildSelected(item)}
                     ?disabled=${!this.canBuild(item)}
                     title=${item.description
