@@ -384,33 +384,9 @@ export class InputHandler {
         event.y,
       );
       const tile = this.game.ref(cell.x, cell.y);
-      const player = this.game.myPlayer();
-      const unitType = this.uiState.pendingBuildUnitType;
-
-      // Client-side validation for UX feedback
-      if (
-        player &&
-        player.gold() >= this.game.config().unitInfo(unitType).cost(player) &&
-        this.game.owner(tile) === player &&
-        // Additional checks for specific unit types
-        ((unitType === UnitType.Warship && this.game.isOcean(tile)) ||
-          (unitType === UnitType.FighterJet && this.game.isLand(tile)) ||
-          (unitType === UnitType.AtomBomb && this.game.isLand(tile)) ||
-          (unitType === UnitType.HydrogenBomb && this.game.isLand(tile)) ||
-          (unitType === UnitType.MIRV && this.game.isLand(tile)) ||
-          (unitType === UnitType.Port &&
-            this.game.isLand(tile) &&
-            this.game.owner(tile) === player) ||
-          (unitType === UnitType.Airfield && this.game.isLand(tile)) ||
-          (unitType === UnitType.MissileSilo && this.game.isLand(tile)) ||
-          (unitType === UnitType.SAMLauncher && this.game.isLand(tile)) ||
-          (unitType === UnitType.DefensePost && this.game.isLand(tile)) ||
-          (unitType === UnitType.Hospital && this.game.isLand(tile)) ||
-          (unitType === UnitType.Academy && this.game.isLand(tile)) ||
-          (unitType === UnitType.City && this.game.isLand(tile)))
-      ) {
-        this.eventBus.emit(new BuildUnitIntentEvent(unitType, tile));
-      }
+      this.eventBus.emit(
+        new BuildUnitIntentEvent(this.uiState.pendingBuildUnitType, tile),
+      );
       this.uiState.pendingBuildUnitType = null;
       return;
     }
