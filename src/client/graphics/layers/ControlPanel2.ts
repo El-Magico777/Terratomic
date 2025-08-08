@@ -272,7 +272,11 @@ export class ControlPanel2 extends LitElement implements Layer {
     this.requestUpdate();
 
     // Force build-menu to re-render if its tab is active
-    if (this.activeTab === "Build" || this.activeTab === "Attack") {
+    if (
+      this.activeTab === "Build" ||
+      this.activeTab === "Nukes" ||
+      this.activeTab === "Units"
+    ) {
       const buildMenuElement = this.querySelector(
         "build-menu",
       ) as LitElement | null;
