@@ -623,10 +623,10 @@ export class ControlPanel2 extends LitElement implements Layer {
             : ""}
         </div>
 
-        <div class="tab-content flex-grow overflow-y-auto">
+        <div class="tab-content flex-grow overflow-y-auto max-w-full">
           ${this.activeTab === "Bombers"
             ? html`
-                <div class="text-white flex">
+                <div class="text-tan flex w-full">
                   <!-- Column 1: Auto-Bombing -->
                   <div class="w-1/3 pr-2">
                     <h3 class="military-heading mb-2">Auto-Bombing</h3>

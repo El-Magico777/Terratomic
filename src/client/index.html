@@ -235,9 +235,19 @@
       class="bottom-0 w-full flex-col-reverse sm:flex-row z-50 md:w-[320px]"
       style="position: fixed; pointer-events: none"
     >
+      <div class="flex">
+        <control-panel
+          class="w-1/4 max-w-[270px] min-w-[270px]"
+          style="pointer-events: auto"
+        ></control-panel>
+        <control-panel2
+          class="w-1/2 max-w-[900px] min-w-[500px]"
+          style="pointer-events: auto"
+        ></control-panel2>
+      </div>
       <div
-        class="w-full sm:w-2/3 sm:fixed sm:right-0 sm:bottom-0 sm:flex justify-end"
-        style="pointer-events: none"
+        class="w-1/4 max-w-[270px] flex flex-col"
+        style="pointer-events: auto"
       >
         <chat-display></chat-display>
         <events-display></events-display>
