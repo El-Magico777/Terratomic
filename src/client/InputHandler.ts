@@ -136,6 +136,7 @@ export class InputHandler {
 
   private userSettings: UserSettings = new UserSettings();
 
+  private _initialized = false;
   constructor(
     private canvas: HTMLCanvasElement,
     private eventBus: EventBus,
@@ -145,6 +146,9 @@ export class InputHandler {
   ) {}
 
   initialize() {
+    if (this._initialized) return;
+    this._initialized = true;
+
     this.keybinds = {
       toggleView: "Space",
       centerCamera: "KeyC",
@@ -350,27 +354,46 @@ export class InputHandler {
   }
 
   onPointerUp(event: PointerEvent) {
-    if (event.button > 0) {
+    if (
+      event.button > 0 ||
+      (typeof event.isPrimary === "boolean" && !event.isPrimary)
+    ) {
       return;
     }
+
+    // Ensure this pointerup originated on the game canvas, not on UI overlays
+    // When listener is on `window`, target is still the original element.
+    const path = event.composedPath?.() ?? [];
+    const cameFromCanvas =
+      event.target === this.canvas ||
+      (path.length > 0 && path.includes(this.canvas));
+
+    if (!cameFromCanvas) {
+      return;
+    }
+
     this.pointerDown = false;
     this.pointers.clear();
 
+    // Build if a unit is selected
     if (this.uiState.pendingBuildUnitType) {
       const cell = this.transformHandler.screenToWorldCoordinates(
         event.x,
         event.y,
       );
       const tile = this.game.ref(cell.x, cell.y);
+
       this.eventBus.emit(
         new BuildUnitIntentEvent(this.uiState.pendingBuildUnitType, tile),
       );
+
       if (!this.uiState.multibuildEnabled) {
         this.uiState.pendingBuildUnitType = null;
       }
       return;
     }
 
+    // No build pending → normal “click up” behavior
     if (this.isModifierKeyPressed(event)) {
       this.eventBus.emit(new ShowBuildMenuEvent(event.clientX, event.clientY));
       return;
@@ -380,22 +403,7 @@ export class InputHandler {
       return;
     }
 
-    const dist =
-      Math.abs(event.x - this.lastPointerDownX) +
-      Math.abs(event.y - this.lastPointerDownY);
-    if (dist < 10) {
-      if (event.pointerType === "touch") {
-        this.eventBus.emit(new ContextMenuEvent(event.clientX, event.clientY));
-        event.preventDefault();
-        return;
-      }
-
-      if (!this.userSettings.leftClickOpensMenu() || event.shiftKey) {
-        this.eventBus.emit(new MouseUpEvent(event.x, event.y));
-      } else {
-        this.eventBus.emit(new ContextMenuEvent(event.clientX, event.clientY));
-      }
-    }
+    this.eventBus.emit(new MouseUpEvent(event.clientX, event.clientY));
   }
 
   private onScroll(event: WheelEvent) {
