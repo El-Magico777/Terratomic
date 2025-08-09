@@ -195,6 +195,9 @@ export class Transport {
   private onconnect: () => void;
   private onmessage: (msg: ServerMessage) => void;
 
+  private _lastBuildAt = 0;
+  private _lastBuildUnit: UnitType | null = null;
+
   private pingInterval: number | null = null;
   public readonly isLocal: boolean;
   constructor(
@@ -559,6 +562,15 @@ export class Transport {
   }
 
   private onBuildUnitIntent(event: BuildUnitIntentEvent) {
+    const now =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    // Drop identical unit builds fired within ~60ms (same pointer-up burst)
+    if (this._lastBuildUnit === event.unit && now - this._lastBuildAt < 60) {
+      return;
+    }
+    this._lastBuildUnit = event.unit;
+    this._lastBuildAt = now;
+
     this.sendIntent({
       type: "build_unit",
       clientID: this.lobbyConfig.clientID,
