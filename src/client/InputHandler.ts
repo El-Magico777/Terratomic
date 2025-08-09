@@ -382,6 +382,17 @@ export class InputHandler {
         event.x,
         event.y,
       );
+
+      // --- ADDED VALIDATION HERE ---
+      if (!this.game.isValidCoord(cell.x, cell.y)) {
+        // If coordinates are invalid, just deselect build state and return
+        if (!this.uiState.multibuildEnabled) {
+          this.uiState.pendingBuildUnitType = null;
+        }
+        return;
+      }
+      // --- END ADDED VALIDATION ---
+
       const tile = this.game.ref(cell.x, cell.y);
 
       this.eventBus.emit(
