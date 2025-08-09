@@ -118,6 +118,7 @@ export class InputHandler {
 
   private lastPointerDownX: number = 0;
   private lastPointerDownY: number = 0;
+  private suppressNextContextMenu = false;
 
   private pointers: Map<number, PointerEvent> = new Map();
 
@@ -381,6 +382,17 @@ export class InputHandler {
         event.x,
         event.y,
       );
+
+      // --- ADDED VALIDATION HERE ---
+      if (!this.game.isValidCoord(cell.x, cell.y)) {
+        // If coordinates are invalid, just deselect build state and return
+        if (!this.uiState.multibuildEnabled) {
+          this.uiState.pendingBuildUnitType = null;
+        }
+        return;
+      }
+      // --- END ADDED VALIDATION ---
+
       const tile = this.game.ref(cell.x, cell.y);
 
       this.eventBus.emit(
@@ -458,11 +470,35 @@ export class InputHandler {
   }
 
   private onContextMenu(event: MouseEvent) {
-    if (this.uiState.pendingBuildUnitType) {
-      this.uiState.pendingBuildUnitType = null;
-      event.preventDefault(); // Prevent radial menu from opening
+    // If the previous right-click just cancelled build mode, ignore the second, immediate contextmenu.
+    if (this.suppressNextContextMenu) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      event.stopPropagation();
       return;
     }
+
+    if (this.uiState.pendingBuildUnitType) {
+      // Cancel build state and suppress any immediate follow-up contextmenu
+      this.uiState.pendingBuildUnitType = null;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      event.stopPropagation();
+
+      this.suppressNextContextMenu = true;
+
+      // Clear suppression on the next frame (and as fallbacks on pointerup/next task)
+      const clear = () => {
+        this.suppressNextContextMenu = false;
+      };
+      requestAnimationFrame(clear);
+      window.addEventListener("pointerup", clear, { once: true });
+      setTimeout(clear, 0);
+
+      return;
+    }
+
+    // Not in build state → open radial menu
     event.preventDefault();
     this.eventBus.emit(new ContextMenuEvent(event.clientX, event.clientY));
   }
