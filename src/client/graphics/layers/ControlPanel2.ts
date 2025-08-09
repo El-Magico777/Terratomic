@@ -11,6 +11,7 @@ import {
   SendSetTargetTroopRatioEvent,
 } from "../../Transport";
 import { UIState } from "../UIState";
+import { ToggleBuildPanelEvent } from "./ControlPanel";
 import { Layer } from "./Layer";
 
 @customElement("control-panel2")
@@ -51,6 +52,9 @@ export class ControlPanel2 extends LitElement implements Layer {
 
   @state()
   private _isVisible = false;
+
+  @state()
+  private isOpen = false;
 
   @state()
   private _manpower: number = 0;
@@ -178,6 +182,10 @@ export class ControlPanel2 extends LitElement implements Layer {
 
       this.attackRatio = newAttackRatio;
       this.onAttackRatioChange(this.attackRatio);
+    });
+
+    this.eventBus.on(ToggleBuildPanelEvent, (event: ToggleBuildPanelEvent) => {
+      this.isOpen = event.isOpen;
     });
   }
 
@@ -385,6 +393,14 @@ export class ControlPanel2 extends LitElement implements Layer {
   }
 
   updated(changedProperties: Map<string | number | symbol, unknown>) {
+    if (changedProperties.has("isOpen")) {
+      if (this.isOpen) {
+        this.classList.remove("hidden");
+      } else {
+        this.classList.add("hidden");
+      }
+    }
+
     if (this.activeTab === "Bombers") {
       if (
         changedProperties.has("activeTab") ||
@@ -548,8 +564,8 @@ export class ControlPanel2 extends LitElement implements Layer {
         }
       </style>
       <div
-        class="${this._isVisible
-          ? `w-full h-[270px] text-sm lg:text-m bg-gray-900 border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col mt-[50px]`
+        class="${this._isVisible && this.isOpen
+          ? `w-full h-[320px] text-sm lg:text-m bg-gray-900 border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col transition-all duration-300 ml-8`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
@@ -594,10 +610,10 @@ export class ControlPanel2 extends LitElement implements Layer {
           </button>
         </div>
 
-        <div class="tab-content flex-grow overflow-y-auto">
+        <div class="tab-content flex-grow overflow-y-auto max-w-full">
           ${this.activeTab === "Bombers"
             ? html`
-                <div class="text-tan flex">
+                <div class="text-tan flex w-full">
                   <!-- Column 1: Auto-Bombing -->
                   <div class="w-1/3 pr-2">
                     <h3 class="font-bold text-base mb-2">Auto-Bombing</h3>
@@ -634,7 +650,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                   <!-- Column 2: Manual Targeting -->
                   <div
                     class="w-1/3 px-2 ${this._isAutoBombingEnabled
-                      ? "hidden"
+                      ? "invisible"
                       : ""}"
                   >
                     <h3 class="font-bold text-base mb-2">Manual Targeting</h3>
@@ -689,7 +705,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                   <!-- Column 3: Target Actions -->
                   <div
                     class="w-1/3 pl-2 ${this._isAutoBombingEnabled
-                      ? "hidden"
+                      ? "invisible"
                       : ""}"
                   >
                     <h3 class="font-bold text-base mb-2">Target Actions</h3>
