@@ -365,7 +365,9 @@ export class InputHandler {
       this.eventBus.emit(
         new BuildUnitIntentEvent(this.uiState.pendingBuildUnitType, tile),
       );
-      this.uiState.pendingBuildUnitType = null;
+      if (!this.uiState.multibuildEnabled) {
+        this.uiState.pendingBuildUnitType = null;
+      }
       return;
     }
 

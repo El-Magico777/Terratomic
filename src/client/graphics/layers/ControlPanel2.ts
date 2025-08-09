@@ -104,6 +104,9 @@ export class ControlPanel2 extends LitElement implements Layer {
   @state()
   private _isAutoBombingEnabled: boolean = false;
 
+  @state()
+  private _multibuildEnabled: boolean = false;
+
   private unitIconMap: { [key: string]: string } = {
     City: "/images/CityIconWhite.svg",
     Hospital: "/images/HospitalIconWhite.svg",
@@ -483,6 +486,12 @@ export class ControlPanel2 extends LitElement implements Layer {
     }
   }
 
+  private _handleMultibuildToggle(event: Event) {
+    const checkbox = event.target as HTMLInputElement;
+    this._multibuildEnabled = checkbox.checked;
+    this.uiState.multibuildEnabled = checkbox.checked;
+  }
+
   render() {
     if (!this.game) {
       return html``;
@@ -731,6 +740,16 @@ export class ControlPanel2 extends LitElement implements Layer {
             : ""}
           ${this.activeTab === "Build"
             ? html`
+                <div class="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="multibuild-toggle"
+                    class="mr-2"
+                    .checked=${this._multibuildEnabled}
+                    @change=${this._handleMultibuildToggle}
+                  />
+                  <label for="multibuild-toggle">Multibuild</label>
+                </div>
                 <build-menu
                   .game=${this.game}
                   .eventBus=${this.eventBus}
@@ -741,6 +760,16 @@ export class ControlPanel2 extends LitElement implements Layer {
             : ""}
           ${this.activeTab === "Nukes"
             ? html`
+                <div class="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="multibuild-toggle"
+                    class="mr-2"
+                    .checked=${this._multibuildEnabled}
+                    @change=${this._handleMultibuildToggle}
+                  />
+                  <label for="multibuild-toggle">Multibuild</label>
+                </div>
                 <build-menu
                   .game=${this.game}
                   .eventBus=${this.eventBus}
@@ -751,6 +780,16 @@ export class ControlPanel2 extends LitElement implements Layer {
             : ""}
           ${this.activeTab === "Units"
             ? html`
+                <div class="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="multibuild-toggle"
+                    class="mr-2"
+                    .checked=${this._multibuildEnabled}
+                    @change=${this._handleMultibuildToggle}
+                  />
+                  <label for="multibuild-toggle">Multibuild</label>
+                </div>
                 <build-menu
                   .game=${this.game}
                   .eventBus=${this.eventBus}
