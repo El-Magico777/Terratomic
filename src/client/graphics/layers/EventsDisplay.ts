@@ -929,7 +929,7 @@ export class EventsDisplay extends LitElement implements Layer {
       <!-- Events Toggle (when hidden) -->
       ${this._hidden
         ? html`
-            <div class="relative w-fit lg:bottom-2.5 lg:right-2.5 z-50">
+            <div class="absolute bottom-0 right-0 z-50">
               ${this.renderButton({
                 content: html`
                   Events
