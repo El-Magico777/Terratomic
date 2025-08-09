@@ -44,6 +44,8 @@ export function createRenderer(
   const uiState: UIState = {
     attackRatio: 0.2, // 20% as a float
     investmentRate: 0.5, // 50% default investment rate
+    pendingBuildUnitType: null,
+    multibuildEnabled: false,
   };
 
   //hide when the game renders

@@ -332,6 +332,21 @@ export class InputHandler {
     this.pointerDown = false;
     this.pointers.clear();
 
+    if (this.uiState.pendingBuildUnitType) {
+      const cell = this.transformHandler.screenToWorldCoordinates(
+        event.x,
+        event.y,
+      );
+      const tile = this.game.ref(cell.x, cell.y);
+      this.eventBus.emit(
+        new BuildUnitIntentEvent(this.uiState.pendingBuildUnitType, tile),
+      );
+      if (!this.uiState.multibuildEnabled) {
+        this.uiState.pendingBuildUnitType = null;
+      }
+      return;
+    }
+
     if (this.isModifierKeyPressed(event)) {
       this.eventBus.emit(new ShowBuildMenuEvent(event.clientX, event.clientY));
       return;
