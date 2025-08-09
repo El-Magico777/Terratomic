@@ -369,15 +369,20 @@ export class InputHandler {
 
     // Pending build: place unit on click (still respects the drag-vs-click guard above)
     if (this.uiState.pendingBuildUnitType) {
-      const cell = this.transformHandler.screenToWorldCoordinates(upX, upY);
+      const cell = this.transformHandler.screenToWorldCoordinates(
+        event.x,
+        event.y,
+      );
 
-      // If coordinates are invalid, just deselect build state (when not multi-build) and return
+      // --- ADDED VALIDATION HERE ---
       if (!this.game.isValidCoord(cell.x, cell.y)) {
+        // If coordinates are invalid, just deselect build state and return
         if (!this.uiState.multibuildEnabled) {
           this.uiState.pendingBuildUnitType = null;
         }
         return;
       }
+      // --- END ADDED VALIDATION ---
 
       const tile = this.game.ref(cell.x, cell.y);
       this.eventBus.emit(
