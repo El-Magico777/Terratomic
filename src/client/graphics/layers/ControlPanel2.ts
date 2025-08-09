@@ -11,6 +11,7 @@ import {
   SendSetTargetTroopRatioEvent,
 } from "../../Transport";
 import { UIState } from "../UIState";
+import { ToggleBuildPanelEvent } from "./ControlPanel";
 import { Layer } from "./Layer";
 
 @customElement("control-panel2")
@@ -51,6 +52,9 @@ export class ControlPanel2 extends LitElement implements Layer {
 
   @state()
   private _isVisible = false;
+
+  @state()
+  private isOpen = false;
 
   @state()
   private _manpower: number = 0;
@@ -178,6 +182,10 @@ export class ControlPanel2 extends LitElement implements Layer {
 
       this.attackRatio = newAttackRatio;
       this.onAttackRatioChange(this.attackRatio);
+    });
+
+    this.eventBus.on(ToggleBuildPanelEvent, (event: ToggleBuildPanelEvent) => {
+      this.isOpen = event.isOpen;
     });
   }
 
@@ -548,8 +556,8 @@ export class ControlPanel2 extends LitElement implements Layer {
         }
       </style>
       <div
-        class="${this._isVisible
-          ? `w-full h-[270px] text-sm lg:text-m bg-gray-900 border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col mt-[50px]`
+        class="${this._isVisible && this.isOpen
+          ? `w-full h-[270px] text-sm lg:text-m bg-gray-900 border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col mt-[50px] transition-all duration-300 ml-8`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
