@@ -610,10 +610,10 @@ export class ControlPanel2 extends LitElement implements Layer {
           </button>
         </div>
 
-        <div class="tab-content flex-grow overflow-y-auto">
+        <div class="tab-content flex-grow overflow-y-auto max-w-full">
           ${this.activeTab === "Bombers"
             ? html`
-                <div class="text-tan flex">
+                <div class="text-tan flex w-full">
                   <!-- Column 1: Auto-Bombing -->
                   <div class="w-1/3 pr-2">
                     <h3 class="font-bold text-base mb-2">Auto-Bombing</h3>
@@ -650,7 +650,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                   <!-- Column 2: Manual Targeting -->
                   <div
                     class="w-1/3 px-2 ${this._isAutoBombingEnabled
-                      ? "hidden"
+                      ? "invisible"
                       : ""}"
                   >
                     <h3 class="font-bold text-base mb-2">Manual Targeting</h3>
@@ -705,7 +705,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                   <!-- Column 3: Target Actions -->
                   <div
                     class="w-1/3 pl-2 ${this._isAutoBombingEnabled
-                      ? "hidden"
+                      ? "invisible"
                       : ""}"
                   >
                     <h3 class="font-bold text-base mb-2">Target Actions</h3>
