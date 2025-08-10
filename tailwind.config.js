@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        military: ['"Black Ops One"', "cursive"],
+        military: ["Oswald"],
         ocr: ['"Azeret Mono"', "monospace"],
       },
       colors: {
