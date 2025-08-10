@@ -33,7 +33,7 @@ export class ControlPanel extends LitElement implements Layer {
   private currentTroopRatio = 0.6;
 
   @state()
-  private investmentRate: number = 0.5; // default to 50%
+  private investmentRate: number = 0; // default to 0%
 
   @state()
   private _population: number;
@@ -88,7 +88,7 @@ export class ControlPanel extends LitElement implements Layer {
       localStorage.getItem("settings.troopRatio") ?? "0.6",
     );
     this.investmentRate = Number(
-      localStorage.getItem("settings.investmentRate") ?? "0.5",
+      localStorage.getItem("settings.investmentRate") ?? "0",
     );
     this.uiState.investmentRate = this.investmentRate;
     this.init_ = true;
@@ -278,7 +278,7 @@ export class ControlPanel extends LitElement implements Layer {
       <div class="relative military-panel">
         <div
           class="${this._isVisible
-            ? `w-full h-[320px] text-sm lg:text-m bg-transparent border-0 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex`
+            ? `w-full h-[300px] text-sm lg:text-m bg-transparent border-0 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex`
             : "hidden"}"
           @contextmenu=${(e: MouseEvent) => e.preventDefault()}
         >
@@ -389,47 +389,6 @@ export class ControlPanel extends LitElement implements Layer {
                     this.onAttackRatioChange(this.attackRatio);
                   }}
                   class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer attackRatio military-slider"
-                />
-              </div>
-            </div>
-
-            <!-- Investment rate -->
-            <div class="relative">
-              <label class="block military-label mb-1" translate="no">
-                Production Investment Rate:
-                ${(this.investmentRate * 100).toFixed(0)}%
-              </label>
-              <div
-                class="text-right text-xs opacity-60 mt-1 military-label normal-case"
-                translate="no"
-              >
-                Prod: ${Math.round(this._productivity * 100)}%
-                (${this._productivityGrowth >= 0 ? "+" : ""}${(
-                  this._productivityGrowth * 100
-                ).toFixed(1)}%/min)
-              </div>
-              <div class="relative h-8">
-                <div
-                  class="absolute left-0 right-0 top-3 h-2 rounded"
-                  style="background-color:#4E513A"
-                ></div>
-                <div
-                  class="absolute left-0 top-3 h-2 rounded transition-all duration-300"
-                  style="width:${(this.investmentRate /
-                    this.game.config().maxInvestmentRate()) *
-                  100}%; background-color: rgba(78,176,87,0.6);"
-                ></div>
-                <input
-                  type="range"
-                  min="0"
-                  max="${this.game?.config()?.maxInvestmentRate() * 100}"
-                  .value=${(this.investmentRate * 100).toString()}
-                  @input=${(e: Event) => {
-                    this.investmentRate =
-                      parseInt((e.target as HTMLInputElement).value) / 100;
-                    this.onInvestmentRateChange(this.investmentRate);
-                  }}
-                  class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer military-slider"
                 />
               </div>
             </div>
