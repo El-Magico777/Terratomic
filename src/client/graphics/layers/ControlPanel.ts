@@ -80,6 +80,8 @@ export class ControlPanel extends LitElement implements Layer {
 
   private init_: boolean = false;
 
+  private _hoverTimeoutId: number | null = null; // New property
+
   init() {
     this.attackRatio = Number(
       localStorage.getItem("settings.attackRatio") ?? "0.3",
@@ -207,6 +209,23 @@ export class ControlPanel extends LitElement implements Layer {
   toggleBuildPanel() {
     this.isBuildPanelOpen = !this.isBuildPanelOpen;
     this.eventBus.emit(new ToggleBuildPanelEvent(this.isBuildPanelOpen));
+  }
+
+  handleMouseEnterBuildPanel() {
+    if (this._hoverTimeoutId) {
+      clearTimeout(this._hoverTimeoutId);
+    }
+    this._hoverTimeoutId = window.setTimeout(() => {
+      this.openBuildPanel();
+      this._hoverTimeoutId = null;
+    }, 300); // 500ms delay
+  }
+
+  handleMouseLeaveBuildPanel() {
+    if (this._hoverTimeoutId) {
+      clearTimeout(this._hoverTimeoutId);
+      this._hoverTimeoutId = null;
+    }
   }
 
   render() {
@@ -403,7 +422,8 @@ export class ControlPanel extends LitElement implements Layer {
               <div
                 class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0 transition-all duration-200 hover:brightness-125"
                 style="background-color:#3B3E2C; border-color:#1F2018;"
-                @mouseenter=${this.openBuildPanel}
+                @mouseenter=${this.handleMouseEnterBuildPanel}
+                @mouseleave=${this.handleMouseLeaveBuildPanel}
                 @click=${this.toggleBuildPanel}
               >
                 <span
