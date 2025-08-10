@@ -350,7 +350,7 @@ export class ControlPanel extends LitElement implements Layer {
               >
                 <div class="flex-grow flex flex-col h-full">
                   <!-- Top stats block -->
-                  <div class="hidden lg:block mb-4 p-2 rounded-sm bg-gray-700">
+                  <div class="hidden lg:block mb-4 p-2 rounded-sm bg-gray-600">
                     <div class="flex justify-between mb-1">
                       <span class="font-bold military-heading">
                         ${translateText("control_panel.pop")}:
