@@ -949,7 +949,8 @@ export class EventsDisplay extends LitElement implements Layer {
         : html`
             <!-- Main Events Display -->
             <div
-              class="relative w-full bg-gray-900 border-2 border-gray-700 shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg"
+              class="relative w-full military-panel p-2 pr-3 lg:p-4"
+              style="box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);"
             >
               <!-- Button Bar -->
               <div class="w-full p-2 lg:p-3 rounded-t-none md:rounded-t-md">
