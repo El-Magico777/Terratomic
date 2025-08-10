@@ -2,8 +2,7 @@ import { html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
-import { Gold, PlayerID, UnitType } from "../../../core/game/Game";
-import { TileRef } from "../../../core/game/GameMap";
+import { Gold } from "../../../core/game/Game";
 import { GameView } from "../../../core/game/GameView";
 import {
   AttackRatioEvent,
@@ -78,77 +77,7 @@ export class ControlPanel extends LitElement implements Layer {
 
   private init_: boolean = false;
 
-  @state()
-  private activeTab:
-    | "Controls"
-    | "Build"
-    | "Nukes"
-    | "Units"
-    | "Bombers"
-    | "Options" = "Controls";
-
-  @state()
-  private buildTile: TileRef | null = null;
-
-  @state()
-  private _lastAirfieldCount: number = 0;
-
-  @state()
-  private _lastPlayersHash: string = "";
-
-  @state()
-  private _reachablePlayersHash: string = "";
-
-  @state()
-  private _hasAirfields: boolean = false;
-
-  @state()
-  private _highlightBombersTab: boolean = false;
-
-  @state()
-  private _currentTargetPlayerId: PlayerID | null = null;
-
-  @state()
-  private _currentTargetStructureType: UnitType | null = null;
-
-  @state()
-  private _currentTargetPlayerName: string | null = null;
-
-  @state()
-  private _isAutoBombingEnabled: boolean = false;
-
-  private unitIconMap: { [key: string]: string } = {
-    City: "/images/CityIconWhite.svg",
-    Hospital: "/images/HospitalIconWhite.svg",
-    Academy: "/images/AcademyIconWhite.png",
-    Port: "/images/PortIcon.svg",
-    "Missile Silo": "/images/MissileSiloIconWhite.svg",
-    "SAM Launcher": "/images/SamLauncherIconWhite.svg",
-    "Air Field": "/images/AirfieldIcon.svg",
-    "Defense Post": "/images/ShieldIconWhite.svg",
-  };
-
-  private readonly NukeTypes: UnitType[] = [
-    UnitType.AtomBomb,
-    UnitType.MIRV,
-    UnitType.HydrogenBomb,
-  ];
-
-  private readonly CombatUnitTypes: UnitType[] = [
-    UnitType.FighterJet,
-    UnitType.Warship,
-  ];
-
-  private readonly StructureTypes: UnitType[] = [
-    UnitType.Airfield,
-    UnitType.Port,
-    UnitType.MissileSilo,
-    UnitType.SAMLauncher,
-    UnitType.DefensePost,
-    UnitType.Hospital,
-    UnitType.Academy,
-    UnitType.City,
-  ];
+  private _hoverTimeoutId: number | null = null; // New property
 
   init() {
     this.attackRatio = Number(
@@ -277,6 +206,35 @@ export class ControlPanel extends LitElement implements Layer {
   delta(): number {
     const d = this._population - this.targetTroops();
     return d;
+  }
+
+  openBuildPanel() {
+    if (!this.isBuildPanelOpen) {
+      this.isBuildPanelOpen = true;
+      this.eventBus.emit(new ToggleBuildPanelEvent(true));
+    }
+  }
+
+  toggleBuildPanel() {
+    this.isBuildPanelOpen = !this.isBuildPanelOpen;
+    this.eventBus.emit(new ToggleBuildPanelEvent(this.isBuildPanelOpen));
+  }
+
+  handleMouseEnterBuildPanel() {
+    if (this._hoverTimeoutId) {
+      clearTimeout(this._hoverTimeoutId);
+    }
+    this._hoverTimeoutId = window.setTimeout(() => {
+      this.openBuildPanel();
+      this._hoverTimeoutId = null;
+    }, 300); // 500ms delay
+  }
+
+  handleMouseLeaveBuildPanel() {
+    if (this._hoverTimeoutId) {
+      clearTimeout(this._hoverTimeoutId);
+      this._hoverTimeoutId = null;
+    }
   }
 
   render() {
@@ -498,7 +456,21 @@ export class ControlPanel extends LitElement implements Layer {
                 </div>
                 <!-- end .flex-grow -->
               </div>
-              <!-- end .w-full container -->
+
+              <!-- Vertical Build tab (no functionality change) -->
+              <div
+                class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0 transition-all duration-200 hover:brightness-125"
+                style="background-color:#3B3E2C; border-color:#1F2018;"
+                @mouseenter=${this.handleMouseEnterBuildPanel}
+                @mouseleave=${this.handleMouseLeaveBuildPanel}
+                @click=${this.toggleBuildPanel}
+              >
+                <span
+                  class="build-tab tracking-wider font-ocr uppercase"
+                  style="color:#D8D1B1; transform: none;"
+                  >Build</span
+                >
+              </div>
             </div>
             <!-- end .military-panel -->
           `
