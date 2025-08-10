@@ -78,8 +78,8 @@ export class ControlPanel2 extends LitElement implements Layer {
   private init_: boolean = false;
 
   @state()
-  private activeTab: "Build" | "Nukes" | "Units" | "Bombers" | "Options" =
-    "Bombers";
+  private activeTab: "Build" | "Attack" | "Economy" | "Research" | "Bombers" =
+    "Build";
 
   @state()
   private _lastAirfieldCount: number = 0;
@@ -129,6 +129,14 @@ export class ControlPanel2 extends LitElement implements Layer {
   ];
 
   private readonly CombatUnitTypes: UnitType[] = [
+    UnitType.FighterJet,
+    UnitType.Warship,
+  ];
+
+  private readonly AttackTypes: UnitType[] = [
+    UnitType.AtomBomb,
+    UnitType.MIRV,
+    UnitType.HydrogenBomb,
     UnitType.FighterJet,
     UnitType.Warship,
   ];
@@ -262,11 +270,7 @@ export class ControlPanel2 extends LitElement implements Layer {
     this.requestUpdate();
 
     // Force build-menu to re-render if its tab is active
-    if (
-      this.activeTab === "Build" ||
-      this.activeTab === "Nukes" ||
-      this.activeTab === "Units"
-    ) {
+    if (this.activeTab === "Build" || this.activeTab === "Attack") {
       const buildMenuElement = this.querySelector(
         "build-menu",
       ) as LitElement | null;
@@ -570,6 +574,38 @@ export class ControlPanel2 extends LitElement implements Layer {
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         <div class="flex border-b border-gray-700 mb-4">
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Build"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Build")}
+          >
+            Build
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Attack"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Attack")}
+          >
+            Attack
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Economy"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Economy")}
+          >
+            Economy
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Research"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Research")}
+          >
+            Research
+          </button>
           ${this._hasAirfields
             ? html`
                 <button
@@ -584,30 +620,6 @@ export class ControlPanel2 extends LitElement implements Layer {
                 </button>
               `
             : ""}
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Build"
-              ? "bg-gray-700 text-crt-green border border-crt-green"
-              : "text-tan"}"
-            @click=${() => (this.activeTab = "Build")}
-          >
-            Build
-          </button>
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Nukes"
-              ? "bg-gray-700 text-crt-green border border-crt-green"
-              : "text-tan"}"
-            @click=${() => (this.activeTab = "Nukes")}
-          >
-            Nukes
-          </button>
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Units"
-              ? "bg-gray-700 text-crt-green border border-crt-green"
-              : "text-tan"}"
-            @click=${() => (this.activeTab = "Units")}
-          >
-            Units
-          </button>
         </div>
 
         <div class="tab-content flex-grow overflow-y-auto max-w-full">
@@ -746,14 +758,6 @@ export class ControlPanel2 extends LitElement implements Layer {
                 </div>
               `
             : ""}
-          ${this.activeTab === "Options"
-            ? html`
-                <div class="text-tan">
-                  <h2>Options Tab Content</h2>
-                  <p>This is where general options will go.</p>
-                </div>
-              `
-            : ""}
           ${this.activeTab === "Build"
             ? html`
                 <div class="flex items-center mb-2">
@@ -767,6 +771,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                   <label for="multibuild-toggle">Multibuild</label>
                 </div>
                 <build-menu
+                  style="width: 100%;"
                   .game=${this.game}
                   .eventBus=${this.eventBus}
                   .uiState=${this.uiState}
@@ -774,7 +779,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                 ></build-menu>
               `
             : ""}
-          ${this.activeTab === "Nukes"
+          ${this.activeTab === "Attack"
             ? html`
                 <div class="flex items-center mb-2">
                   <input
@@ -787,31 +792,28 @@ export class ControlPanel2 extends LitElement implements Layer {
                   <label for="multibuild-toggle">Multibuild</label>
                 </div>
                 <build-menu
+                  style="width: 100%;"
                   .game=${this.game}
                   .eventBus=${this.eventBus}
                   .uiState=${this.uiState}
-                  .unitFilter=${this.NukeTypes}
+                  .unitFilter=${this.AttackTypes}
                 ></build-menu>
               `
             : ""}
-          ${this.activeTab === "Units"
+          ${this.activeTab === "Economy"
             ? html`
-                <div class="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    id="multibuild-toggle"
-                    class="mr-2"
-                    .checked=${this._multibuildEnabled}
-                    @change=${this._handleMultibuildToggle}
-                  />
-                  <label for="multibuild-toggle">Multibuild</label>
+                <div class="text-tan">
+                  <h2>Economy Tab Content</h2>
+                  <p>This is where economy-related options will go.</p>
                 </div>
-                <build-menu
-                  .game=${this.game}
-                  .eventBus=${this.eventBus}
-                  .uiState=${this.uiState}
-                  .unitFilter=${this.CombatUnitTypes}
-                ></build-menu>
+              `
+            : ""}
+          ${this.activeTab === "Research"
+            ? html`
+                <div class="text-tan">
+                  <h2>Research Tab Content</h2>
+                  <p>This is where research-related options will go.</p>
+                </div>
               `
             : ""}
         </div>
