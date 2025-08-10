@@ -560,10 +560,10 @@ export class ControlPanel2 extends LitElement implements Layer {
         }
         @keyframes pulse {
           from {
-            background-color: rgba(59, 130, 246, 0.5);
+            background-color: rgba(78, 176, 87, 0.4);
           }
           to {
-            background-color: rgba(59, 130, 246, 1);
+            background-color: rgba(78, 176, 87, 0.9);
           }
         }
       </style>
@@ -638,14 +638,15 @@ export class ControlPanel2 extends LitElement implements Layer {
                     <div class="flex flex-col gap-2">
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm font-ocr uppercase bg-olive-green hover:bg-green-700 text-white border border-gray-700 rounded-sm"
+                        class="military-button w-full"
                         @click=${this._startAutoBombing}
                       >
                         Start Auto Bombing
                       </button>
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm font-ocr uppercase bg-muted-red hover:bg-red-700 text-white border border-gray-700 rounded-sm"
+                        class="military-button w-full"
+                        style="background-color: var(--alertColor); border-color: var(--alertColor);"
                         @click=${this._stopAutoBombing}
                       >
                         Stop Auto Bombing
@@ -752,14 +753,14 @@ export class ControlPanel2 extends LitElement implements Layer {
                           <div class="flex gap-2 mt-auto">
                             <button
                               type="button"
-                              class="flex-1 p-1 font-ocr uppercase bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
+                              class="military-button flex-1"
                               @click=${this.handleBomberIntent}
                             >
                               Set Target
                             </button>
                             <button
                               type="button"
-                              class="flex-1 p-1 font-ocr uppercase bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
+                              class="military-button flex-1"
                               @click=${() => this.sendBomberIntent(null, null)}
                             >
                               Clear Target
