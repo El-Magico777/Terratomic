@@ -2,7 +2,6 @@ import { html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { EventBus } from "../../../core/EventBus";
 import { Gold, PlayerID, PlayerType, UnitType } from "../../../core/game/Game";
-import { TileRef } from "../../../core/game/GameMap";
 import { GameView, PlayerView } from "../../../core/game/GameView";
 import {
   AttackRatioEvent,
@@ -78,11 +77,8 @@ export class ControlPanel2 extends LitElement implements Layer {
   private init_: boolean = false;
 
   @state()
-  private activeTab: "Build" | "Nukes" | "Units" | "Bombers" | "Options" =
-    "Bombers";
-
-  @state()
-  private buildTile: TileRef | null = null;
+  private activeTab: "Build" | "Attack" | "Economy" | "Research" | "Bombers" =
+    "Build";
 
   @state()
   private _lastAirfieldCount: number = 0;
@@ -129,6 +125,14 @@ export class ControlPanel2 extends LitElement implements Layer {
   ];
 
   private readonly CombatUnitTypes: UnitType[] = [
+    UnitType.FighterJet,
+    UnitType.Warship,
+  ];
+
+  private readonly AttackTypes: UnitType[] = [
+    UnitType.AtomBomb,
+    UnitType.MIRV,
+    UnitType.HydrogenBomb,
     UnitType.FighterJet,
     UnitType.Warship,
   ];
@@ -263,6 +267,16 @@ export class ControlPanel2 extends LitElement implements Layer {
     }
 
     this.requestUpdate();
+
+    // Force build-menu to re-render if its tab is active
+    if (this.activeTab === "Build" || this.activeTab === "Attack") {
+      const buildMenuElement = this.querySelector(
+        "build-menu",
+      ) as LitElement | null;
+      if (buildMenuElement) {
+        buildMenuElement.requestUpdate();
+      }
+    }
   }
 
   onAttackRatioChange(newRatio: number) {
@@ -545,12 +559,44 @@ export class ControlPanel2 extends LitElement implements Layer {
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         <div class="flex border-b border-gray-700 mb-4">
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Build"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Build")}
+          >
+            Build
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Attack"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Attack")}
+          >
+            Attack
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Economy"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Economy")}
+          >
+            Economy
+          </button>
+          <button
+            class="py-2 px-4 text-center ${this.activeTab === "Research"
+              ? "bg-gray-700 text-crt-green border border-crt-green"
+              : "text-tan"}"
+            @click=${() => (this.activeTab = "Research")}
+          >
+            Research
+          </button>
           ${this._hasAirfields
             ? html`
                 <button
                   class="py-2 px-4 text-center ${this.activeTab === "Bombers"
-                    ? "bg-gray-700 text-white"
-                    : "text-white"} ${this._highlightBombersTab
+                    ? "bg-gray-700 text-crt-green border border-crt-green"
+                    : "text-tan"} ${this._highlightBombersTab
                     ? "highlight-tab"
                     : ""}"
                   @click=${() => (this.activeTab = "Bombers")}
@@ -559,30 +605,6 @@ export class ControlPanel2 extends LitElement implements Layer {
                 </button>
               `
             : ""}
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Build"
-              ? "bg-gray-700 text-white"
-              : "text-white"}"
-            @click=${() => (this.activeTab = "Build")}
-          >
-            Build
-          </button>
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Nukes"
-              ? "bg-gray-700 text-white"
-              : "text-white"}"
-            @click=${() => (this.activeTab = "Nukes")}
-          >
-            Nukes
-          </button>
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Units"
-              ? "bg-gray-700 text-white"
-              : "text-white"}"
-            @click=${() => (this.activeTab = "Units")}
-          >
-            Units
-          </button>
         </div>
 
         <div class="tab-content min-h-[320px]">
@@ -705,17 +727,10 @@ export class ControlPanel2 extends LitElement implements Layer {
                 </div>
               `
             : ""}
-          ${this.activeTab === "Options"
-            ? html`
-                <div class="text-white">
-                  <h2>Options Tab Content</h2>
-                  <p>This is where general options will go.</p>
-                </div>
-              `
-            : ""}
           ${this.activeTab === "Build"
             ? html`
                 <build-menu
+                  style="width: 100%;"
                   .game=${this.game}
                   .eventBus=${this.eventBus}
                   .clickedTile=${this.buildTile}
@@ -723,24 +738,31 @@ export class ControlPanel2 extends LitElement implements Layer {
                 ></build-menu>
               `
             : ""}
-          ${this.activeTab === "Nukes"
+          ${this.activeTab === "Attack"
             ? html`
                 <build-menu
+                  style="width: 100%;"
                   .game=${this.game}
                   .eventBus=${this.eventBus}
-                  .clickedTile=${this.buildTile}
-                  .unitFilter=${this.NukeTypes}
+                  .uiState=${this.uiState}
+                  .unitFilter=${this.AttackTypes}
                 ></build-menu>
               `
             : ""}
-          ${this.activeTab === "Units"
+          ${this.activeTab === "Economy"
             ? html`
-                <build-menu
-                  .game=${this.game}
-                  .eventBus=${this.eventBus}
-                  .clickedTile=${this.buildTile}
-                  .unitFilter=${this.CombatUnitTypes}
-                ></build-menu>
+                <div class="text-tan">
+                  <h2>Economy Tab Content</h2>
+                  <p>This is where economy-related options will go.</p>
+                </div>
+              `
+            : ""}
+          ${this.activeTab === "Research"
+            ? html`
+                <div class="text-tan">
+                  <h2>Research Tab Content</h2>
+                  <p>This is where research-related options will go.</p>
+                </div>
               `
             : ""}
         </div>
