@@ -274,141 +274,151 @@ export class ControlPanel extends LitElement implements Layer {
         }
       </style>
 
-      <!-- Root panel shell (military-panel provides background/border/colors) -->
-      <div class="relative military-panel">
-        <div
-          class="${this._isVisible
-            ? `w-full h-[300px] text-sm lg:text-m bg-transparent border-0 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex`
-            : "hidden"}"
-          @contextmenu=${(e: MouseEvent) => e.preventDefault()}
-        >
-          <div class="flex-grow flex flex-col h-full">
-            <!-- Top stats block -->
-            <div class="hidden lg:block mb-4 p-2 rounded-sm">
-              <div class="flex justify-between mb-1">
-                <span class="font-bold military-heading">
-                  ${translateText("control_panel.pop")}:
-                </span>
-                <span translate="no" class="military-label normal-case">
-                  ${renderTroops(this._population)} /
-                  ${renderTroops(this._maxPopulation)}
-                  <span
-                    translate="no"
-                    style="color: ${this._popRateIsIncreasing
-                      ? "#4EB057"
-                      : "#B0504E"}"
-                  >
-                    (+${renderTroops(this.popRate)}${this._hospitalReturns > 0
-                      ? `/ +${renderTroops(this._hospitalReturns)}`
-                      : ""})
-                  </span>
-                </span>
-              </div>
-              <div class="flex justify-between">
-                <span class="font-bold military-heading">
-                  ${translateText("control_panel.gold")}:
-                </span>
-                <span translate="no" class="military-label normal-case">
-                  ${renderNumber(this._gold)}
-                  (+${renderNumber(this._goldPerSecond)})
-                </span>
-              </div>
-            </div>
+      ${this._isVisible
+        ? html`
+            <!-- Root panel shell (military-panel provides background/border/colors) -->
+            <div class="relative military-panel">
+              <div
+                class="w-full h-[300px] text-sm lg:text-m bg-transparent border-0 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex"
+                @contextmenu=${(e: MouseEvent) => e.preventDefault()}
+              >
+                <div class="flex-grow flex flex-col h-full">
+                  <!-- Top stats block -->
+                  <div class="hidden lg:block mb-4 p-2 rounded-sm">
+                    <div class="flex justify-between mb-1">
+                      <span class="font-bold military-heading">
+                        ${translateText("control_panel.pop")}:
+                      </span>
+                      <span translate="no" class="military-label normal-case">
+                        ${renderTroops(this._population)} /
+                        ${renderTroops(this._maxPopulation)}
+                        <span
+                          translate="no"
+                          style="color: ${this._popRateIsIncreasing
+                            ? "#4EB057"
+                            : "#B0504E"}"
+                        >
+                          (+${renderTroops(this.popRate)}${this
+                            ._hospitalReturns > 0
+                            ? `/ +${renderTroops(this._hospitalReturns)}`
+                            : ""})
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="font-bold military-heading">
+                        ${translateText("control_panel.gold")}:
+                      </span>
+                      <span translate="no" class="military-label normal-case">
+                        ${renderNumber(this._gold)}
+                        (+${renderNumber(this._goldPerSecond)})
+                      </span>
+                    </div>
+                  </div>
 
-            <!-- Troops/Workers ratio -->
-            <div class="relative">
-              <label class="block military-label mb-1" translate="no">
-                ${translateText("control_panel.troops")}:
-                <span translate="no" class="normal-case"
-                  >${renderTroops(this._troops)}</span
-                >
-                | ${translateText("control_panel.workers")}:
-                <span translate="no" class="normal-case"
-                  >${renderTroops(this._workers)}</span
-                >
-              </label>
-              <div class="relative h-8">
-                <!-- Background track (exact color) -->
-                <div
-                  class="absolute left-0 right-0 top-3 h-2 rounded"
-                  style="background-color:#4E513A"
-                ></div>
-                <!-- Fill track (exact green) -->
-                <div
-                  class="absolute left-0 top-3 h-2 rounded transition-all duration-300"
-                  style="width:${this.currentTroopRatio *
-                  100}%; background-color: rgba(78,176,87,0.6);"
-                ></div>
-                <!-- Range input -->
-                <input
-                  type="range"
-                  min="1"
-                  max="100"
-                  .value=${(this.targetTroopRatio * 100).toString()}
-                  @input=${(e: Event) => {
-                    this.targetTroopRatio =
-                      parseInt((e.target as HTMLInputElement).value) / 100;
-                    this.onTroopChange(this.targetTroopRatio);
-                  }}
-                  class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer targetTroopRatio military-slider"
-                />
-              </div>
-            </div>
+                  <!-- Troops/Workers ratio -->
+                  <div class="relative">
+                    <label class="block military-label mb-1" translate="no">
+                      ${translateText("control_panel.troops")}:
+                      <span translate="no" class="normal-case"
+                        >${renderTroops(this._troops)}</span
+                      >
+                      | ${translateText("control_panel.workers")}:
+                      <span translate="no" class="normal-case"
+                        >${renderTroops(this._workers)}</span
+                      >
+                    </label>
+                    <div class="relative h-8">
+                      <!-- Background track (exact color) -->
+                      <div
+                        class="absolute left-0 right-0 top-3 h-2 rounded"
+                        style="background-color:#4E513A"
+                      ></div>
+                      <!-- Fill track (exact green) -->
+                      <div
+                        class="absolute left-0 top-3 h-2 rounded transition-all duration-300"
+                        style="width:${this.currentTroopRatio *
+                        100}%; background-color: rgba(78,176,87,0.6);"
+                      ></div>
+                      <!-- Range input -->
+                      <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        .value=${(this.targetTroopRatio * 100).toString()}
+                        @input=${(e: Event) => {
+                          this.targetTroopRatio =
+                            parseInt((e.target as HTMLInputElement).value) /
+                            100;
+                          this.onTroopChange(this.targetTroopRatio);
+                        }}
+                        class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer targetTroopRatio military-slider"
+                      />
+                    </div>
+                  </div>
 
-            <!-- Attack ratio -->
-            <div class="relative">
-              <label class="block military-label mb-1" translate="no">
-                ${translateText("control_panel.attack_ratio")}:
-                ${(this.attackRatio * 100).toFixed(0)}%
-                (${renderTroops(
-                  (this.game?.myPlayer()?.troops() ?? 0) * this.attackRatio,
-                )})
-              </label>
-              <div class="relative h-8">
-                <!-- Background track -->
-                <div
-                  class="absolute left-0 right-0 top-3 h-2 rounded"
-                  style="background-color:#4E513A"
-                ></div>
-                <!-- Fill track (exact muted red) -->
-                <div
-                  class="absolute left-0 top-3 h-2 rounded transition-all duration-300"
-                  style="width:${this.attackRatio *
-                  100}%; background-color: rgba(176,80,78,0.6);"
-                ></div>
-                <!-- Range input -->
-                <input
-                  id="attack-ratio"
-                  type="range"
-                  min="1"
-                  max="100"
-                  .value=${(this.attackRatio * 100).toString()}
-                  @input=${(e: Event) => {
-                    this.attackRatio =
-                      parseInt((e.target as HTMLInputElement).value) / 100;
-                    this.onAttackRatioChange(this.attackRatio);
-                  }}
-                  class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer attackRatio military-slider"
-                />
+                  <!-- Attack ratio -->
+                  <div class="relative">
+                    <label class="block military-label mb-1" translate="no">
+                      ${translateText("control_panel.attack_ratio")}:
+                      ${(this.attackRatio * 100).toFixed(0)}%
+                      (${renderTroops(
+                        (this.game?.myPlayer()?.troops() ?? 0) *
+                          this.attackRatio,
+                      )})
+                    </label>
+                    <div class="relative h-8">
+                      <!-- Background track -->
+                      <div
+                        class="absolute left-0 right-0 top-3 h-2 rounded"
+                        style="background-color:#4E513A"
+                      ></div>
+                      <!-- Fill track (exact muted red) -->
+                      <div
+                        class="absolute left-0 top-3 h-2 rounded transition-all duration-300"
+                        style="width:${this.attackRatio *
+                        100}%; background-color: rgba(176,80,78,0.6);"
+                      ></div>
+                      <!-- Range input -->
+                      <input
+                        id="attack-ratio"
+                        type="range"
+                        min="1"
+                        max="100"
+                        .value=${(this.attackRatio * 100).toString()}
+                        @input=${(e: Event) => {
+                          this.attackRatio =
+                            parseInt((e.target as HTMLInputElement).value) /
+                            100;
+                          this.onAttackRatioChange(this.attackRatio);
+                        }}
+                        class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer attackRatio military-slider"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Vertical Build tab (no functionality change) -->
-        <div
-          class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0"
-          style="background-color:#3B3E2C; border-color:#1F2018;"
-          @mouseenter=${this.openBuildPanel}
-          @click=${this.toggleBuildPanel}
-        >
-          <span
-            class="build-tab tracking-wider font-ocr uppercase"
-            style="color:#D8D1B1;"
-            >Build</span
-          >
-        </div>
-      </div>
+              ${this._isVisible
+                ? html`
+                    <!-- Vertical Build tab (no functionality change) -->
+                    <div
+                      class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0"
+                      style="background-color:#3B3E2C; border-color:#1F2018;"
+                      @mouseenter=${this.openBuildPanel}
+                      @click=${this.toggleBuildPanel}
+                    >
+                      <span
+                        class="build-tab tracking-wider font-ocr uppercase"
+                        style="color:#D8D1B1;"
+                        >Build</span
+                      >
+                    </div>
+                  `
+                : ""}
+            </div>
+          `
+        : ""}
     `;
   }
 
