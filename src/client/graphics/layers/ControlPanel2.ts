@@ -569,13 +569,14 @@ export class ControlPanel2 extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible && this.isOpen
-          ? `w-full h-[320px] text-sm lg:text-m bg-gray-900 border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col transition-all duration-300 ml-8`
+          ? `w-full h-[320px] text-sm lg:text-m military-panel border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col transition-all duration-300 ml-8`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         <div class="flex border-b border-gray-700 mb-4">
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Build"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Build"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Build")}
@@ -583,7 +584,8 @@ export class ControlPanel2 extends LitElement implements Layer {
             Build
           </button>
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Attack"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Attack"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Attack")}
@@ -591,7 +593,8 @@ export class ControlPanel2 extends LitElement implements Layer {
             Attack
           </button>
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Economy"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Economy"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Economy")}
@@ -599,7 +602,8 @@ export class ControlPanel2 extends LitElement implements Layer {
             Economy
           </button>
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Research"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Research"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Research")}
@@ -609,7 +613,8 @@ export class ControlPanel2 extends LitElement implements Layer {
           ${this._hasAirfields
             ? html`
                 <button
-                  class="py-2 px-4 text-center ${this.activeTab === "Bombers"
+                  class="py-2 px-4 text-center font-ocr uppercase ${this
+                    .activeTab === "Bombers"
                     ? "bg-gray-700 text-crt-green border border-crt-green"
                     : "text-tan"} ${this._highlightBombersTab
                     ? "highlight-tab"
@@ -628,18 +633,18 @@ export class ControlPanel2 extends LitElement implements Layer {
                 <div class="text-tan flex w-full">
                   <!-- Column 1: Auto-Bombing -->
                   <div class="w-1/3 pr-2">
-                    <h3 class="font-bold text-base mb-2">Auto-Bombing</h3>
+                    <h3 class="military-heading mb-2">Auto-Bombing</h3>
                     <div class="flex flex-col gap-2">
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm bg-olive-green hover:bg-green-700 text-white border border-gray-700 rounded-sm"
+                        class="w-full px-2 py-1 text-sm font-ocr uppercase bg-olive-green hover:bg-green-700 text-white border border-gray-700 rounded-sm"
                         @click=${this._startAutoBombing}
                       >
                         Start Auto Bombing
                       </button>
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm bg-muted-red hover:bg-red-700 text-white border border-gray-700 rounded-sm"
+                        class="w-full px-2 py-1 text-sm font-ocr uppercase bg-muted-red hover:bg-red-700 text-white border border-gray-700 rounded-sm"
                         @click=${this._stopAutoBombing}
                       >
                         Stop Auto Bombing
@@ -665,12 +670,14 @@ export class ControlPanel2 extends LitElement implements Layer {
                       ? "invisible"
                       : ""}"
                   >
-                    <h3 class="font-bold text-base mb-2">Manual Targeting</h3>
+                    <h3 class="military-heading mb-2">Manual Targeting</h3>
                     <form
                       @submit=${(e: Event) => e.preventDefault()}
                       class="flex flex-col gap-2"
                     >
-                      <label class="inline-flex items-center text-sm">
+                      <label
+                        class="inline-flex items-center text-sm military-label"
+                      >
                         Select Target
                         <select
                           id="bomber-player-select"
@@ -678,7 +685,9 @@ export class ControlPanel2 extends LitElement implements Layer {
                         ></select>
                       </label>
 
-                      <label class="block text-sm">Select Structure</label>
+                      <label class="block text-sm military-label"
+                        >Select Structure</label
+                      >
                       <div class="grid grid-cols-4 gap-2">
                         ${[
                           UnitType.City,
@@ -720,11 +729,11 @@ export class ControlPanel2 extends LitElement implements Layer {
                       ? "invisible"
                       : ""}"
                   >
-                    <h3 class="font-bold text-base mb-2">Target Actions</h3>
+                    <h3 class="military-heading mb-2">Target Actions</h3>
                     <div class="text-tan text-sm min-h-[20px]">
                       ${this._currentTargetPlayerId &&
                       this._currentTargetStructureType
-                        ? html`<span class="text-muted-red font-bold"
+                        ? html`<span class="font-bold military-label"
                               >Target:</span
                             >
                             ${this._currentTargetPlayerName}
@@ -735,20 +744,22 @@ export class ControlPanel2 extends LitElement implements Layer {
                               alt="${this._currentTargetStructureType}"
                               class="inline-block w-4 h-4 align-top ml-1"
                             />`
-                        : html`No target selected`}
+                        : html`<span class="military-label"
+                            >No target selected</span
+                          >`}
                     </div>
 
                     <div class="flex gap-2 mt-auto">
                       <button
                         type="button"
-                        class="flex-1 p-1 bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
+                        class="flex-1 p-1 font-ocr uppercase bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
                         @click=${this.handleBomberIntent}
                       >
                         Set Target
                       </button>
                       <button
                         type="button"
-                        class="flex-1 p-1 bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
+                        class="flex-1 p-1 font-ocr uppercase bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
                         @click=${() => this.sendBomberIntent(null, null)}
                       >
                         Clear Target
@@ -768,7 +779,9 @@ export class ControlPanel2 extends LitElement implements Layer {
                     .checked=${this._multibuildEnabled}
                     @change=${this._handleMultibuildToggle}
                   />
-                  <label for="multibuild-toggle">Multibuild</label>
+                  <label for="multibuild-toggle" class="military-label"
+                    >Multibuild</label
+                  >
                 </div>
                 <build-menu
                   style="width: 100%;"
@@ -789,7 +802,9 @@ export class ControlPanel2 extends LitElement implements Layer {
                     .checked=${this._multibuildEnabled}
                     @change=${this._handleMultibuildToggle}
                   />
-                  <label for="multibuild-toggle">Multibuild</label>
+                  <label for="multibuild-toggle" class="military-label"
+                    >Multibuild</label
+                  >
                 </div>
                 <build-menu
                   style="width: 100%;"
@@ -803,16 +818,20 @@ export class ControlPanel2 extends LitElement implements Layer {
           ${this.activeTab === "Economy"
             ? html`
                 <div class="text-tan">
-                  <h2>Economy Tab Content</h2>
-                  <p>This is where economy-related options will go.</p>
+                  <h2 class="military-heading">Economy</h2>
+                  <p class="military-label normal-case">
+                    This is where economy-related options will go.
+                  </p>
                 </div>
               `
             : ""}
           ${this.activeTab === "Research"
             ? html`
                 <div class="text-tan">
-                  <h2>Research Tab Content</h2>
-                  <p>This is where research-related options will go.</p>
+                  <h2 class="military-heading">Research</h2>
+                  <p class="military-label normal-case">
+                    This is where research-related options will go.
+                  </p>
                 </div>
               `
             : ""}
