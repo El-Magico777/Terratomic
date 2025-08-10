@@ -654,117 +654,117 @@ export class ControlPanel2 extends LitElement implements Layer {
                       Autobombing sends bombers to nearby non-allied territory
                       and bombs their structures.
                     </p>
-                    <div
-                      class="mt-4 text-crt-green font-bold ${!this
-                        ._isAutoBombingEnabled
-                        ? "hidden"
-                        : ""}"
-                    >
-                      Automatic bombing is enabled.
-                    </div>
                   </div>
 
                   <!-- Column 2: Manual Targeting -->
-                  <div
-                    class="w-1/3 px-2 ${this._isAutoBombingEnabled
-                      ? "invisible"
-                      : ""}"
-                  >
-                    <h3 class="military-heading mb-2">Manual Targeting</h3>
-                    <form
-                      @submit=${(e: Event) => e.preventDefault()}
-                      class="flex flex-col gap-2"
-                    >
-                      <label
-                        class="inline-flex items-center text-sm military-label"
-                      >
-                        Select Target
-                        <select
-                          id="bomber-player-select"
-                          class="ml-1 p-1 bg-gray-700 text-tan border border-gray-500 rounded-sm w-full truncate"
-                        ></select>
-                      </label>
-
-                      <label class="block text-sm military-label"
-                        >Select Structure</label
-                      >
-                      <div class="grid grid-cols-4 gap-2">
-                        ${[
-                          UnitType.City,
-                          UnitType.DefensePost,
-                          UnitType.SAMLauncher,
-                          UnitType.MissileSilo,
-                          UnitType.Port,
-                          UnitType.Airfield,
-                          UnitType.Hospital,
-                          UnitType.Academy,
-                        ].map((s) => {
-                          return html`
+                  <div class="w-1/3 px-2">
+                    ${this._isAutoBombingEnabled
+                      ? html`
+                          <div
+                            class="flex flex-col items-center justify-center h-full text-crt-green font-bold text-center"
+                          >
+                            Automatic bombing is enabled.
+                          </div>
+                        `
+                      : html`
+                          <h3 class="military-heading mb-2">
+                            Manual Targeting
+                          </h3>
+                          <form
+                            @submit=${(e: Event) => e.preventDefault()}
+                            class="flex flex-col gap-2"
+                          >
                             <label
-                              class="flex items-center space-x-1 p-1 border border-gray-700 rounded-sm cursor-pointer has-checked:border-crt-green"
+                              class="inline-flex items-center text-sm military-label"
                             >
-                              <img
-                                src="${this.unitIconMap[s]}"
-                                alt="${s}"
-                                class="w-4 h-4"
-                              />
-                              <input
-                                type="checkbox"
-                                name="structure"
-                                value="${s}"
-                                ?checked=${s === UnitType.City}
-                                class="form-checkbox h-4 w-4 text-crt-green bg-gray-700 border-gray-500 rounded-sm focus:ring-crt-green"
-                                @change=${this.handleStructureChange}
-                              />
+                              Select Target
+                              <select
+                                id="bomber-player-select"
+                                class="ml-1 p-1 bg-gray-700 text-tan border border-gray-500 rounded-sm w-full truncate"
+                              ></select>
                             </label>
-                          `;
-                        })}
-                      </div>
-                    </form>
+
+                            <label class="block text-sm military-label"
+                              >Select Structure</label
+                            >
+                            <div class="grid grid-cols-4 gap-2">
+                              ${[
+                                UnitType.City,
+                                UnitType.DefensePost,
+                                UnitType.SAMLauncher,
+                                UnitType.MissileSilo,
+                                UnitType.Port,
+                                UnitType.Airfield,
+                                UnitType.Hospital,
+                                UnitType.Academy,
+                              ].map((s) => {
+                                return html`
+                                  <label
+                                    class="flex items-center space-x-1 p-1 border border-gray-700 rounded-sm cursor-pointer has-checked:border-crt-green"
+                                  >
+                                    <img
+                                      src="${this.unitIconMap[s]}"
+                                      alt="${s}"
+                                      class="w-4 h-4"
+                                    />
+                                    <input
+                                      type="checkbox"
+                                      name="structure"
+                                      value="${s}"
+                                      ?checked=${s === UnitType.City}
+                                      class="form-checkbox h-4 w-4 text-crt-green bg-gray-700 border-gray-500 rounded-sm focus:ring-crt-green"
+                                      @change=${this.handleStructureChange}
+                                    />
+                                  </label>
+                                `;
+                              })}
+                            </div>
+                          </form>
+                        `}
                   </div>
 
                   <!-- Column 3: Target Actions -->
-                  <div
-                    class="w-1/3 pl-2 ${this._isAutoBombingEnabled
-                      ? "invisible"
-                      : ""}"
-                  >
-                    <h3 class="military-heading mb-2">Target Actions</h3>
-                    <div class="text-tan text-sm min-h-[20px]">
-                      ${this._currentTargetPlayerId &&
-                      this._currentTargetStructureType
-                        ? html`<span class="font-bold military-label"
-                              >Target:</span
-                            >
-                            ${this._currentTargetPlayerName}
-                            <img
-                              src="${this.unitIconMap[
-                                this._currentTargetStructureType
-                              ]}"
-                              alt="${this._currentTargetStructureType}"
-                              class="inline-block w-4 h-4 align-top ml-1"
-                            />`
-                        : html`<span class="military-label"
-                            >No target selected</span
-                          >`}
-                    </div>
+                  <div class="w-1/3 pl-2">
+                    ${this._isAutoBombingEnabled
+                      ? ""
+                      : html`
+                          <h3 class="military-heading mb-2">Target Actions</h3>
+                          <div class="text-tan text-sm min-h-[20px]">
+                            ${this._currentTargetPlayerId &&
+                            this._currentTargetStructureType
+                              ? html`<span class="font-bold military-label"
+                                    >Target:</span
+                                  >
+                                  ${this._currentTargetPlayerName}
+                                  <img
+                                    src="${this.unitIconMap[
+                                      this._currentTargetStructureType
+                                    ]}"
+                                    alt="${this._currentTargetStructureType}"
+                                    class="inline-block w-4 h-4 align-top ml-1"
+                                  />`
+                              : html`<span class="military-label"
+                                  >No target selected</span
+                                >`}
+                          </div>
 
-                    <div class="flex gap-2 mt-auto">
-                      <button
-                        type="button"
-                        class="flex-1 p-1 font-ocr uppercase bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
-                        @click=${this.handleBomberIntent}
-                      >
-                        Set Target
-                      </button>
-                      <button
-                        type="button"
-                        class="flex-1 p-1 font-ocr uppercase bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
-                        @click=${() => this.sendBomberIntent(null, null)}
-                      >
-                        Clear Target
-                      </button>
-                    </div>
+                          <div class="flex gap-2 mt-auto">
+                            <button
+                              type="button"
+                              class="flex-1 p-1 font-ocr uppercase bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
+                              @click=${this.handleBomberIntent}
+                            >
+                              Set Target
+                            </button>
+                            <button
+                              type="button"
+                              class="flex-1 p-1 font-ocr uppercase bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
+                              @click=${() => this.sendBomberIntent(null, null)}
+                            >
+                              Clear Target
+                            </button>
+                          </div>
+                        `}
                   </div>
                 </div>
               `
