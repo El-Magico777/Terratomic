@@ -180,10 +180,17 @@ export class BuildMenu extends LitElement {
       position: relative;
       width: 120px; /* More rectangular */
       height: 50px; /* More rectangular */
-      border: 2px solid #444;
-      background-color: #2c2c2c;
-      color: white;
-      border-radius: 8px;
+      border: 2px solid #1f2018; /* From military-panel */
+      background: linear-gradient(
+        to bottom,
+        #2f3223,
+        #3b3e2c
+      ); /* From military-panel */
+      color: #d8d1b1; /* From military-panel */
+      border-radius: 6px; /* From military-panel */
+      box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.5),
+        0 2px 6px rgba(0, 0, 0, 0.4); /* From military-panel */
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
@@ -195,29 +202,48 @@ export class BuildMenu extends LitElement {
       gap: 8px; /* Space between icon and text block */
     }
     .build-button:not(:disabled):hover {
-      background-color: #3a3a3a;
+      background: linear-gradient(
+        to bottom,
+        #3b3e2c,
+        #2f3223
+      ); /* Darker gradient on hover */
       transform: scale(1.02);
-      border-color: #666;
+      border-color: #4e513a; /* Slightly lighter border on hover */
+      box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.5),
+        0 2px 8px rgba(0, 0, 0, 0.6); /* Slightly stronger shadow on hover */
     }
     .build-button:not(:disabled):active {
-      background-color: #4a4a4a;
+      background: linear-gradient(
+        to bottom,
+        #2f3223,
+        #2f3223
+      ); /* Solid darker background on active */
       transform: scale(0.98);
+      box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.7),
+        0 1px 3px rgba(0, 0, 0, 0.3); /* More inset shadow on active */
     }
     .build-button:disabled {
-      background-color: #1a1a1a;
-      border-color: #333;
+      background: linear-gradient(
+        to bottom,
+        #222,
+        #1a1a1a
+      ); /* Darker, muted background for disabled */
+      border-color: #111; /* Darker border for disabled */
       cursor: not-allowed;
-      opacity: 0.7;
+      opacity: 0.6; /* Slightly more opaque for disabled */
+      box-shadow: none; /* No shadow for disabled */
     }
     .build-button:disabled img {
-      opacity: 0.5;
+      opacity: 0.4; /* More faded icon for disabled */
     }
     .build-button:disabled .build-cost {
-      color: #ff4444;
+      color: #888; /* Muted cost color for disabled */
     }
     .selected-for-build {
-      border-color: #34d399; /* A bright green to indicate selection */
-      box-shadow: 0 0 10px #34d399;
+      border-color: #4eb057; /* A military green to indicate selection */
+      box-shadow: 0 0 10px #4eb057; /* Green glow for selection */
     }
     .build-icon {
       width: 28px;
