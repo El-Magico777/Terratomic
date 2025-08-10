@@ -270,7 +270,7 @@ export class ControlPanel extends LitElement implements Layer {
 
         .build-tab {
           writing-mode: vertical-rl;
-          transform: rotate(180deg);
+          transform: none; /* Changed from rotate(180deg) */
         }
       </style>
 
@@ -399,23 +399,19 @@ export class ControlPanel extends LitElement implements Layer {
                 </div>
               </div>
 
-              ${this._isVisible
-                ? html`
-                    <!-- Vertical Build tab (no functionality change) -->
-                    <div
-                      class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0"
-                      style="background-color:#3B3E2C; border-color:#1F2018;"
-                      @mouseenter=${this.openBuildPanel}
-                      @click=${this.toggleBuildPanel}
-                    >
-                      <span
-                        class="build-tab tracking-wider font-ocr uppercase"
-                        style="color:#D8D1B1;"
-                        >Build</span
-                      >
-                    </div>
-                  `
-                : ""}
+              <!-- Vertical Build tab (no functionality change) -->
+              <div
+                class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0 transition-all duration-200 hover:brightness-125"
+                style="background-color:#3B3E2C; border-color:#1F2018;"
+                @mouseenter=${this.openBuildPanel}
+                @click=${this.toggleBuildPanel}
+              >
+                <span
+                  class="build-tab tracking-wider font-ocr uppercase"
+                  style="color:#D8D1B1; transform: none;"
+                  >Build</span
+                >
+              </div>
             </div>
           `
         : ""}
