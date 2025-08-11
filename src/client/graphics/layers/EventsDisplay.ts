@@ -1037,7 +1037,7 @@ export class EventsDisplay extends LitElement implements Layer {
 
               <!-- Content Area -->
               <div
-                class="rounded-b-none md:rounded-b-md flex flex-col-reverse overflow-y-auto w-full h-[236px]"
+                class="rounded-b-none md:rounded-b-md flex flex-col-reverse overflow-y-auto w-full h-[236px] lg:h-[190px]"
               >
                 <div>
                   <table
