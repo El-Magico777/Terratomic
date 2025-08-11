@@ -788,7 +788,9 @@ export class ControlPanel2 extends LitElement implements Layer {
                     .checked=${this._multibuildEnabled}
                     @change=${this._handleMultibuildToggle}
                   />
-                  <label for="multibuild-toggle">Multibuild</label>
+                  <label for="multibuild-toggle" class="military-label"
+                    >Enable Mass Production</label
+                  >
                 </div>
                 <build-menu
                   style="width: 100%;"
@@ -809,7 +811,9 @@ export class ControlPanel2 extends LitElement implements Layer {
                     .checked=${this._multibuildEnabled}
                     @change=${this._handleMultibuildToggle}
                   />
-                  <label for="multibuild-toggle">Multibuild</label>
+                  <label for="multibuild-toggle" class="military-label"
+                    >Enable Mass Production</label
+                  >
                 </div>
                 <build-menu
                   style="width: 100%;"
