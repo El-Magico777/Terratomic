@@ -1,22 +1,22 @@
 .c-button {
   background: linear-gradient(
     to bottom,
-    #36454f,
-    #2c3e50
-  ); /* Dark Gray to Steel gradient */
-  color: var(--tan); /* Tan text */
+    #2f3223,
+    #3b3e2c
+  ); /* From military-panel */
+  color: #d8d1b1; /* From military-panel */
   cursor: pointer;
   outline: none;
   display: inline-block;
   font-size: 16px;
-  border: 1px solid var(--steel); /* Steel border */
+  border: 2px solid #1f2018; /* From military-panel */
   text-align: center;
   padding: 0.8rem 1rem;
-  border-radius: 4px; /* Slightly sharper corners */
+  border-radius: 6px; /* From military-panel */
   transition: all 0.2s ease-in-out;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 1px 2px rgba(0, 0, 0, 0.6); /* Subtle inner and outer shadow */
+    inset 0 0 10px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.4); /* From military-panel */
 
   @media (min-width: 1024px) {
     font-size: 18px;
@@ -41,22 +41,26 @@
 .c-button:focus {
   background: linear-gradient(
     to bottom,
-    var(--primaryColorHover),
-    #222831
-  ); /* Darker hover state */
+    #3b3e2c,
+    #2f3223
+  ); /* Darker gradient on hover */
   box-shadow:
-    0 0 8px var(--crt-green),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 1px 2px rgba(0, 0, 0, 0.6); /* CRT green glow */
-  border-color: var(--crt-green); /* Green border on hover */
+    inset 0 0 10px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.6); /* Slightly stronger shadow on hover */
+  border-color: #4e513a; /* Slightly lighter border on hover */
+  color: white; /* Lighter text color on hover */
 }
 
 .c-button:disabled {
-  background: var(--primaryColorDisabled);
-  opacity: 0.5;
+  background: linear-gradient(
+    to bottom,
+    #222,
+    #1a1a1a
+  ); /* Darker, muted background for disabled */
+  opacity: 0.6; /* Slightly more opaque for disabled */
   cursor: not-allowed;
-  box-shadow: none;
-  border-color: #4a4a4a; /* Darker border for disabled */
+  box-shadow: none; /* No shadow for disabled */
+  border-color: #111; /* Darker border for disabled */
 }
 
 .c-button--secondary {
@@ -74,14 +78,14 @@
 .c-button--secondary:focus {
   background: linear-gradient(
     to bottom,
-    var(--secondaryColorHover),
-    #909090
-  ); /* Darker tan hover */
+    #3b3e2c,
+    #2f3223
+  ); /* Darker gradient on hover */
   box-shadow:
-    0 0 8px var(--crt-green),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 1px 2px rgba(0, 0, 0, 0.6); /* CRT green glow */
-  border-color: var(--crt-green);
+    inset 0 0 10px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.6); /* Slightly stronger shadow on hover */
+  border-color: #4e513a; /* Slightly lighter border on hover */
+  color: white; /* Lighter text color on hover */
 }
 
 .c-button--block {
