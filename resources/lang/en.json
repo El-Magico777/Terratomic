@@ -456,11 +456,11 @@
     "academies": "War Colleges",
     "missile_launchers": "ICBM Silos",
     "sams": "Flak Batteries",
-    "warships": "Destroyers",
+    "warships": "Destroyer",
     "fighter_jets": "Jet Fighters",
     "health": "Health",
     "attitude": "Attitude",
-    "airfields": "Airfields"
+    "airfields": "Air Bases"
   },
   "events_display": {
     "retreating": "retreating",
