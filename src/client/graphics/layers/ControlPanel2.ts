@@ -120,6 +120,7 @@ export class ControlPanel2 extends LitElement implements Layer {
     "SAM Launcher": "/images/SamLauncherIconWhite.svg",
     "Air Field": "/images/AirfieldIcon.svg",
     "Defense Post": "/images/ShieldIconWhite.svg",
+    "Road Node": "/images/RoadNodeIcon.svg",
   };
 
   private readonly NukeTypes: UnitType[] = [
@@ -150,6 +151,7 @@ export class ControlPanel2 extends LitElement implements Layer {
     UnitType.Hospital,
     UnitType.Academy,
     UnitType.City,
+    UnitType.RoadNode,
   ];
 
   init() {

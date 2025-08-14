@@ -157,6 +157,7 @@ export enum UnitType {
   Hospital = "Hospital",
   Academy = "Academy",
   Airfield = "Air Field",
+  RoadNode = "Road Node",
   CargoPlane = "Cargo Plane",
   Bomber = "Bomber",
   FighterJet = "Fighter Jet", // Represents a Fighter Jet unit.
@@ -172,6 +173,7 @@ const _structureTypes: ReadonlySet<UnitType> = new Set([
   UnitType.Airfield,
   UnitType.Hospital,
   UnitType.Academy,
+  UnitType.RoadNode,
 ]);
 
 export function isStructureType(type: UnitType): boolean {
@@ -232,6 +234,8 @@ export interface UnitParamsMap {
   [UnitType.Construction]: Record<string, never>;
 
   [UnitType.Airfield]: Record<string, never>;
+
+  [UnitType.RoadNode]: Record<string, never>;
 
   [UnitType.CargoPlane]: {
     targetUnit: Unit;

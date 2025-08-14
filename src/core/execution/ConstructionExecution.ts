@@ -18,6 +18,7 @@ import { MirvExecution } from "./MIRVExecution";
 import { MissileSiloExecution } from "./MissileSiloExecution";
 import { NukeExecution } from "./NukeExecution";
 import { PortExecution } from "./PortExecution";
+import { RoadNodeExecution } from "./RoadNodeExecution";
 import { SAMLauncherExecution } from "./SAMLauncherExecution";
 import { WarshipExecution } from "./WarshipExecution";
 
@@ -146,6 +147,9 @@ export class ConstructionExecution implements Execution {
         break;
       case UnitType.Airfield:
         this.mg.addExecution(new AirfieldExecution(player, this.tile));
+        break;
+      case UnitType.RoadNode:
+        this.mg.addExecution(new RoadNodeExecution(player, this.tile));
         break;
       default:
         // Try to build the unit directly if it has no specific execution

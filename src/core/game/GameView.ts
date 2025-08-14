@@ -592,6 +592,12 @@ export class GameView implements GameMap {
   setFallout(ref: TileRef, value: boolean): void {
     return this._map.setFallout(ref, value);
   }
+  hasRoad(ref: TileRef): boolean {
+    return this._map.hasRoad(ref);
+  }
+  setRoad(ref: TileRef, value: boolean): void {
+    return this._map.setRoad(ref, value);
+  }
   isBorder(ref: TileRef): boolean {
     return this._map.isBorder(ref);
   }

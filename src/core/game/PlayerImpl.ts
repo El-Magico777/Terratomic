@@ -993,6 +993,7 @@ export class PlayerImpl implements Player {
       case UnitType.Academy:
       case UnitType.Construction:
       case UnitType.Airfield:
+      case UnitType.RoadNode:
         return this.landBasedStructureSpawn(targetTile, validTiles);
       case UnitType.CargoPlane:
       case UnitType.Bomber:

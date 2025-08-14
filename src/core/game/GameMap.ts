@@ -27,6 +27,8 @@ export interface GameMap {
   setOwnerID(ref: TileRef, playerId: number): void;
   hasFallout(ref: TileRef): boolean;
   setFallout(ref: TileRef, value: boolean): void;
+  hasRoad(ref: TileRef): boolean;
+  setRoad(ref: TileRef, value: boolean): void;
   isOnEdgeOfMap(ref: TileRef): boolean;
   isBorder(ref: TileRef): boolean;
   neighbors(ref: TileRef): TileRef[];
@@ -55,6 +57,7 @@ export class GameMapImpl implements GameMap {
 
   private readonly terrain: Uint8Array; // Immutable terrain data
   private readonly state: Uint16Array; // Mutable game state
+  private readonly roads: Uint8Array; // Road presence
   private readonly width_: number;
   private readonly height_: number;
 
@@ -92,6 +95,7 @@ export class GameMapImpl implements GameMap {
     this.height_ = height;
     this.terrain = terrainData;
     this.state = new Uint16Array(width * height);
+    this.roads = new Uint8Array(width * height);
     // Precompute the LUTs
     let ref = 0;
     this.refToX = new Array(width * height);
@@ -208,6 +212,14 @@ export class GameMapImpl implements GameMap {
     }
   }
 
+  hasRoad(ref: TileRef): boolean {
+    return Boolean(this.roads[ref]);
+  }
+
+  setRoad(ref: TileRef, value: boolean): void {
+    this.roads[ref] = value ? 1 : 0;
+  }
+
   isOnEdgeOfMap(ref: TileRef): boolean {
     const x = this.x(ref);
     const y = this.y(ref);
@@ -248,6 +260,9 @@ export class GameMapImpl implements GameMap {
   }
 
   cost(ref: TileRef): number {
+    if (this.hasRoad(ref)) {
+      return 0.5;
+    }
     return this.magnitude(ref) < 10 ? 2 : 1;
   }
 

@@ -196,6 +196,14 @@ export class GameImpl implements Game {
     });
   }
 
+  hasRoad(tile: TileRef): boolean {
+    return this._map.hasRoad(tile);
+  }
+
+  setRoad(tile: TileRef, value: boolean) {
+    this._map.setRoad(tile, value);
+  }
+
   units(...types: UnitType[]): Unit[] {
     return Array.from(this._players.values()).flatMap((p) => p.units(...types));
   }
