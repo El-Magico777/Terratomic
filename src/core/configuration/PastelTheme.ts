@@ -26,8 +26,8 @@ export class PastelTheme implements Theme {
     colord({ r: 125, g: 255, b: 75 }), // Warmer tint
     colord({ r: 115, g: 250, b: 68 }), // Cooler tint
   ];
-  private water = colord({ r: 90, g: 108, b: 123 });
-  private shorelineWater = colord({ r: 126, g: 138, b: 151 });
+  private water = colord({ r: 57, g: 74, b: 159 });
+  private shorelineWater = colord({ r: 87, g: 85, b: 234 });
 
   private _selfColor = colord({ r: 0, g: 255, b: 0 });
   private _allyColor = colord({ r: 255, g: 255, b: 0 });
