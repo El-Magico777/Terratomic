@@ -1,10 +1,7 @@
 import { EventBus } from "../../core/EventBus";
 import { GameView } from "../../core/game/GameView";
 import { GameStartingModal } from "../GameStartingModal";
-import {
-  InputHandler,
-  RefreshGraphicsEvent as RedrawGraphicsEvent,
-} from "../InputHandler";
+import { RefreshGraphicsEvent as RedrawGraphicsEvent } from "../InputHandler";
 import { TransformHandler } from "./TransformHandler";
 import { UIState } from "./UIState";
 import { BuildMenu } from "./layers/BuildMenu";
@@ -260,7 +257,6 @@ export function createRenderer(
     transformHandler,
     uiState,
     layers,
-    new InputHandler(canvas, eventBus, uiState, game, transformHandler),
   );
 }
 
@@ -274,7 +270,6 @@ export class GameRenderer {
     public transformHandler: TransformHandler,
     public uiState: UIState,
     private layers: Layer[],
-    private inputHandler: InputHandler,
   ) {
     const context = canvas.getContext("2d");
     if (context === null) throw new Error("2d context not supported");
@@ -291,7 +286,6 @@ export class GameRenderer {
     });
 
     this.layers.forEach((l) => l.init?.());
-    this.inputHandler.initialize();
 
     document.body.appendChild(this.canvas);
     window.addEventListener("resize", () => this.resizeCanvas());
