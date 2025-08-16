@@ -74,7 +74,6 @@ export function createRenderer(
   buildMenu.game = game;
   buildMenu.eventBus = eventBus;
   buildMenu.uiState = uiState;
-  buildMenu.uiState = uiState;
 
   const leaderboard = document.querySelector("leader-board") as Leaderboard;
   if (!leaderboard || !(leaderboard instanceof Leaderboard)) {
