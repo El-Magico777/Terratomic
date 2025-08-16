@@ -374,14 +374,29 @@ export class InputHandler {
     const upX = event.clientX;
     const upY = event.clientY;
 
+    // End interaction
     this.pointerDown = false;
     this.pointers.clear();
 
-    // Build if a unit is selected
+    // ---------- RESTORED SAFEGUARD (drag vs click) ----------
+    // Treat as click only if the pointer barely moved since pointerdown.
+    const dist =
+      Math.abs(upX - this.lastPointerDownX) +
+      Math.abs(upY - this.lastPointerDownY);
+
+    // If moved too much, consider it a drag/pan; do NOT fire click/place actions.
+    if (dist >= 10) {
+      return;
+    }
+    // --------------------------------------------------------
+
+    // If we reach here, it's a "click" interaction.
+
+    // Pending build: place unit on click (still respects the drag-vs-click guard above)
     if (this.uiState.pendingBuildUnitType) {
       const cell = this.transformHandler.screenToWorldCoordinates(upX, upY);
 
-      // If coordinates are invalid, just deselect build state and return
+      // If coordinates are invalid, just deselect build state (when not multi-build) and return
       if (!this.game.isValidCoord(cell.x, cell.y)) {
         if (!this.uiState.multibuildEnabled) {
           this.uiState.pendingBuildUnitType = null;
@@ -410,8 +425,19 @@ export class InputHandler {
       return;
     }
 
-    // Single, final delivery of MouseUpEvent
-    this.eventBus.emit(new MouseUpEvent(upX, upY));
+    // Touch parity with the old behavior: short tap opens context menu.
+    if (event.pointerType === "touch") {
+      this.eventBus.emit(new ContextMenuEvent(upX, upY));
+      event.preventDefault();
+      return;
+    }
+
+    // Respect the old setting: left click either selects (MouseUp) or opens menu.
+    if (!this.userSettings.leftClickOpensMenu() || event.shiftKey) {
+      this.eventBus.emit(new MouseUpEvent(upX, upY));
+    } else {
+      this.eventBus.emit(new ContextMenuEvent(upX, upY));
+    }
   }
 
   private onScroll(event: WheelEvent) {
