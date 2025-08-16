@@ -144,6 +144,7 @@ export interface PlayerUpdate {
   betrayals?: bigint;
   effectiveUnits: Record<UnitType, number>;
   unitsOwned: Record<UnitType, number>;
+  unitsConstructed: Record<UnitType, number>;
 }
 
 export interface AllianceRequestUpdate {
