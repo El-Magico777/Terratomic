@@ -355,6 +355,7 @@ export class InputHandler {
   }
 
   onPointerUp(event: PointerEvent) {
+    // Ignore non-primary buttons and non-primary pointers
     if (
       event.button > 0 ||
       (typeof event.isPrimary === "boolean" && !event.isPrimary)
@@ -362,39 +363,33 @@ export class InputHandler {
       return;
     }
 
-    // Ensure this pointerup originated on the game canvas, not on UI overlays
-    // When listener is on `window`, target is still the original element.
+    // Ensure this pointerup originated on the game canvas, not on UI overlays.
     const path = event.composedPath?.() ?? [];
     const cameFromCanvas =
       event.target === this.canvas ||
       (path.length > 0 && path.includes(this.canvas));
+    if (!cameFromCanvas) return;
 
-    if (!cameFromCanvas) {
-      return;
-    }
+    // Normalize coordinates
+    const upX = event.clientX;
+    const upY = event.clientY;
 
     this.pointerDown = false;
     this.pointers.clear();
 
     // Build if a unit is selected
     if (this.uiState.pendingBuildUnitType) {
-      const cell = this.transformHandler.screenToWorldCoordinates(
-        event.x,
-        event.y,
-      );
+      const cell = this.transformHandler.screenToWorldCoordinates(upX, upY);
 
-      // --- ADDED VALIDATION HERE ---
+      // If coordinates are invalid, just deselect build state and return
       if (!this.game.isValidCoord(cell.x, cell.y)) {
-        // If coordinates are invalid, just deselect build state and return
         if (!this.uiState.multibuildEnabled) {
           this.uiState.pendingBuildUnitType = null;
         }
         return;
       }
-      // --- END ADDED VALIDATION ---
 
       const tile = this.game.ref(cell.x, cell.y);
-
       this.eventBus.emit(
         new BuildUnitIntentEvent(this.uiState.pendingBuildUnitType, tile),
       );
@@ -407,15 +402,16 @@ export class InputHandler {
 
     // No build pending → normal “click up” behavior
     if (this.isModifierKeyPressed(event)) {
-      this.eventBus.emit(new ShowBuildMenuEvent(event.clientX, event.clientY));
+      this.eventBus.emit(new ShowBuildMenuEvent(upX, upY));
       return;
     }
     if (this.isAltKeyPressed(event)) {
-      this.eventBus.emit(new ShowEmojiMenuEvent(event.clientX, event.clientY));
+      this.eventBus.emit(new ShowEmojiMenuEvent(upX, upY));
       return;
     }
 
-    this.eventBus.emit(new MouseUpEvent(event.clientX, event.clientY));
+    // Single, final delivery of MouseUpEvent
+    this.eventBus.emit(new MouseUpEvent(upX, upY));
   }
 
   private onScroll(event: WheelEvent) {
