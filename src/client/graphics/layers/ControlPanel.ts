@@ -4,11 +4,7 @@ import { translateText } from "../../../client/Utils";
 import { EventBus, GameEvent } from "../../../core/EventBus";
 import { Gold } from "../../../core/game/Game";
 import { GameView } from "../../../core/game/GameView";
-import {
-  AttackRatioEvent,
-  CloseViewEvent,
-  ShowBuildMenuInControlPanelEvent,
-} from "../../InputHandler";
+import { AttackRatioEvent } from "../../InputHandler";
 import {
   SendSetInvestmentRateEvent,
   SendSetTargetTroopRatioEvent,
@@ -100,18 +96,6 @@ export class ControlPanel extends LitElement implements Layer {
     this.init_ = true;
     this.uiState.attackRatio = this.attackRatio;
     this.currentTroopRatio = this.targetTroopRatio;
-    this.eventBus.on(CloseViewEvent, () => {
-      this.buildTile = null;
-      this.activeTab = "Controls";
-    });
-
-    this.eventBus.on(
-      ShowBuildMenuInControlPanelEvent,
-      (event: ShowBuildMenuInControlPanelEvent) => {
-        this.buildTile = event.tile;
-        this.activeTab = "Build";
-      },
-    );
 
     this.eventBus.on(AttackRatioEvent, (event: AttackRatioEvent) => {
       let newAttackRatio =
