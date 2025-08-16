@@ -239,12 +239,12 @@
     "title": "Select Language"
   },
   "unit_type": {
-    "city": "City",
-    "defense_post": "Defense Post",
-    "port": "Port",
-    "warship": "Warship",
-    "missile_silo": "Missile Silo",
-    "sam_launcher": "SAM Launcher",
+    "city": "Industrial Complex",
+    "defense_post": "Pillbox",
+    "port": "Naval Dockyard",
+    "warship": "Destroyer",
+    "missile_silo": "ICBM Silo",
+    "sam_launcher": "Flak Battery",
     "atom_bomb": "Atom Bomb",
     "hydrogen_bomb": "Hydrogen Bomb",
     "mirv": "MIRV",
