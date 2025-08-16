@@ -339,151 +339,170 @@ export class ControlPanel extends LitElement implements Layer {
           }
         }
       </style>
-      <div
-        class="${this._isVisible
-          ? `w-full h-[320px] text-sm lg:text-m bg-slate-800/40 backdrop-blur-sm shadow-xs p-2 pr-3 lg:p-4 shadow-lg lg:rounded-lg flex flex-col`
-          : "hidden"}"
-        @contextmenu=${(e: MouseEvent) => e.preventDefault()}
-      >
-        <div class="tab-content flex flex-col h-full">
-          <div class="hidden lg:block bg-gray-800 text-tan mb-4 p-2 rounded-sm">
-            <div class="flex justify-between mb-1">
-              <span class="font-bold"
-                >${translateText("control_panel.pop")}:</span
-              >
-              <span translate="no"
-                >${renderTroops(this._population)} /
-                ${renderTroops(this._maxPopulation)}
-                <span
-                  class="${this._popRateIsIncreasing
-                    ? "text-crt-green"
-                    : "text-orange-400"}"
-                  translate="no"
-                >
-                  (+${renderTroops(this.popRate)}${this._hospitalReturns > 0
-                    ? `/ +${renderTroops(this._hospitalReturns)}`
-                    : ""})
-                </span>
-              </span>
-            </div>
-            <div class="flex justify-between">
-              <span class="font-bold text-tan"
-                >${translateText("control_panel.gold")}:</span
-              >
-              <span translate="no" class="text-tan"
-                >${renderNumber(this._gold)}
-                (+${renderNumber(this._goldPerSecond)})</span
-              >
-            </div>
-          </div>
 
-          <div class="relative mb-4 lg:mb-4">
-            <label class="block text-tan mb-1" translate="no"
-              >${translateText("control_panel.troops")}:
-              <span translate="no">${renderTroops(this._troops)}</span>
-              | ${translateText("control_panel.workers")}:
-              <span translate="no">${renderTroops(this._workers)}</span></label
-            >
-            <div class="relative h-8">
-              <!-- Background track -->
+      ${this._isVisible
+        ? html`
+            <!-- Root panel shell (military-panel provides background/border/colors) -->
+            <div class="relative military-panel">
               <div
-                class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
-              ></div>
-              <!-- Fill track -->
-              <div
-                class="absolute left-0 top-3 h-2 bg-crt-green/60 rounded transition-all duration-300"
-                style="width: ${this.currentTroopRatio * 100}%"
-              ></div>
-              <!-- Range input - exactly overlaying the visual elements -->
-              <input
-                type="range"
-                min="1"
-                max="100"
-                .value=${(this.targetTroopRatio * 100).toString()}
-                @input=${(e: Event) => {
-                  this.targetTroopRatio =
-                    parseInt((e.target as HTMLInputElement).value) / 100;
-                  this.onTroopChange(this.targetTroopRatio);
-                }}
-                class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer targetTroopRatio"
-              />
-            </div>
-          </div>
+                class="w-full h-[300px] lg:h-[255px] text-sm lg:text-m bg-transparent border-0 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex"
+                @contextmenu=${(e: MouseEvent) => e.preventDefault()}
+              >
+                <div class="flex-grow flex flex-col h-full">
+                  <!-- Top stats block -->
+                  <div class="hidden lg:block mb-4 p-2 rounded-sm bg-gray-700">
+                    <div class="flex justify-between mb-1">
+                      <span class="font-bold military-heading">
+                        ${translateText("control_panel.pop")}:
+                      </span>
+                      <span translate="no" class="military-label normal-case">
+                        ${renderTroops(this._population)} /
+                        ${renderTroops(this._maxPopulation)}
+                        <span
+                          translate="no"
+                          style="color: ${this._popRateIsIncreasing
+                            ? "#4EB057"
+                            : "#B0504E"}"
+                        >
+                          (+${renderTroops(this.popRate)}${this
+                            ._hospitalReturns > 0
+                            ? `/ +${renderTroops(this._hospitalReturns)}`
+                            : ""})
+                        </span>
+                      </span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="font-bold military-heading">
+                        ${translateText("control_panel.gold")}:
+                      </span>
+                      <span translate="no" class="military-label normal-case">
+                        ${renderNumber(this._gold)}
+                        (+${renderNumber(this._goldPerSecond)})
+                      </span>
+                    </div>
+                  </div>
 
-          <div class="relative mb-0 lg:mb-4">
-            <label class="block text-tan mb-1" translate="no"
-              >${translateText("control_panel.attack_ratio")}:
-              ${(this.attackRatio * 100).toFixed(0)}%
-              (${renderTroops(
-                (this.game?.myPlayer()?.troops() ?? 0) * this.attackRatio,
-              )})</label
-            >
-            <div class="relative h-8">
-              <!-- Background track -->
-              <div
-                class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
-              ></div>
-              <!-- Fill track -->
-              <div
-                class="absolute left-0 top-3 h-2 bg-muted-red/60 rounded transition-all duration-300"
-                style="width: ${this.attackRatio * 100}%"
-              ></div>
-              <!-- Range input - exactly overlaying the visual elements -->
-              <input
-                id="attack-ratio"
-                type="range"
-                min="1"
-                max="100"
-                .value=${(this.attackRatio * 100).toString()}
-                @input=${(e: Event) => {
-                  this.attackRatio =
-                    parseInt((e.target as HTMLInputElement).value) / 100;
-                  this.onAttackRatioChange(this.attackRatio);
-                }}
-                class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer attackRatio"
-              />
+                  <div class="relative mb-4 lg:mb-4">
+                    <label class="block text-tan mb-1" translate="no"
+                      >${translateText("control_panel.troops")}:
+                      <span translate="no">${renderTroops(this._troops)}</span>
+                      | ${translateText("control_panel.workers")}:
+                      <span translate="no"
+                        >${renderTroops(this._workers)}</span
+                      ></label
+                    >
+                    <div class="relative h-8">
+                      <!-- Background track -->
+                      <div
+                        class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
+                      ></div>
+                      <!-- Fill track -->
+                      <div
+                        class="absolute left-0 top-3 h-2 bg-crt-green/60 rounded transition-all duration-300"
+                        style="width: ${this.currentTroopRatio * 100}%"
+                      ></div>
+                      <!-- Range input - exactly overlaying the visual elements -->
+                      <input
+                        type="range"
+                        min="1"
+                        max="100"
+                        .value=${(this.targetTroopRatio * 100).toString()}
+                        @input=${(e: Event) => {
+                          this.targetTroopRatio =
+                            parseInt((e.target as HTMLInputElement).value) /
+                            100;
+                          this.onTroopChange(this.targetTroopRatio);
+                        }}
+                        class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer targetTroopRatio"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="relative mb-0 lg:mb-4">
+                    <label class="block text-tan mb-1" translate="no"
+                      >${translateText("control_panel.attack_ratio")}:
+                      ${(this.attackRatio * 100).toFixed(0)}%
+                      (${renderTroops(
+                        (this.game?.myPlayer()?.troops() ?? 0) *
+                          this.attackRatio,
+                      )})</label
+                    >
+                    <div class="relative h-8">
+                      <!-- Background track -->
+                      <div
+                        class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
+                      ></div>
+                      <!-- Fill track -->
+                      <div
+                        class="absolute left-0 top-3 h-2 bg-muted-red/60 rounded transition-all duration-300"
+                        style="width: ${this.attackRatio * 100}%"
+                      ></div>
+                      <!-- Range input - exactly overlaying the visual elements -->
+                      <input
+                        id="attack-ratio"
+                        type="range"
+                        min="1"
+                        max="100"
+                        .value=${(this.attackRatio * 100).toString()}
+                        @input=${(e: Event) => {
+                          this.attackRatio =
+                            parseInt((e.target as HTMLInputElement).value) /
+                            100;
+                          this.onAttackRatioChange(this.attackRatio);
+                        }}
+                        class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer attackRatio"
+                      />
+                    </div>
+                  </div>
+                  <div class="relative lg:mb-4">
+                    <label class="block text-white mb-1" translate="no">
+                      Production Investment Rate:
+                      ${(this.investmentRate * 100).toFixed(0)}%
+                    </label>
+                    <div
+                      class="text-tan text-right text-xs opacity-60 mt-1"
+                      translate="no"
+                    >
+                      Prod: ${Math.round(this._productivity * 100)}%
+                      (${this._productivityGrowth >= 0 ? "+" : ""}${(
+                        this._productivityGrowth * 100
+                      ).toFixed(1)}%/min)
+                    </div>
+                    <div class="relative h-8">
+                      <div
+                        class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
+                      ></div>
+                      <div
+                        class="absolute left-0 top-3 h-2 bg-crt-green/60 rounded transition-all duration-300"
+                        style="width: ${(this.investmentRate /
+                          this.game.config().maxInvestmentRate()) *
+                        100}%"
+                      ></div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="${this.game?.config()?.maxInvestmentRate() * 100}"
+                        .value=${(this.investmentRate * 100).toString()}
+                        @input=${(e: Event) => {
+                          this.investmentRate =
+                            parseInt((e.target as HTMLInputElement).value) /
+                            100;
+                          this.onInvestmentRateChange(this.investmentRate);
+                        }}
+                        class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer"
+                      />
+                    </div>
+                    <!-- end .relative.h-8 -->
+                  </div>
+                  <!-- end .relative.lg:mb-4 -->
+                </div>
+                <!-- end .flex-grow -->
+              </div>
+              <!-- end .w-full container -->
             </div>
-          </div>
-          <div class="relative lg:mb-4">
-            <label class="block text-white mb-1" translate="no">
-              Production Investment Rate:
-              ${(this.investmentRate * 100).toFixed(0)}%
-            </label>
-            <div
-              class="text-tan text-right text-xs opacity-60 mt-1"
-              translate="no"
-            >
-              Prod: ${Math.round(this._productivity * 100)}%
-              (${this._productivityGrowth >= 0 ? "+" : ""}${(
-                this._productivityGrowth * 100
-              ).toFixed(1)}%/min)
-            </div>
-            <div class="relative h-8">
-              <div
-                class="absolute left-0 right-0 top-3 h-2 bg-gray-700 rounded"
-              ></div>
-              <div
-                class="absolute left-0 top-3 h-2 bg-crt-green/60 rounded transition-all duration-300"
-                style="width: ${(this.investmentRate /
-                  this.game.config().maxInvestmentRate()) *
-                100}%"
-              ></div>
-              <input
-                type="range"
-                min="0"
-                max="${this.game?.config()?.maxInvestmentRate() * 100}"
-                .value=${(this.investmentRate * 100).toString()}
-                @input=${(e: Event) => {
-                  this.investmentRate =
-                    parseInt((e.target as HTMLInputElement).value) / 100;
-                  this.onInvestmentRateChange(this.investmentRate);
-                }}
-                class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+            <!-- end .military-panel -->
+          `
+        : ``}
     `;
   }
 
