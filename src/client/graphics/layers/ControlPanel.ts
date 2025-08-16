@@ -243,11 +243,13 @@ export class ControlPanel extends LitElement implements Layer {
     }
     return html`
       <style>
+        /* Make the inputs transparent so our custom track/thumb show */
         input[type="range"] {
           -webkit-appearance: none;
           background: transparent;
           outline: none;
         }
+        /* Thumb base (we color with borders below) */
         input[type="range"]::-webkit-slider-thumb {
           -webkit-appearance: none;
           appearance: none;
@@ -268,18 +270,20 @@ export class ControlPanel extends LitElement implements Layer {
           border-radius: 50%;
           cursor: pointer;
         }
+        /* Exact WWII palette for thumbs */
         .targetTroopRatio::-webkit-slider-thumb {
-          border-color: #00ff00; /* CRT Green */
+          border-color: #4eb057;
         }
         .targetTroopRatio::-moz-range-thumb {
-          border-color: #00ff00; /* CRT Green */
+          border-color: #4eb057;
         }
         .attackRatio::-webkit-slider-thumb {
-          border-color: #cc0000; /* Muted Red */
+          border-color: #b0504e;
         }
         .attackRatio::-moz-range-thumb {
-          border-color: #cc0000; /* Muted Red */
+          border-color: #b0504e;
         }
+
         .highlight-tab {
           animation: pulse 1s infinite alternate;
         }
@@ -302,7 +306,7 @@ export class ControlPanel extends LitElement implements Layer {
       <div class="relative military-panel">
         <div
           class="${this._isVisible
-            ? `w-full h-[300px] text-sm lg:text-m bg-transparent border-0 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex`
+            ? `w-full h-[320px] text-sm lg:text-m bg-transparent border-0 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex`
             : "hidden"}"
           @contextmenu=${(e: MouseEvent) => e.preventDefault()}
         >
@@ -416,27 +420,63 @@ export class ControlPanel extends LitElement implements Layer {
                 />
               </div>
             </div>
+
+            <!-- Investment rate -->
+            <div class="relative">
+              <label class="block military-label mb-1" translate="no">
+                Production Investment Rate:
+                ${(this.investmentRate * 100).toFixed(0)}%
+              </label>
+              <div
+                class="text-right text-xs opacity-60 mt-1 military-label normal-case"
+                translate="no"
+              >
+                Prod: ${Math.round(this._productivity * 100)}%
+                (${this._productivityGrowth >= 0 ? "+" : ""}${(
+                  this._productivityGrowth * 100
+                ).toFixed(1)}%/min)
+              </div>
+              <div class="relative h-8">
+                <div
+                  class="absolute left-0 right-0 top-3 h-2 rounded"
+                  style="background-color:#4E513A"
+                ></div>
+                <div
+                  class="absolute left-0 top-3 h-2 rounded transition-all duration-300"
+                  style="width:${(this.investmentRate /
+                    this.game.config().maxInvestmentRate()) *
+                  100}%; background-color: rgba(78,176,87,0.6);"
+                ></div>
+                <input
+                  type="range"
+                  min="0"
+                  max="${this.game?.config()?.maxInvestmentRate() * 100}"
+                  .value=${(this.investmentRate * 100).toString()}
+                  @input=${(e: Event) => {
+                    this.investmentRate =
+                      parseInt((e.target as HTMLInputElement).value) / 100;
+                    this.onInvestmentRateChange(this.investmentRate);
+                  }}
+                  class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer military-slider"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        ${this._isVisible
-          ? html`
-              <!-- Vertical Build tab (no functionality change) -->
-              <div
-                class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0"
-                style="background-color:#3B3E2C; border-color:#1F2018;"
-                @mouseenter=${this.openBuildPanel}
-                @click=${this.toggleBuildPanel}
-              >
-                <span
-                  class="build-tab tracking-wider font-ocr uppercase"
-                  style="color:#D8D1B1;"
-                >
-                  Build
-                </span>
-              </div>
-            `
-          : ``}
+        <!-- Vertical Build tab (no functionality change) -->
+        <div
+          class="absolute top-0 -right-8 w-8 h-full rounded-r-md flex items-center justify-center cursor-pointer border-2 border-l-0"
+          style="background-color:#3B3E2C; border-color:#1F2018;"
+          @mouseenter=${this.openBuildPanel}
+          @click=${this.toggleBuildPanel}
+        >
+          <span
+            class="build-tab tracking-wider font-ocr uppercase"
+            style="color:#D8D1B1;"
+            >Build</span
+          >
+        </div>
       </div>
       <!-- end .relative.military-panel -->
     `;

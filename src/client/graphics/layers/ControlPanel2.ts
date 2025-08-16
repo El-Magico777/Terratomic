@@ -564,14 +564,15 @@ export class ControlPanel2 extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible && this.isOpen
-          ? `w-full h-[320px] text-sm lg:text-m military-panel border-2 border-gray-700 p-2 pr-3 lg:p-4 rounded-md flex flex-col transition-all duration-300 ml-8`
+          ? `w-full h-[320px] text-sm lg:text-m military-panel border-2 border-gray-700 shadow-inner p-2 pr-3 lg:p-4 rounded-md flex flex-col transition-all duration-300 ml-8`
           : "hidden"}"
         style="box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         <div class="flex border-b border-gray-700 mb-4">
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Build"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Build"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Build")}
@@ -579,7 +580,8 @@ export class ControlPanel2 extends LitElement implements Layer {
             Build
           </button>
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Attack"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Attack"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Attack")}
@@ -587,7 +589,8 @@ export class ControlPanel2 extends LitElement implements Layer {
             Attack
           </button>
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Economy"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Economy"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Economy")}
@@ -595,7 +598,8 @@ export class ControlPanel2 extends LitElement implements Layer {
             Economy
           </button>
           <button
-            class="py-2 px-4 text-center ${this.activeTab === "Research"
+            class="py-2 px-4 text-center font-ocr uppercase ${this.activeTab ===
+            "Research"
               ? "bg-gray-700 text-crt-green border border-crt-green"
               : "text-tan"}"
             @click=${() => (this.activeTab = "Research")}
@@ -605,7 +609,8 @@ export class ControlPanel2 extends LitElement implements Layer {
           ${this._hasAirfields
             ? html`
                 <button
-                  class="py-2 px-4 text-center ${this.activeTab === "Bombers"
+                  class="py-2 px-4 text-center font-ocr uppercase ${this
+                    .activeTab === "Bombers"
                     ? "bg-gray-700 text-crt-green border border-crt-green"
                     : "text-tan"} ${this._highlightBombersTab
                     ? "highlight-tab"
@@ -624,19 +629,18 @@ export class ControlPanel2 extends LitElement implements Layer {
                 <div class="text-white flex">
                   <!-- Column 1: Auto-Bombing -->
                   <div class="w-1/3 pr-2">
-                    <h3 class="font-bold text-base mb-2">Auto-Bombing</h3>
+                    <h3 class="military-heading mb-2">Auto-Bombing</h3>
                     <div class="flex flex-col gap-2">
                       <button
                         type="button"
-                        class="military-button w-full"
+                        class="w-full px-2 py-1 text-sm font-ocr uppercase bg-olive-green hover:bg-green-700 text-white border border-gray-700 rounded-sm"
                         @click=${this._startAutoBombing}
                       >
                         Start Auto Bombing
                       </button>
                       <button
                         type="button"
-                        class="military-button w-full"
-                        style="background-color: var(--alertColor); border-color: var(--alertColor);"
+                        class="w-full px-2 py-1 text-sm font-ocr uppercase bg-muted-red hover:bg-red-700 text-white border border-gray-700 rounded-sm"
                         @click=${this._stopAutoBombing}
                       >
                         Stop Auto Bombing
@@ -649,114 +653,106 @@ export class ControlPanel2 extends LitElement implements Layer {
                   </div>
 
                   <!-- Column 2: Manual Targeting -->
-                  <div class="w-1/3 px-2">
-                    ${this._isAutoBombingEnabled
-                      ? html`
-                          <div
-                            class="flex flex-col items-center justify-center h-full text-crt-green font-bold text-center"
-                          >
-                            Automatic bombing is enabled.
-                          </div>
-                        `
-                      : html`
-                          <h3 class="military-heading mb-2">
-                            Manual Targeting
-                          </h3>
-                          <form
-                            @submit=${(e: Event) => e.preventDefault()}
-                            class="flex flex-col gap-2"
-                          >
-                            <label
-                              class="inline-flex items-center text-sm military-label"
-                            >
-                              Select Target
-                              <select
-                                id="bomber-player-select"
-                                class="ml-1 p-1 bg-gray-700 text-tan border border-gray-500 rounded-sm w-full truncate"
-                              ></select>
-                            </label>
+                  <div
+                    class="w-1/3 px-2 ${this._isAutoBombingEnabled
+                      ? "invisible"
+                      : ""}"
+                  >
+                    <h3 class="military-heading mb-2">Manual Targeting</h3>
+                    <form
+                      @submit=${(e: Event) => e.preventDefault()}
+                      class="flex flex-col gap-2"
+                    >
+                      <label
+                        class="inline-flex items-center text-sm military-label"
+                      >
+                        Select Target
+                        <select
+                          id="bomber-player-select"
+                          class="ml-1 p-1 bg-gray-700 text-tan border border-gray-500 rounded-sm w-full truncate"
+                        ></select>
+                      </label>
 
-                            <label class="block text-sm military-label"
-                              >Select Structure</label
+                      <label class="block text-sm military-label"
+                        >Select Structure</label
+                      >
+                      <div class="grid grid-cols-4 gap-2">
+                        ${[
+                          UnitType.City,
+                          UnitType.DefensePost,
+                          UnitType.SAMLauncher,
+                          UnitType.MissileSilo,
+                          UnitType.Port,
+                          UnitType.Airfield,
+                          UnitType.Hospital,
+                          UnitType.Academy,
+                        ].map((s) => {
+                          return html`
+                            <label
+                              class="flex items-center space-x-1 p-1 border border-gray-700 rounded-sm cursor-pointer has-checked:border-crt-green"
                             >
-                            <div class="grid grid-cols-4 gap-2">
-                              ${[
-                                UnitType.City,
-                                UnitType.DefensePost,
-                                UnitType.SAMLauncher,
-                                UnitType.MissileSilo,
-                                UnitType.Port,
-                                UnitType.Airfield,
-                                UnitType.Hospital,
-                                UnitType.Academy,
-                              ].map((s) => {
-                                return html`
-                                  <label
-                                    class="flex items-center space-x-1 p-1 border border-gray-700 rounded-sm cursor-pointer has-checked:border-crt-green"
-                                  >
-                                    <img
-                                      src="${this.unitIconMap[s]}"
-                                      alt="${s}"
-                                      class="w-4 h-4"
-                                    />
-                                    <input
-                                      type="checkbox"
-                                      name="structure"
-                                      value="${s}"
-                                      ?checked=${s === UnitType.City}
-                                      class="form-checkbox h-4 w-4 text-crt-green bg-gray-700 border-gray-500 rounded-sm focus:ring-crt-green"
-                                      @change=${this.handleStructureChange}
-                                    />
-                                  </label>
-                                `;
-                              })}
-                            </div>
-                          </form>
-                        `}
+                              <img
+                                src="${this.unitIconMap[s]}"
+                                alt="${s}"
+                                class="w-4 h-4"
+                              />
+                              <input
+                                type="checkbox"
+                                name="structure"
+                                value="${s}"
+                                ?checked=${s === UnitType.City}
+                                class="form-checkbox h-4 w-4 text-crt-green bg-gray-700 border-gray-500 rounded-sm focus:ring-crt-green"
+                                @change=${this.handleStructureChange}
+                              />
+                            </label>
+                          `;
+                        })}
+                      </div>
+                    </form>
                   </div>
 
                   <!-- Column 3: Target Actions -->
-                  <div class="w-1/3 pl-2">
-                    ${this._isAutoBombingEnabled
-                      ? ""
-                      : html`
-                          <h3 class="military-heading mb-2">Target Actions</h3>
-                          <div class="text-tan text-sm min-h-[20px]">
-                            ${this._currentTargetPlayerId &&
-                            this._currentTargetStructureType
-                              ? html`<span class="font-bold military-label"
-                                    >Target:</span
-                                  >
-                                  ${this._currentTargetPlayerName}
-                                  <img
-                                    src="${this.unitIconMap[
-                                      this._currentTargetStructureType
-                                    ]}"
-                                    alt="${this._currentTargetStructureType}"
-                                    class="inline-block w-4 h-4 align-top ml-1"
-                                  />`
-                              : html`<span class="military-label"
-                                  >No target selected</span
-                                >`}
-                          </div>
+                  <div
+                    class="w-1/3 pl-2 ${this._isAutoBombingEnabled
+                      ? "invisible"
+                      : ""}"
+                  >
+                    <h3 class="military-heading mb-2">Target Actions</h3>
+                    <div class="text-tan text-sm min-h-[20px]">
+                      ${this._currentTargetPlayerId &&
+                      this._currentTargetStructureType
+                        ? html`<span class="font-bold military-label"
+                              >Target:</span
+                            >
+                            ${this._currentTargetPlayerName}
+                            <img
+                              src="${this.unitIconMap[
+                                this._currentTargetStructureType
+                              ]}"
+                              alt="${this._currentTargetStructureType}"
+                              class="inline-block w-4 h-4 align-top ml-1"
+                            />`
+                        : html`<span class="military-label"
+                            >No target selected</span
+                          >`}
+                    </div>
 
-                          <div class="flex gap-2 mt-auto">
-                            <button
-                              type="button"
-                              class="flex-1 p-1 font-ocr uppercase bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
-                              @click=${this.handleBomberIntent}
-                            >
-                              Set Target
-                            </button>
-                            <button
-                              type="button"
-                              class="flex-1 p-1 font-ocr uppercase bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
-                              @click=${() => this.sendBomberIntent(null, null)}
-                            >
-                              Clear Target
-                            </button>
-                          </div>
-                        `}
+                    <div class="flex gap-2 mt-auto">
+                      <button
+                        type="button"
+                        class="flex-1 p-1 font-ocr uppercase bg-steel hover:bg-blue-700 text-white border border-gray-700 rounded-sm"
+                        @click=${this.handleBomberIntent}
+                      >
+                        Set Target
+                      </button>
+                      <button
+                        type="button"
+                        class="flex-1 p-1 font-ocr uppercase bg-gray-700 hover:bg-gray-600 text-white border border-gray-700 rounded-sm"
+                        @click=${() => this.sendBomberIntent(null, null)}
+                      >
+                        Clear Target
+                      </button>
+                    </div>
                   </div>
                 </div>
               `
@@ -780,7 +776,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                     @change=${this._handleMultibuildToggle}
                   />
                   <label for="multibuild-toggle" class="military-label"
-                    >Enable Mass Production</label
+                    >Multibuild</label
                   >
                 </div>
                 <build-menu
@@ -803,7 +799,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                     @change=${this._handleMultibuildToggle}
                   />
                   <label for="multibuild-toggle" class="military-label"
-                    >Enable Mass Production</label
+                    >Multibuild</label
                   >
                 </div>
                 <build-menu
@@ -818,60 +814,20 @@ export class ControlPanel2 extends LitElement implements Layer {
           ${this.activeTab === "Economy"
             ? html`
                 <div class="text-tan">
-                  <div class="relative">
-                    <label class="block military-label mb-1" translate="no">
-                      Production Investment Rate:
-                      ${(this.investmentRate * 100).toFixed(0)}%
-                    </label>
-                    <div
-                      class="text-right text-xs opacity-60 mt-1 military-label normal-case"
-                      translate="no"
-                    >
-                      Prod: ${Math.round(this._productivity * 100)}%
-                      (${this._productivityGrowth >= 0 ? "+" : ""}${(
-                        this._productivityGrowth * 100
-                      ).toFixed(1)}%/min)
-                    </div>
-                    <div class="relative h-8">
-                      <div
-                        class="absolute left-0 right-0 top-3 h-2 rounded"
-                        style="background-color:#4E513A"
-                      ></div>
-                      <div
-                        class="absolute left-0 top-3 h-2 rounded transition-all duration-300"
-                        style="width:${(this.investmentRate /
-                          this.game.config().maxInvestmentRate()) *
-                        100}%; background-color: rgba(78,176,87,0.6);"
-                      ></div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="${this.game?.config()?.maxInvestmentRate() * 100}"
-                        .value=${(this.investmentRate * 100).toString()}
-                        @input=${(e: Event) => {
-                          this.investmentRate =
-                            parseInt((e.target as HTMLInputElement).value) /
-                            100;
-                          this.onInvestmentRateChange(this.investmentRate);
-                        }}
-                        class="absolute left-0 right-0 top-2 m-0 h-4 cursor-pointer military-slider"
-                      />
-                    </div>
-                  </div>
+                  <h2 class="military-heading">Economy</h2>
+                  <p class="military-label normal-case">
+                    This is where economy-related options will go.
+                  </p>
                 </div>
               `
             : ""}
           ${this.activeTab === "Research"
             ? html`
-                <div class="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    id="multibuild-toggle"
-                    class="mr-2"
-                    .checked=${this._multibuildEnabled}
-                    @change=${this._handleMultibuildToggle}
-                  />
-                  <label for="multibuild-toggle">Multibuild</label>
+                <div class="text-tan">
+                  <h2 class="military-heading">Research</h2>
+                  <p class="military-label normal-case">
+                    This is where research-related options will go.
+                  </p>
                 </div>
                 <build-menu
                   .game=${this.game}
