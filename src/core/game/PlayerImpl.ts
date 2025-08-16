@@ -203,13 +203,6 @@ export class PlayerImpl implements Player {
         },
         {} as Record<UnitType, number>,
       ),
-      unitsConstructed: Object.values(UnitType).reduce(
-        (acc, type) => {
-          acc[type] = this.unitsConstructed(type);
-          return acc;
-        },
-        {} as Record<UnitType, number>,
-      ),
     };
   }
 

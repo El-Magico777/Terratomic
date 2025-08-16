@@ -237,10 +237,6 @@ export class PlayerView {
   unitsOwned(type: UnitType): number {
     return this.data.unitsOwned[type];
   }
-
-  unitsConstructed(type: UnitType): number {
-    return this.data.unitsConstructed[type] ?? 0;
-  }
   numTilesOwned(): number {
     return this.data.tilesOwned;
   }
