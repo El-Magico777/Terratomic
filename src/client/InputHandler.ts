@@ -387,7 +387,10 @@ export class InputHandler {
       this.eventBus.emit(
         new BuildUnitIntentEvent(this.uiState.pendingBuildUnitType, tile),
       );
-      this.uiState.pendingBuildUnitType = null;
+      // Only clear pendingBuildUnitType if multibuild is not enabled
+      if (!this.uiState.multibuildEnabled) {
+        this.uiState.pendingBuildUnitType = null;
+      }
       return;
     }
 

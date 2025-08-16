@@ -823,7 +823,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                   .game=${this.game}
                   .eventBus=${this.eventBus}
                   .uiState=${this.uiState}
-                  .unitFilter=${this.NukeTypes}
+                  .unitFilter=${this.AttackTypes}
                 ></build-menu>
               `
             : ""}
@@ -845,12 +845,6 @@ export class ControlPanel2 extends LitElement implements Layer {
                     This is where research-related options will go.
                   </p>
                 </div>
-                <build-menu
-                  .game=${this.game}
-                  .eventBus=${this.eventBus}
-                  .uiState=${this.uiState}
-                  .unitFilter=${this.CombatUnitTypes}
-                ></build-menu>
               `
             : ""}
         </div>
