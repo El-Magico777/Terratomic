@@ -74,8 +74,13 @@ export class ControlPanel2 extends LitElement implements Layer {
   private init_: boolean = false;
 
   @state()
-  private activeTab: "Build" | "Nukes" | "Units" | "Bombers" | "Options" =
-    "Bombers";
+  private activeTab:
+    | "Build"
+    | "Attack"
+    | "Economy"
+    | "Research"
+    | "Bombers"
+    | "Options" = "Bombers";
 
   @state()
   private _lastAirfieldCount: number = 0;
@@ -264,8 +269,10 @@ export class ControlPanel2 extends LitElement implements Layer {
     // Force build-menu to re-render if its tab is active
     if (
       this.activeTab === "Build" ||
-      this.activeTab === "Nukes" ||
-      this.activeTab === "Units"
+      this.activeTab === "Attack" ||
+      this.activeTab === "Research" ||
+      this.activeTab === "Bombers" ||
+      this.activeTab === "Economy"
     ) {
       const buildMenuElement = this.querySelector(
         "build-menu",
@@ -548,15 +555,15 @@ export class ControlPanel2 extends LitElement implements Layer {
         }
         @keyframes pulse {
           from {
-            background-color: rgba(59, 130, 246, 0.5);
+            background-color: rgba(78, 176, 87, 0.4);
           }
           to {
-            background-color: rgba(59, 130, 246, 1);
+            background-color: rgba(78, 176, 87, 0.9);
           }
         }
       </style>
       <div
-        class="${this._isVisible && this.isOpen
+        class="${this._isVisible
           ? `w-full h-[320px] lg:h-[272px] text-sm lg:text-m military-panel border-2 border-gray-700 p-2 pr-3 lg:p-4 rounded-md flex flex-col transition-all duration-300 ml-8`
           : "hidden"}"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
@@ -608,30 +615,6 @@ export class ControlPanel2 extends LitElement implements Layer {
                 </button>
               `
             : ""}
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Build"
-              ? "bg-gray-700 text-crt-green border border-crt-green"
-              : "text-tan"}"
-            @click=${() => (this.activeTab = "Build")}
-          >
-            Build
-          </button>
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Nukes"
-              ? "bg-gray-700 text-crt-green border border-crt-green"
-              : "text-tan"}"
-            @click=${() => (this.activeTab = "Nukes")}
-          >
-            Nukes
-          </button>
-          <button
-            class="py-2 px-4 text-center ${this.activeTab === "Units"
-              ? "bg-gray-700 text-crt-green border border-crt-green"
-              : "text-tan"}"
-            @click=${() => (this.activeTab = "Units")}
-          >
-            Units
-          </button>
         </div>
 
         <div class="tab-content flex-grow overflow-y-auto">
@@ -644,14 +627,15 @@ export class ControlPanel2 extends LitElement implements Layer {
                     <div class="flex flex-col gap-2">
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm bg-green-600 hover:bg-green-500 text-white border border-gray-500 rounded"
+                        class="military-button w-full"
                         @click=${this._startAutoBombing}
                       >
                         Start Auto Bombing
                       </button>
                       <button
                         type="button"
-                        class="w-full px-2 py-1 text-sm bg-red-600 hover:bg-red-500 text-white border border-gray-500 rounded"
+                        class="military-button w-full"
+                        style="background-color: var(--alertColor); border-color: var(--alertColor);"
                         @click=${this._stopAutoBombing}
                       >
                         Stop Auto Bombing
@@ -753,14 +737,14 @@ export class ControlPanel2 extends LitElement implements Layer {
                     <div class="flex gap-2 mt-auto">
                       <button
                         type="button"
-                        class="flex-1 p-1 bg-blue-600 hover:bg-blue-500 text-white border border-gray-500 rounded"
+                        class="military-button flex-1"
                         @click=${this.handleBomberIntent}
                       >
                         Set Target
                       </button>
                       <button
                         type="button"
-                        class="flex-1 p-1 bg-gray-600 hover:bg-gray-500 text-white border border-gray-500 rounded"
+                        class="military-button flex-1"
                         @click=${() => this.sendBomberIntent(null, null)}
                       >
                         Clear Target
