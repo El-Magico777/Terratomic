@@ -108,7 +108,6 @@ const buildTable: BuildItemDisplay[][] = [
       key: "unit_type.missile_silo",
       countable: true,
     },
-    // needs new icon
     {
       unitType: UnitType.SAMLauncher,
       icon: samlauncherIcon,
@@ -147,6 +146,38 @@ export class BuildMenu extends LitElement {
   @state()
   private filteredBuildTable: BuildItemDisplay[][] = buildTable;
 
+  // Recompute once after first render, and whenever relevant inputs change
+  protected firstUpdated(): void {
+    this.recomputeFilteredTable();
+  }
+
+  protected updated(changed: Map<string, unknown>): void {
+    if (changed.has("unitFilter") || changed.has("game")) {
+      this.recomputeFilteredTable();
+    }
+  }
+
+  // Centralized precomputation of the table to avoid doing it in render()
+  private recomputeFilteredTable(): void {
+    let current = buildTable;
+
+    if (this.unitFilter && this.unitFilter.length > 0) {
+      current = buildTable.map((row) =>
+        row.filter((item) => this.unitFilter!.includes(item.unitType)),
+      );
+    }
+
+    if (this.game?.config()) {
+      this.filteredBuildTable = current.map((row) =>
+        row.filter(
+          (item) => !this.game!.config().isUnitDisabled(item.unitType),
+        ),
+      );
+    } else {
+      this.filteredBuildTable = current;
+    }
+  }
+
   static styles = css`
     :host {
       display: block;
@@ -172,88 +203,72 @@ export class BuildMenu extends LitElement {
     }
     .build-row {
       display: flex;
-      justify-content: left; /* Align buttons to the left */
+      justify-content: left;
       flex-wrap: wrap;
       width: 100%;
     }
     .build-button {
       position: relative;
-      width: 120px; /* More rectangular */
-      height: 50px; /* More rectangular */
-      border: 2px solid #1f2018; /* From military-panel */
-      background: linear-gradient(
-        to bottom,
-        #2f3223,
-        #3b3e2c
-      ); /* From military-panel */
-      color: #d8d1b1; /* From military-panel */
-      border-radius: 6px; /* From military-panel */
+      width: 120px;
+      height: 50px;
+      border: 2px solid #1f2018;
+      background: linear-gradient(to bottom, #2f3223, #3b3e2c);
+      color: #d8d1b1;
+      border-radius: 6px;
       box-shadow:
         inset 0 0 10px rgba(0, 0, 0, 0.5),
-        0 2px 6px rgba(0, 0, 0, 0.4); /* From military-panel */
+        0 2px 6px rgba(0, 0, 0, 0.4);
       cursor: pointer;
       transition: all 0.3s ease;
       display: flex;
-      flex-direction: row; /* Icon next to text */
-      justify-content: flex-start; /* Align items to the start */
+      flex-direction: row;
+      justify-content: flex-start;
       align-items: center;
       margin: 4px;
-      padding: 5px; /* Reduced padding */
-      gap: 8px; /* Space between icon and text block */
+      padding: 5px;
+      gap: 8px;
     }
     .build-button:not(:disabled):hover {
-      background: linear-gradient(
-        to bottom,
-        #3b3e2c,
-        #2f3223
-      ); /* Darker gradient on hover */
+      background: linear-gradient(to bottom, #3b3e2c, #2f3223);
       transform: scale(1.02);
-      border-color: #4e513a; /* Slightly lighter border on hover */
+      border-color: #4e513a;
       box-shadow:
         inset 0 0 10px rgba(0, 0, 0, 0.5),
-        0 2px 8px rgba(0, 0, 0, 0.6); /* Slightly stronger shadow on hover */
+        0 2px 8px rgba(0, 0, 0, 0.6);
     }
     .build-button:not(:disabled):active {
-      background: linear-gradient(
-        to bottom,
-        #2f3223,
-        #2f3223
-      ); /* Solid darker background on active */
+      background: linear-gradient(to bottom, #2f3223, #2f3223);
       transform: scale(0.98);
       box-shadow:
         inset 0 0 10px rgba(0, 0, 0, 0.7),
-        0 1px 3px rgba(0, 0, 0, 0.3); /* More inset shadow on active */
+        0 1px 3px rgba(0, 0, 0, 0.3);
     }
     .build-button:disabled {
-      background: linear-gradient(
-        to bottom,
-        #222,
-        #1a1a1a
-      ); /* Darker, muted background for disabled */
-      border-color: #111; /* Darker border for disabled */
+      background: linear-gradient(to bottom, #222, #1a1a1a);
+      border-color: #111;
       cursor: not-allowed;
-      opacity: 0.6; /* Slightly more opaque for disabled */
-      box-shadow: none; /* No shadow for disabled */
+      opacity: 0.6;
+      box-shadow: none;
     }
     .build-button:disabled img {
-      opacity: 0.4; /* More faded icon for disabled */
+      opacity: 0.4;
     }
     .build-button:disabled .build-cost {
-      color: #888; /* Muted cost color for disabled */
+      color: #888;
     }
     .selected-for-build {
-      border-color: #4eb057; /* A military green to indicate selection */
-      box-shadow: 0 0 10px #4eb057; /* Green glow for selection */
+      border-color: #4eb057;
+      box-shadow: 0 0 10px #4eb057;
     }
     .build-icon {
       width: 28px;
       height: 28px;
-      flex-shrink: 0; /* Prevent icon from shrinking */
+      flex-shrink: 0;
     }
     .build-item-details {
       display: flex;
       flex-direction: column;
-      align-items: flex-start; /* Align text to the left */
+      align-items: flex-start;
       gap: 2px;
     }
     .build-name {
@@ -268,10 +283,10 @@ export class BuildMenu extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
-      -webkit-line-clamp: 2; /* Limit to 2 lines */
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
-      word-break: break-word; /* Break long words */
-      max-height: 2.4em; /* Max height for 2 lines */
+      word-break: break-word;
+      max-height: 2.4em;
     }
     .build-cost {
       font-size: 10px;
@@ -342,7 +357,6 @@ export class BuildMenu extends LitElement {
     if (!player) {
       return "?";
     }
-
     return player.units(item.unitType).length.toString();
   }
 
@@ -360,26 +374,23 @@ export class BuildMenu extends LitElement {
       return html`<div>Loading build options...</div>`;
     }
 
-    let currentBuildTable = buildTable;
-    if (this.unitFilter && this.unitFilter.length > 0) {
-      currentBuildTable = buildTable.map((row) =>
-        row.filter((item) => this.unitFilter!.includes(item.unitType)),
-      );
-    }
-
-    const filteredAndDisabledCheckedTable = currentBuildTable.map((row) =>
-      row.filter((item) => !this.game!.config().isUnitDisabled(item.unitType)),
-    );
+    const table = this.filteredBuildTable;
 
     return html`
       <div
         class="build-menu"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
-        ${filteredAndDisabledCheckedTable.map(
+        ${table.map(
           (row) => html`
             <div class="build-row">
               ${row.map((item) => {
+                const name = item.key
+                  ? translateText(item.key)
+                  : String(item.unitType);
+                const price =
+                  this.game && this.game.myPlayer() ? this.cost(item) : 0;
+
                 return html`
                   <button
                     class="build-button ${this.uiState.pendingBuildUnitType ===
@@ -391,22 +402,13 @@ export class BuildMenu extends LitElement {
                     title=${item.description
                       ? translateText(item.description)
                       : ""}
+                    aria-label=${`${name}, ${renderNumber(price)} gold`}
                   >
-                    <img
-                      class="build-icon"
-                      src=${item.icon}
-                      alt="${item.unitType}"
-                    />
+                    <img class="build-icon" src=${item.icon} alt=${name} />
                     <div class="build-item-details">
-                      <span class="build-name"
-                        >${item.key && translateText(item.key)}</span
-                      >
+                      <span class="build-name">${name}</span>
                       <span class="build-cost" translate="no">
-                        ${renderNumber(
-                          this.game && this.game.myPlayer()
-                            ? this.cost(item)
-                            : 0,
-                        )}
+                        ${renderNumber(price)}
                         <img
                           src=${goldCoinIcon}
                           alt="gold"
