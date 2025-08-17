@@ -883,6 +883,19 @@ export class EventsDisplay extends LitElement implements Layer {
     `;
   }
 
+  private renderAttackRow() {
+    return html`
+      ${this.renderIncomingAttacks()} ${this.renderOutgoingAttacks()}
+      ${this.renderOutgoingLandAttacks()} ${this.renderBoats()}
+      ${this.incomingAttacks.length === 0 &&
+      this.outgoingAttacks.length === 0 &&
+      this.outgoingLandAttacks.length === 0 &&
+      this.outgoingBoats.length === 0
+        ? html`&nbsp;`
+        : ""}
+    `;
+  }
+
   render() {
     if (!this.active || !this._isVisible) {
       return html``;
@@ -1041,7 +1054,7 @@ export class EventsDisplay extends LitElement implements Layer {
               >
                 <div>
                   <table
-                    class="w-full max-h-none border-collapse text-tan shadow-lg lg:text-base text-md md:text-xs"
+                    class="w-full max-h-none border-collapse text-tan shadow-lg text-[0.7rem] leading-[0.7rem]"
                     style="pointer-events: auto;"
                   >
                     <tbody>
@@ -1116,74 +1129,11 @@ export class EventsDisplay extends LitElement implements Layer {
                           </tr>
                         `,
                       )}
-                      <!--- Incoming attacks row -->
-                      ${this.incomingAttacks.length > 0
-                        ? html`
-                            <tr class="lg:px-2 lg:py-1 p-1">
-                              <td
-                                class="lg:px-2 lg:py-1 p-1 text-left text-muted-red"
-                              >
-                                ${this.renderIncomingAttacks()}
-                              </td>
-                            </tr>
-                          `
-                        : ""}
-
-                      <!--- Outgoing attacks row -->
-                      ${this.outgoingAttacks.length > 0
-                        ? html`
-                            <tr class="lg:px-2 lg:py-1 p-1">
-                              <td
-                                class="lg:px-2 lg:py-1 p-1 text-left text-steel"
-                              >
-                                ${this.renderOutgoingAttacks()}
-                              </td>
-                            </tr>
-                          `
-                        : ""}
-
-                      <!--- Outgoing land attacks row -->
-                      ${this.outgoingLandAttacks.length > 0
-                        ? html`
-                            <tr class="lg:px-2 lg:py-1 p-1">
-                              <td
-                                class="lg:px-2 lg:py-1 p-1 text-left text-tan"
-                              >
-                                ${this.renderOutgoingLandAttacks()}
-                              </td>
-                            </tr>
-                          `
-                        : ""}
-
-                      <!--- Boats row -->
-                      ${this.outgoingBoats.length > 0
-                        ? html`
-                            <tr class="lg:px-2 lg:py-1 p-1">
-                              <td
-                                class="lg:px-2 lg:py-1 p-1 text-left text-steel"
-                              >
-                                ${this.renderBoats()}
-                              </td>
-                            </tr>
-                          `
-                        : ""}
-
-                      <!--- Empty row when no events or attacks -->
-                      ${filteredEvents.length === 0 &&
-                      this.incomingAttacks.length === 0 &&
-                      this.outgoingAttacks.length === 0 &&
-                      this.outgoingLandAttacks.length === 0 &&
-                      this.outgoingBoats.length === 0
-                        ? html`
-                            <tr>
-                              <td
-                                class="lg:px-2 lg:py-1 p-1 min-w-72 text-left text-tan"
-                              >
-                                &nbsp;
-                              </td>
-                            </tr>
-                          `
-                        : ""}
+                      <tr>
+                        <td class="lg:px-2 lg:py-1 p-1 text-left">
+                          ${this.renderAttackRow()}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
