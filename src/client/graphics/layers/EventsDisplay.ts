@@ -378,10 +378,12 @@ export class EventsDisplay extends LitElement implements Layer {
     }
 
     let description: string = event.message;
-    if (event.params !== undefined) {
-      if (event.message.startsWith("events_display.")) {
-        description = translateText(event.message, event.params);
-      }
+    // Check if the message is a translation key (starts with "events_display." or "messages.")
+    if (
+      event.message.startsWith("events_display.") ||
+      event.message.startsWith("messages.")
+    ) {
+      description = translateText(event.message, event.params);
     }
 
     this.addEvent({

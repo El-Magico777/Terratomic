@@ -89,9 +89,6 @@ export class MirvExecution implements Execution {
       return;
     } else {
       this.nuke.move(result);
-      console.log(
-        `MIRV ${this.nuke.id()} moving to tile: ${this.mg.x(this.nuke.tile())}, ${this.mg.y(this.nuke.tile())}`,
-      );
     }
   }
 
