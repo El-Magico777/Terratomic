@@ -17,7 +17,6 @@ export class NewsModal extends LitElement {
 
     .news-container {
       max-height: 60vh;
-      overflow-y: auto;
       padding: 1rem;
       display: flex;
       flex-direction: column;
@@ -73,11 +72,6 @@ export class NewsModal extends LitElement {
                     place it.
                   </li>
                   <li>
-                    <strong>New Military-Themed UI:</strong> The entire user
-                    interface has been redesigned with a new color palette,
-                    fonts, and a "military panel" look and feel.
-                  </li>
-                  <li>
                     <strong>Redesigned Control Panel:</strong> The main control
                     panel has been redesigned and now includes tabs for "Build",
                     "Attack", "Economy", and "Research", making it easier to
@@ -96,7 +90,7 @@ export class NewsModal extends LitElement {
                   </li>
                   <li>
                     <strong>Improved Visuals:</strong> The game now features new
-                    background images and logos.
+                    background images.
                   </li>
                 </ul>
                 <p>
