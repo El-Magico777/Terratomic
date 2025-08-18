@@ -252,7 +252,7 @@ export class InputHandler {
       ) {
         this.eventBus.emit(new ZoomEvent(cx, cy, -this.ZOOM_SPEED));
       }
-    }, 1);
+    }, 16);
 
     window.addEventListener("keydown", (e) => {
       if (e.code === this.keybinds.toggleView) {
@@ -543,6 +543,7 @@ export class InputHandler {
   destroy() {
     if (this.moveInterval !== null) {
       clearInterval(this.moveInterval);
+      this.moveInterval = null;
     }
     this.activeKeys.clear();
   }
