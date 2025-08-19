@@ -23,12 +23,33 @@ export class RoadLayer implements Layer {
     const ctx = this.context;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Only draw roads if debugRoads is enabled in the config
     if (!this.game.config().debugRoads()) {
       return;
     }
 
-    ctx.fillStyle = "blue"; // Bright blue
-    ctx.fillRect(100, 100, 100, 100); // Draw a 100x100 blue rectangle
+    ctx.strokeStyle = "rgba(255, 255, 0, 1)"; // Yellow roads, semi-transparent
+    ctx.lineWidth = 1; // Road thickness
+
+    for (const [
+      sourceTileRef,
+      connectedTileRefs,
+    ] of this.game.roadConnections.entries()) {
+      // Get center coordinates of the source tile
+      const sourceX = this.game.x(sourceTileRef) + 0.5;
+      const sourceY = this.game.y(sourceTileRef) + 0.5;
+
+      for (const targetTileRef of connectedTileRefs) {
+        // Get center coordinates of the target tile
+        const targetX = this.game.x(targetTileRef) + 0.5;
+        const targetY = this.game.y(targetTileRef) + 0.5;
+
+        ctx.beginPath();
+        ctx.moveTo(sourceX, sourceY);
+        ctx.lineTo(targetX, targetY);
+        ctx.stroke();
+      }
+    }
   }
 
   renderLayer(context: CanvasRenderingContext2D) {

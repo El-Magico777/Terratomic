@@ -30,6 +30,7 @@ import {
   InputHandler,
   MouseMoveEvent,
   MouseUpEvent,
+  RefreshGraphicsEvent,
   UnitSelectionEvent,
 } from "./InputHandler";
 import { endGame, startGame, startTime } from "./LocalPersistantStats";
@@ -287,6 +288,10 @@ export class ClientGameRunner {
       });
       this.gameView.update(gu);
       this.renderer.tick();
+
+      if (gu.updates[GameUpdateType.RoadConnections].length > 0) {
+        this.eventBus.emit(new RefreshGraphicsEvent());
+      }
 
       if (gu.updates[GameUpdateType.Win].length > 0) {
         this.saveGame(gu.updates[GameUpdateType.Win][0]);
