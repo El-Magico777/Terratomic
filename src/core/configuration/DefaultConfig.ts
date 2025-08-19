@@ -715,16 +715,6 @@ export class DefaultConfig implements Config {
     if (attackerType === PlayerType.Bot) {
       speed *= 10; // slow bot attacks
     }
-
-    if (
-      gm.areTilesConnectedViaRoad(
-        attacker.tiles().values().next().value,
-        tileToConquer,
-      )
-    ) {
-      speed *= this.roadAttackSpeedBoost();
-    }
-
     if (defenderIsPlayer) {
       const defenderTroops = defender.troops();
       const defenderTiles = defender.numTilesOwned();

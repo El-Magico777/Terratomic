@@ -918,7 +918,7 @@ export class GameImpl implements Game {
 
     const nearbyNodes = this.nearbyUnits(
       tile,
-      this.config().roadNodeConnectionRadius(),
+      5, // ROAD_CONNECTION_RADIUS
       [UnitType.RoadNode, UnitType.City, UnitType.Port],
       ({ unit }) => unit.owner() === owner,
     );

@@ -27,10 +27,9 @@ export class LandTradeExecution implements Execution {
                 (u) => u.type() === UnitType.City || u.type() === UnitType.Port,
               );
             if (connectedStructure) {
-              const income =
-                BigInt(
-                  Math.floor((player.population() + owner.population()) / 100),
-                ) * BigInt(this.game.config().roadGoldMultiplier());
+              const income = BigInt(
+                Math.floor((player.population() + owner.population()) / 100),
+              );
               landTradeIncome += income;
             }
           }
