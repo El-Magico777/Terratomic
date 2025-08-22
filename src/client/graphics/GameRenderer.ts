@@ -14,6 +14,7 @@ import { EventsDisplay } from "./layers/EventsDisplay";
 import { FxLayer } from "./layers/FxLayer";
 import { GameLeftSidebar } from "./layers/GameLeftSidebar";
 import { HeadsUpMessage } from "./layers/HeadsUpMessage";
+import { HighlightLayer } from "./layers/HighlightLayer";
 import { Layer } from "./layers/Layer";
 import { Leaderboard } from "./layers/Leaderboard";
 import { MultiTabModal } from "./layers/MultiTabModal";
@@ -212,11 +213,13 @@ export function createRenderer(
     unitInfoModal,
   );
   unitInfoModal.structureLayer = structureLayer;
-  // unitInfoModal.eventBus = eventBus;
+
+  const highlightLayer = new HighlightLayer(eventBus, game, transformHandler);
 
   const layers: Layer[] = [
     new TerrainLayer(game, transformHandler),
     new TerritoryLayer(game, eventBus, transformHandler),
+    highlightLayer,
     structureLayer,
     new UnitLayer(game, eventBus, transformHandler),
     new FxLayer(game),

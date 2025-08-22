@@ -83,10 +83,7 @@ export class TransformHandler {
       (centerY - this.offsetY) * this.scale + this.game.height() / 2;
 
     // Step 4: Convert canvas coordinates back to screen coordinates
-    const canvasRect = this.boundingRect();
-    const screenX = canvasX + canvasRect.left;
-    const screenY = canvasY + canvasRect.top;
-    return { x: screenX, y: screenY };
+    return { x: canvasX, y: canvasY }; // Return canvas coordinates directly
   }
 
   screenToWorldCoordinates(screenX: number, screenY: number): Cell {

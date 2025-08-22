@@ -169,3 +169,8 @@
   height: 6px;
   border-radius: 3px;
 }
+
+.highlighted-icon {
+  border: 2px solid yellow; /* Example highlight */
+  box-shadow: 0 0 10px yellow; /* Example glow */
+}

@@ -11,6 +11,10 @@ import {
 } from "../../../core/game/Game";
 import { TileRef } from "../../../core/game/GameMap";
 import { GameView, PlayerView, UnitView } from "../../../core/game/GameView";
+import {
+  ClearHighlightEvent,
+  HighlightStructureEvent,
+} from "../../HighlightEvents";
 import { MouseMoveEvent } from "../../InputHandler";
 import { renderNumber, renderTroops } from "../../Utils";
 import { TransformHandler } from "../TransformHandler";
@@ -58,6 +62,9 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
 
   @state()
   private _isInfoVisible: boolean = false;
+
+  @state()
+  private highlightedUnitType: UnitType | null = null;
 
   private _isActive = false;
 
@@ -325,7 +332,11 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
 
               return html`
                 <div
-                  class="flex flex-col items-center justify-between p-1 border border-gray-400 rounded"
+                  class="flex flex-col items-center justify-between p-1 border border-gray-400 rounded cursor-pointer ${this
+                    .highlightedUnitType === unitType
+                    ? "highlighted-icon"
+                    : ""}"
+                  @click=${() => this.handleUnitIconClick(unitType, player)}
                 >
                   <img
                     src="${iconSrc}"
@@ -397,5 +408,17 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
 
   createRenderRoot() {
     return this; // Disable shadow DOM to allow Tailwind styles
+  }
+
+  private handleUnitIconClick(unitType: UnitType, player: PlayerView) {
+    if (this.highlightedUnitType === unitType) {
+      (this.eventBus as any).emit(new ClearHighlightEvent());
+      this.highlightedUnitType = null;
+    } else {
+      (this.eventBus as any).emit(
+        new HighlightStructureEvent(unitType, player.id()),
+      );
+      this.highlightedUnitType = unitType;
+    }
   }
 }
