@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import airfieldIcon from "../../../../resources/images/AirfieldIcon.svg";
 import warshipIcon from "../../../../resources/images/BattleshipIconWhite.svg";
 import academyIcon from "../../../../resources/images/buildings/academy_icon.png";
+import roadNodeIcon from "../../../../resources/images/buildings/RoadNode.png";
 import cityIcon from "../../../../resources/images/CityIconWhite.svg";
 import fighterJetIcon from "../../../../resources/images/FighterJetIcon.svg";
 import goldCoinIcon from "../../../../resources/images/GoldCoinIcon.svg";
@@ -124,7 +125,7 @@ const buildTable: BuildItemDisplay[][] = [
     },
     {
       unitType: UnitType.RoadNode,
-      icon: shieldIcon,
+      icon: roadNodeIcon,
       description: "build_menu.desc.road_node",
       key: "unit_type.road_node",
       countable: true,

@@ -150,6 +150,7 @@ export class ControlPanel2 extends LitElement implements Layer {
     UnitType.Hospital,
     UnitType.Academy,
     UnitType.City,
+    UnitType.RoadNode,
   ];
 
   init() {

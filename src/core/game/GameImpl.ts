@@ -752,11 +752,7 @@ export class GameImpl implements Game {
 
   addUnit(u: Unit) {
     this.unitGrid.addUnit(u);
-    if (
-      u.type() === UnitType.RoadNode ||
-      u.type() === UnitType.City ||
-      u.type() === UnitType.Port
-    ) {
+    if (u.type() === UnitType.RoadNode) {
       this.recalculateRoadNetwork(u.owner());
     }
   }
@@ -928,7 +924,7 @@ export class GameImpl implements Game {
 
     // Update the other nodes as well
     for (const { unit } of nearbyNodes) {
-      const otherConnections = this.roadConnections.get(unit.tile()) || [];
+      const otherConnections = this.roadConnections.get(unit.tile()) ?? [];
       if (!otherConnections.includes(tile)) {
         otherConnections.push(tile);
         this.roadConnections.set(unit.tile(), otherConnections);
@@ -937,7 +933,7 @@ export class GameImpl implements Game {
   }
 
   public getConnectedRoadNodes(origin: TileRef): TileRef[] {
-    return this.roadConnections.get(origin) || [];
+    return this.roadConnections.get(origin) ?? [];
   }
 
   public areTilesConnectedViaRoad(from: TileRef, to: TileRef): boolean {
@@ -949,37 +945,46 @@ export class GameImpl implements Game {
   }
 
   private recalculateRoadNetwork(player: Player) {
-    // Clear all road connections for this player
     this.roadConnections.clear();
 
-    // Recalculate connections for all relevant units of all players
     for (const p of this.allPlayers()) {
       if (!p.isPlayer()) continue;
-      const relevantUnits = p.units(
-        UnitType.RoadNode,
+
+      const structures = p.units(
         UnitType.City,
         UnitType.Port,
+        UnitType.RoadNode,
       );
-      for (const unit of relevantUnits) {
-        const nearbyNodes = this.nearbyUnits(
-          unit.tile(),
+
+      for (const structure of structures) {
+        const nearbyRoadNodes = this.nearbyUnits(
+          structure.tile(),
           this.config().roadNodeConnectionRadius(),
-          [UnitType.RoadNode, UnitType.City, UnitType.Port],
-          ({ unit: otherUnit }) =>
-            otherUnit.owner().id() === p.id() && otherUnit.id() !== unit.id(),
+          UnitType.RoadNode,
+          ({ unit: otherUnit }) => otherUnit.owner().id() === p.id(),
         );
 
-        const connections = nearbyNodes.map(({ unit: otherUnit }) =>
+        if (nearbyRoadNodes.length === 0) {
+          continue;
+        }
+
+        const sortedNearbyRoadNodes = nearbyRoadNodes.sort(
+          (a, b) => a.distSquared - b.distSquared,
+        );
+        const closestRoadNodes = sortedNearbyRoadNodes.slice(0, 3);
+
+        const connections = closestRoadNodes.map(({ unit: otherUnit }) =>
           otherUnit.tile(),
         );
-        this.roadConnections.set(unit.tile(), connections);
+        this.roadConnections.set(structure.tile(), connections);
 
         // Ensure bidirectional connections
-        for (const connectedTile of connections) {
+        for (const connectedNode of closestRoadNodes) {
+          const connectedTile = connectedNode.unit.tile();
           const existingConnections =
-            this.roadConnections.get(connectedTile) || [];
-          if (!existingConnections.includes(unit.tile())) {
-            existingConnections.push(unit.tile());
+            this.roadConnections.get(connectedTile) ?? [];
+          if (!existingConnections.includes(structure.tile())) {
+            existingConnections.push(structure.tile());
             this.roadConnections.set(connectedTile, existingConnections);
           }
         }

@@ -994,7 +994,7 @@ export class DefaultConfig implements Config {
 
   // Road Network
   roadNodeConnectionRadius(): number {
-    return 200;
+    return 100;
   }
   roadGoldMultiplier(): number {
     return 1;

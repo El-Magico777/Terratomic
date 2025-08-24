@@ -12,6 +12,7 @@ import cityIcon from "../../../../resources/images/buildings/cityAlt1.png";
 import shieldIcon from "../../../../resources/images/buildings/fortAlt2.png";
 import hospitalIcon from "../../../../resources/images/buildings/hospital.png";
 import anchorIcon from "../../../../resources/images/buildings/port1.png";
+import roadNodeIcon from "../../../../resources/images/buildings/RoadNode.png";
 import MissileSiloReloadingIcon from "../../../../resources/images/buildings/silo1-reloading.png";
 import missileSiloIcon from "../../../../resources/images/buildings/silo1.png";
 import SAMMissileReloadingIcon from "../../../../resources/images/buildings/silo4-reloading.png";
@@ -101,6 +102,12 @@ export class StructureLayer implements Layer {
     },
     [UnitType.Academy]: {
       icon: academyIcon,
+      borderRadius: 8.525,
+      territoryRadius: 6.525,
+      borderType: UnitBorderType.Square,
+    },
+    [UnitType.RoadNode]: {
+      icon: roadNodeIcon,
       borderRadius: 8.525,
       territoryRadius: 6.525,
       borderType: UnitBorderType.Square,
