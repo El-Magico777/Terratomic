@@ -247,7 +247,7 @@ export interface UnitParamsMap {
     patrolTile: TileRef;
   };
 
-  [UnitType.RoadNode]: {};
+  [UnitType.RoadNode]: Record<string, never>;
 }
 
 // Type helper to get params type for a specific unit type
@@ -709,7 +709,6 @@ export interface Game extends GameMap {
 
   // Road Network
   roadConnections: Map<TileRef, TileRef[]>;
-  updateRoadNetwork(tile: TileRef): void;
   getConnectedRoadNodes(origin: TileRef): TileRef[];
   areTilesConnectedViaRoad(from: TileRef, to: TileRef): boolean;
 }
