@@ -972,7 +972,10 @@ export class GameImpl implements Game {
     for (const targetNode of closestStructures) {
       const targetTile = targetNode.unit.tile();
       // Check for redundancy against the *existing* road network
-      if (!this.areTilesIndirectlyConnected(u.tile(), targetTile, 5)) {
+      if (
+        !this.areTilesIndirectlyConnected(u.tile(), targetTile, 5) &&
+        this.hasLandPath(u.tile(), targetTile)
+      ) {
         // Add bidirectional connection
         const existingConnectionsU = this.roadConnections.get(u.tile()) ?? [];
         if (!existingConnectionsU.includes(targetTile)) {
@@ -985,83 +988,6 @@ export class GameImpl implements Game {
         if (!existingConnectionsTarget.includes(u.tile())) {
           existingConnectionsTarget.push(u.tile());
           this.roadConnections.set(targetTile, existingConnectionsTarget);
-        }
-      }
-    }
-
-    // Re-evaluate connections for existing structures that might now connect to 'u'
-    // This is a simplified re-evaluation, focusing on structures that might be affected by 'u'
-    const affectedStructures = this.units(
-      UnitType.City,
-      UnitType.Port,
-      UnitType.RoadNode,
-    ).filter(
-      (s) => s.owner().id() === owner.id() || owner.isFriendly(s.owner()),
-    );
-
-    for (const s of affectedStructures) {
-      if (s.tile() === u.tile()) continue; // Skip the new unit itself
-
-      const sNearbyStructures = this.nearbyUnits(
-        s.tile(),
-        this.config().roadNodeConnectionRadius(),
-        [UnitType.RoadNode, UnitType.City, UnitType.Port],
-        ({ unit: otherUnit }) =>
-          (otherUnit.owner().id() === owner.id() ||
-            owner.isFriendly(otherUnit.owner())) &&
-          this.isLand(otherUnit.tile()),
-      );
-
-      const sOwnNearbyStructures = sNearbyStructures.filter(
-        ({ unit: otherUnit }) => otherUnit.owner().id() === owner.id(),
-      );
-      const sAlliedNearbyStructures = sNearbyStructures.filter(
-        ({ unit: otherUnit }) => otherUnit.owner().id() !== owner.id(),
-      );
-
-      const sSortedOwnStructures = sOwnNearbyStructures.sort(
-        (a, b) => a.distSquared - b.distSquared,
-      );
-      const sSortedAlliedStructures = sAlliedNearbyStructures.sort(
-        (a, b) => a.distSquared - b.distSquared,
-      );
-
-      const sClosestStructures: { unit: Unit; distSquared: number }[] = [];
-
-      for (const node of sSortedOwnStructures) {
-        if (sClosestStructures.length < 3) {
-          sClosestStructures.push(node);
-        } else {
-          break;
-        }
-      }
-
-      for (const node of sSortedAlliedStructures) {
-        if (sClosestStructures.length < 3) {
-          sClosestStructures.push(node);
-        } else {
-          break;
-        }
-      }
-
-      // Clear existing connections for 's' and rebuild based on current closest
-      this.roadConnections.set(s.tile(), []); // Clear existing connections for 's'
-
-      for (const targetNode of sClosestStructures) {
-        const targetTile = targetNode.unit.tile();
-        if (!this.areTilesIndirectlyConnected(s.tile(), targetTile, 5)) {
-          const existingConnectionsS = this.roadConnections.get(s.tile()) ?? [];
-          if (!existingConnectionsS.includes(targetTile)) {
-            existingConnectionsS.push(targetTile);
-            this.roadConnections.set(s.tile(), existingConnectionsS);
-          }
-
-          const existingConnectionsTarget =
-            this.roadConnections.get(targetTile) ?? [];
-          if (!existingConnectionsTarget.includes(s.tile())) {
-            existingConnectionsTarget.push(s.tile());
-            this.roadConnections.set(targetTile, existingConnectionsTarget);
-          }
         }
       }
     }
@@ -1085,84 +1011,6 @@ export class GameImpl implements Game {
         fromTile,
         connections.filter((toTile) => toTile !== u.tile()),
       );
-    }
-
-    // Re-evaluate connections for structures that were connected to 'u' or might be affected
-    const affectedStructures = this.units(
-      UnitType.City,
-      UnitType.Port,
-      UnitType.RoadNode,
-    ).filter(
-      (s) => s.owner().id() === owner.id() || owner.isFriendly(s.owner()),
-    );
-
-    for (const s of affectedStructures) {
-      if (s.tile() === u.tile()) continue; // Skip the removed unit itself
-
-      const sNearbyStructures = this.nearbyUnits(
-        s.tile(),
-        this.config().roadNodeConnectionRadius(),
-        [UnitType.RoadNode, UnitType.City, UnitType.Port],
-        ({ unit: otherUnit }) =>
-          (otherUnit.owner().id() === owner.id() ||
-            owner.isFriendly(otherUnit.owner())) &&
-          this.isLand(otherUnit.tile()),
-      );
-
-      const sOwnNearbyStructures = sNearbyStructures.filter(
-        ({ unit: otherUnit }) => otherUnit.owner().id() === owner.id(),
-      );
-      const sAlliedNearbyStructures = sNearbyStructures.filter(
-        ({ unit: otherUnit }) =>
-          otherUnit.owner().id() !== owner.id() &&
-          owner.isFriendly(otherUnit.owner()),
-      );
-
-      const sSortedOwnStructures = sOwnNearbyStructures.sort(
-        (a, b) => a.distSquared - b.distSquared,
-      );
-      const sSortedAlliedStructures = sAlliedNearbyStructures.sort(
-        (a, b) => a.distSquared - b.distSquared,
-      );
-
-      const sClosestStructures: { unit: Unit; distSquared: number }[] = [];
-
-      for (const node of sSortedOwnStructures) {
-        if (sClosestStructures.length < 3) {
-          sClosestStructures.push(node);
-        } else {
-          break;
-        }
-      }
-
-      for (const node of sSortedAlliedStructures) {
-        if (sClosestStructures.length < 3) {
-          sClosestStructures.push(node);
-        } else {
-          break;
-        }
-      }
-
-      // Clear existing connections for 's' and rebuild based on current closest
-      this.roadConnections.set(s.tile(), []); // Clear existing connections for 's'
-
-      for (const targetNode of sClosestStructures) {
-        const targetTile = targetNode.unit.tile();
-        if (!this.areTilesIndirectlyConnected(s.tile(), targetTile, 5)) {
-          const existingConnectionsS = this.roadConnections.get(s.tile()) ?? [];
-          if (!existingConnectionsS.includes(targetTile)) {
-            existingConnectionsS.push(targetTile);
-            this.roadConnections.set(s.tile(), existingConnectionsS);
-          }
-
-          const existingConnectionsTarget =
-            this.roadConnections.get(targetTile) ?? [];
-          if (!existingConnectionsTarget.includes(s.tile())) {
-            existingConnectionsTarget.push(s.tile());
-            this.roadConnections.set(targetTile, existingConnectionsTarget);
-          }
-        }
-      }
     }
 
     this.addUpdate({
@@ -1206,6 +1054,29 @@ export class GameImpl implements Game {
         }
       }
     }
+    return false;
+  }
+
+  private hasLandPath(startTile: TileRef, endTile: TileRef): boolean {
+    const visited = new Set<TileRef>();
+    const queue: TileRef[] = [startTile];
+    visited.add(startTile);
+
+    while (queue.length > 0) {
+      const currentTile = queue.shift()!;
+
+      if (currentTile === endTile) {
+        return true;
+      }
+
+      for (const neighbor of this.neighbors(currentTile)) {
+        if (!visited.has(neighbor) && this.isLand(neighbor)) {
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+    }
+
     return false;
   }
 }
