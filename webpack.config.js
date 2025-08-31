@@ -130,7 +130,7 @@ export default async (env, argv) => {
             to: path.resolve(__dirname, "static"),
             noErrorOnMissing: true,
             globOptions: {
-              ignore: ["resources/maps/**/*"],
+              ignore: isProduction ? ["resources/maps/**/*"] : ["**/maps/**"],
             },
           },
         ],
