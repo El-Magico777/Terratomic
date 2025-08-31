@@ -1,19 +1,7 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import airfieldIcon from "../../../../resources/images/AirfieldIcon.svg";
-import warshipIcon from "../../../../resources/images/BattleshipIconWhite.svg";
-import academyIcon from "../../../../resources/images/buildings/academy_icon.png";
-import cityIcon from "../../../../resources/images/CityIconWhite.svg";
-import fighterJetIcon from "../../../../resources/images/FighterJetIcon.svg";
+import { until } from "lit/directives/until.js";
 import goldCoinIcon from "../../../../resources/images/GoldCoinIcon.svg";
-import hospitalIcon from "../../../../resources/images/HospitalIconWhite.svg";
-import mirvIcon from "../../../../resources/images/MIRVIcon.svg";
-import missileSiloIcon from "../../../../resources/images/MissileSiloIconWhite.svg";
-import hydrogenBombIcon from "../../../../resources/images/MushroomCloudIconWhite.svg";
-import atomBombIcon from "../../../../resources/images/NukeIconWhite.svg";
-import portIcon from "../../../../resources/images/PortIcon.svg";
-import samlauncherIcon from "../../../../resources/images/SamLauncherIconWhite.svg";
-import shieldIcon from "../../../../resources/images/ShieldIconWhite.svg";
 import { translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
 import { Gold, UnitType } from "../../../core/game/Game";
@@ -23,7 +11,6 @@ import { UIState } from "../UIState";
 
 interface BuildItemDisplay {
   unitType: UnitType;
-  icon: string;
   description?: string;
   key?: string;
   countable?: boolean;
@@ -33,91 +20,78 @@ const buildTable: BuildItemDisplay[][] = [
   [
     {
       unitType: UnitType.AtomBomb,
-      icon: atomBombIcon,
       description: "build_menu.desc.atom_bomb",
       key: "unit_type.atom_bomb",
       countable: false,
     },
     {
       unitType: UnitType.HydrogenBomb,
-      icon: hydrogenBombIcon,
       description: "build_menu.desc.hydrogen_bomb",
       key: "unit_type.hydrogen_bomb",
       countable: false,
     },
     {
       unitType: UnitType.MIRV,
-      icon: mirvIcon,
       description: "build_menu.desc.mirv",
       key: "unit_type.mirv",
       countable: false,
     },
     {
       unitType: UnitType.FighterJet,
-      icon: fighterJetIcon,
       description: "build_menu.desc.fighter_jet",
       key: "unit_type.fighter_jet",
       countable: true,
     },
     {
       unitType: UnitType.Warship,
-      icon: warshipIcon,
       description: "build_menu.desc.warship",
       key: "unit_type.warship",
       countable: true,
     },
     {
       unitType: UnitType.City,
-      icon: cityIcon,
       description: "build_menu.desc.city",
       key: "unit_type.city",
       countable: true,
     },
     {
       unitType: UnitType.Port,
-      icon: portIcon,
       description: "build_menu.desc.port",
       key: "unit_type.port",
       countable: true,
     },
     {
       unitType: UnitType.Airfield,
-      icon: airfieldIcon,
       description: "build_menu.desc.airfield",
       key: "unit_type.airfield",
       countable: true,
     },
     {
       unitType: UnitType.Hospital,
-      icon: hospitalIcon,
       description: "build_menu.desc.hospital",
       key: "unit_type.hospital",
       countable: true,
     },
     {
       unitType: UnitType.Academy,
-      icon: academyIcon,
       description: "build_menu.desc.academy",
       key: "unit_type.academy",
       countable: true,
     },
     {
       unitType: UnitType.MissileSilo,
-      icon: missileSiloIcon,
       description: "build_menu.desc.missile_silo",
       key: "unit_type.missile_silo",
       countable: true,
     },
     {
       unitType: UnitType.SAMLauncher,
-      icon: samlauncherIcon,
       description: "build_menu.desc.sam_launcher",
       key: "unit_type.sam_launcher",
       countable: true,
     },
     {
       unitType: UnitType.DefensePost,
-      icon: shieldIcon,
       description: "build_menu.desc.defense_post",
       key: "unit_type.defense_post",
       countable: true,
@@ -146,7 +120,83 @@ export class BuildMenu extends LitElement {
   @state()
   private filteredBuildTable: BuildItemDisplay[][] = buildTable;
 
-  // Recompute once after first render, and whenever relevant inputs change
+  private iconCache: Map<UnitType, Promise<string>> = new Map();
+
+  private getIcon(unitType: UnitType): Promise<string> {
+    if (this.iconCache.has(unitType)) {
+      return this.iconCache.get(unitType)!;
+    }
+
+    let importPromise;
+    switch (unitType) {
+      case UnitType.AtomBomb:
+        importPromise = import(
+          "../../../../resources/images/NukeIconWhite.svg"
+        );
+        break;
+      case UnitType.HydrogenBomb:
+        importPromise = import(
+          "../../../../resources/images/MushroomCloudIconWhite.svg"
+        );
+        break;
+      case UnitType.MIRV:
+        importPromise = import("../../../../resources/images/MIRVIcon.svg");
+        break;
+      case UnitType.FighterJet:
+        importPromise = import(
+          "../../../../resources/images/FighterJetIcon.svg"
+        );
+        break;
+      case UnitType.Warship:
+        importPromise = import(
+          "../../../../resources/images/BattleshipIconWhite.svg"
+        );
+        break;
+      case UnitType.City:
+        importPromise = import(
+          "../../../../resources/images/CityIconWhite.svg"
+        );
+        break;
+      case UnitType.Port:
+        importPromise = import("../../../../resources/images/PortIcon.svg");
+        break;
+      case UnitType.Airfield:
+        importPromise = import("../../../../resources/images/AirfieldIcon.svg");
+        break;
+      case UnitType.Hospital:
+        importPromise = import(
+          "../../../../resources/images/HospitalIconWhite.svg"
+        );
+        break;
+      case UnitType.Academy:
+        importPromise = import(
+          "../../../../resources/images/buildings/academy_icon.png"
+        );
+        break;
+      case UnitType.MissileSilo:
+        importPromise = import(
+          "../../../../resources/images/MissileSiloIconWhite.svg"
+        );
+        break;
+      case UnitType.SAMLauncher:
+        importPromise = import(
+          "../../../../resources/images/SamLauncherIconWhite.svg"
+        );
+        break;
+      case UnitType.DefensePost:
+        importPromise = import(
+          "../../../../resources/images/ShieldIconWhite.svg"
+        );
+        break;
+      default:
+        return Promise.resolve(""); // Return empty string for unknown types
+    }
+
+    const iconPromise = importPromise.then((module) => module.default);
+    this.iconCache.set(unitType, iconPromise);
+    return iconPromise;
+  }
+
   protected firstUpdated(): void {
     this.recomputeFilteredTable();
   }
@@ -157,7 +207,6 @@ export class BuildMenu extends LitElement {
     }
   }
 
-  // Centralized precomputation of the table to avoid doing it in render()
   private recomputeFilteredTable(): void {
     let current = buildTable;
 
@@ -264,6 +313,13 @@ export class BuildMenu extends LitElement {
       width: 28px;
       height: 28px;
       flex-shrink: 0;
+    }
+    .build-icon-placeholder {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      background-color: #333;
+      border-radius: 4px;
     }
     .build-item-details {
       display: flex;
@@ -404,7 +460,18 @@ export class BuildMenu extends LitElement {
                       : ""}
                     aria-label=${`${name}, ${renderNumber(price)} gold`}
                   >
-                    <img class="build-icon" src=${item.icon} alt=${name} />
+                    ${until(
+                      this.getIcon(item.unitType).then((iconUrl) =>
+                        iconUrl
+                          ? html`<img
+                              class="build-icon"
+                              src=${iconUrl}
+                              alt=${name}
+                            />`
+                          : "",
+                      ),
+                      html`<div class="build-icon-placeholder"></div>`,
+                    )}
                     <div class="build-item-details">
                       <span class="build-name">${name}</span>
                       <span class="build-cost" translate="no">
