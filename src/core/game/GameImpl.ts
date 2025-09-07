@@ -918,6 +918,10 @@ export class GameImpl implements Game {
     return this.alliances_;
   }
 
+  public hasRoadOnTile(tile: TileRef): boolean {
+    return this.roadManager.hasRoadOnTile(tile);
+  }
+
   public roads(): Road[] {
     return this.roadManager.getRoads();
   }
