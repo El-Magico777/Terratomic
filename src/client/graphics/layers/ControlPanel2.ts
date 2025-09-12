@@ -3,6 +3,7 @@ import { customElement, state } from "lit/decorators.js";
 import { EventBus } from "../../../core/EventBus";
 import { Gold, PlayerID, PlayerType, UnitType } from "../../../core/game/Game";
 import { GameView, PlayerView } from "../../../core/game/GameView";
+import { PlayerListChangedEvent } from "../../events/PlayerListChangedEvent";
 import { AttackRatioEvent } from "../../InputHandler";
 import {
   SendBomberIntentEvent,
@@ -195,6 +196,27 @@ export class ControlPanel2 extends LitElement implements Layer {
     this.eventBus.on(ToggleBuildPanelEvent, (event: ToggleBuildPanelEvent) => {
       this.isOpen = event.isOpen;
     });
+
+    this.eventBus.on(PlayerListChangedEvent, () => {
+      this._updatePlayerHashAndRefresh();
+    });
+    this._updatePlayerHashAndRefresh(); // Initial hash calculation
+  }
+
+  private _updatePlayerHashAndRefresh() {
+    const currentPlayersHash = this.game
+      .players()
+      .map((p) => p.id())
+      .sort()
+      .join(",");
+
+    if (this._lastPlayersHash !== currentPlayersHash) {
+      this._lastPlayersHash = currentPlayersHash;
+      // Only refresh the list if the relevant tab is active
+      if (this.activeTab === "Bombers") {
+        this._refreshBomberPlayerLists();
+      }
+    }
   }
 
   tick() {
@@ -240,11 +262,6 @@ export class ControlPanel2 extends LitElement implements Layer {
     // Track relevant state for dynamic updates
     const currentAirfieldCount = player.units(UnitType.Airfield).length;
     this._hasAirfields = currentAirfieldCount > 0;
-    const currentPlayersHash = this.game
-      .players()
-      .map((p) => p.id())
-      .sort()
-      .join(","); // Simple hash for player list changes
 
     const currentReachablePlayersHash = this._getPlayersInAirfieldRange()
       .map((p) => p.id())
@@ -254,12 +271,10 @@ export class ControlPanel2 extends LitElement implements Layer {
     if (
       this.activeTab === "Bombers" &&
       (this._lastAirfieldCount !== currentAirfieldCount ||
-        this._lastPlayersHash !== currentPlayersHash ||
         this._reachablePlayersHash !== currentReachablePlayersHash)
     ) {
       this._refreshBomberPlayerLists();
       this._lastAirfieldCount = currentAirfieldCount;
-      this._lastPlayersHash = currentPlayersHash;
       this._reachablePlayersHash = currentReachablePlayersHash;
     }
 

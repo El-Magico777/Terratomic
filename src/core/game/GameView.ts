@@ -1,5 +1,7 @@
+import { PlayerListChangedEvent } from "../../client/events/PlayerListChangedEvent";
 import { SpatialIndex } from "../../client/graphics/SpatialIndex";
 import { Config } from "../configuration/Config";
+import { EventBus } from "../EventBus";
 import { ClientID, GameID } from "../Schemas";
 import { createRandomName } from "../Util";
 import { WorkerClient } from "../worker/WorkerClient";
@@ -354,6 +356,7 @@ export class GameView implements GameMap {
   private toDelete = new Set<number>();
 
   constructor(
+    public eventBus: EventBus,
     public worker: WorkerClient,
     private _config: Config,
     private _map: GameMap,
@@ -377,6 +380,13 @@ export class GameView implements GameMap {
   }
 
   public update(gu: GameUpdateViewData) {
+    // Fingerprint BEFORE the update
+    const oldAlivePlayerIds = new Set(
+      Array.from(this._players.values())
+        .filter((p) => p.isAlive())
+        .map((p) => p.id()),
+    );
+
     this.toDelete.forEach((id) => this._units.delete(id));
     this.toDelete.clear();
 
@@ -435,6 +445,30 @@ export class GameView implements GameMap {
         this.toDelete.add(unit.id());
       }
     });
+
+    // Fingerprint AFTER the update
+    const newAlivePlayerIds = new Set(
+      Array.from(this._players.values())
+        .filter((p) => p.isAlive())
+        .map((p) => p.id()),
+    );
+
+    // Compare the fingerprints
+    let listsAreDifferent = false;
+    if (oldAlivePlayerIds.size !== newAlivePlayerIds.size) {
+      listsAreDifferent = true;
+    } else {
+      for (const id of oldAlivePlayerIds) {
+        if (!newAlivePlayerIds.has(id)) {
+          listsAreDifferent = true;
+          break;
+        }
+      }
+    }
+
+    if (listsAreDifferent) {
+      this.eventBus.emit(new PlayerListChangedEvent());
+    }
   }
 
   public alliances(): AllianceViewData[] {
