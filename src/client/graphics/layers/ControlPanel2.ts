@@ -323,73 +323,43 @@ export class ControlPanel2 extends LitElement implements Layer {
       .units(UnitType.Airfield)
       .filter((u) => u.isActive());
     if (myAirfields.length === 0) {
-      return []; // No active airfields, no reachable targets
+      return [];
     }
 
-    // Pre-compute squared range for efficiency
-    const bomberRangeSquared = this.game.config().bomberTargetRange() ** 2;
-    const reachablePlayers: PlayerView[] = [];
-    const checkedPlayerIDs = new Set<PlayerID>(); // To avoid adding the same player multiple times
+    const bomberRange = this.game.config().bomberTargetRange();
+    const reachablePlayers = new Map<PlayerID, PlayerView>();
 
-    // Define all targetable structure types for bombers
-    const targetableStructures: UnitType[] = [
-      UnitType.City,
-      UnitType.Hospital,
-      UnitType.Academy,
-      UnitType.Port,
-      UnitType.MissileSilo,
-      UnitType.SAMLauncher,
-      UnitType.Airfield,
-      UnitType.DefensePost,
-    ];
+    const structureIndex = this.game.getStructureIndex();
 
-    for (const otherPlayer of this.game.players()) {
-      // Skip self and players already identified as reachable
-      if (
-        otherPlayer.id() === myPlayer.id() ||
-        myPlayer.isFriendly(otherPlayer) ||
-        checkedPlayerIDs.has(otherPlayer.id())
-      ) {
-        continue;
-      }
-      // Only consider human or fake human players as targets
-      if (
-        otherPlayer.type() !== PlayerType.Human &&
-        otherPlayer.type() !== PlayerType.FakeHuman
-      ) {
-        continue;
-      }
-
-      let isReachable = false;
-      // Get all relevant structures for the other player
-      const otherPlayerAllStructures = targetableStructures.flatMap((type) =>
-        otherPlayer.units(type),
+    for (const airfield of myAirfields) {
+      const airfieldPos = {
+        x: this.game.x(airfield.tile()),
+        y: this.game.y(airfield.tile()),
+      };
+      const nearbyStructures = structureIndex.getInRange(
+        airfieldPos.x,
+        airfieldPos.y,
+        bomberRange,
       );
 
-      // Check if any of my airfields can reach any of their structures
-      for (const myAirfield of myAirfields) {
-        for (const otherStructure of otherPlayerAllStructures) {
-          const distanceSquared = this.game.euclideanDistSquared(
-            myAirfield.tile(),
-            otherStructure.tile(),
-          );
-          if (distanceSquared <= bomberRangeSquared) {
-            isReachable = true;
-            break; // Found a reachable structure, no need to check more for this player
+      for (const structure of nearbyStructures) {
+        const owner = structure.owner();
+        if (
+          owner &&
+          owner.isPlayer() &&
+          !myPlayer.isFriendly(owner) &&
+          owner.type() !== PlayerType.Bot
+        ) {
+          if (!reachablePlayers.has(owner.id())) {
+            reachablePlayers.set(owner.id(), owner);
           }
         }
-        if (isReachable) {
-          break; // Found a reachable structure for this player, no need to check more airfields
-        }
-      }
-
-      if (isReachable) {
-        reachablePlayers.push(otherPlayer);
-        checkedPlayerIDs.add(otherPlayer.id());
       }
     }
-    // Sort players alphabetically by name for consistent display
-    return reachablePlayers.sort((a, b) => a.name().localeCompare(b.name()));
+
+    return Array.from(reachablePlayers.values()).sort((a, b) =>
+      a.name().localeCompare(b.name()),
+    );
   }
 
   private _refreshBomberPlayerLists() {

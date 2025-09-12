@@ -1,3 +1,4 @@
+import { SpatialIndex } from "../../client/graphics/SpatialIndex";
 import { Config } from "../configuration/Config";
 import { ClientID, GameID } from "../Schemas";
 import { createRandomName } from "../Util";
@@ -7,6 +8,7 @@ import {
   EmojiMessage,
   GameUpdates,
   Gold,
+  isStructureType,
   NameViewData,
   Player,
   PlayerActions,
@@ -347,6 +349,7 @@ export class GameView implements GameMap {
   private _alliances: AllianceViewData[] = [];
 
   private unitGrid: UnitGrid;
+  private structureIndex: SpatialIndex;
 
   private toDelete = new Set<number>();
 
@@ -359,6 +362,7 @@ export class GameView implements GameMap {
   ) {
     this.lastUpdate = null;
     this.unitGrid = new UnitGrid(_map);
+    this.structureIndex = new SpatialIndex(this);
   }
   isOnEdgeOfMap(ref: TileRef): boolean {
     return this._map.isOnEdgeOfMap(ref);
@@ -366,6 +370,10 @@ export class GameView implements GameMap {
 
   public updatesSinceLastTick(): GameUpdates | null {
     return this.lastUpdate?.updates ?? null;
+  }
+
+  public getStructureIndex(): SpatialIndex {
+    return this.structureIndex;
   }
 
   public update(gu: GameUpdateViewData) {
@@ -410,9 +418,15 @@ export class GameView implements GameMap {
         unit = new UnitView(this, update);
         this._units.set(update.id, unit);
         this.unitGrid.addUnit(unit);
+        if (isStructureType(unit.type())) {
+          this.structureIndex.add(unit);
+        }
       }
       if (!update.isActive) {
         this.unitGrid.removeUnit(unit);
+        if (isStructureType(unit.type())) {
+          this.structureIndex.remove(unit);
+        }
       } else if (unit.tile() !== unit.lastTile()) {
         this.unitGrid.updateUnitCell(unit);
       }
