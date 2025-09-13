@@ -263,19 +263,20 @@ export class ControlPanel2 extends LitElement implements Layer {
     const currentAirfieldCount = player.units(UnitType.Airfield).length;
     this._hasAirfields = currentAirfieldCount > 0;
 
-    const currentReachablePlayersHash = this._getPlayersInAirfieldRange()
-      .map((p) => p.id())
-      .sort()
-      .join(",");
+    if (this.activeTab === "Bombers") {
+      const currentReachablePlayersHash = this._getPlayersInAirfieldRange()
+        .map((p) => p.id())
+        .sort()
+        .join(",");
 
-    if (
-      this.activeTab === "Bombers" &&
-      (this._lastAirfieldCount !== currentAirfieldCount ||
-        this._reachablePlayersHash !== currentReachablePlayersHash)
-    ) {
-      this._refreshBomberPlayerLists();
-      this._lastAirfieldCount = currentAirfieldCount;
-      this._reachablePlayersHash = currentReachablePlayersHash;
+      if (
+        this._lastAirfieldCount !== currentAirfieldCount ||
+        this._reachablePlayersHash !== currentReachablePlayersHash
+      ) {
+        this._refreshBomberPlayerLists();
+        this._lastAirfieldCount = currentAirfieldCount;
+        this._reachablePlayersHash = currentReachablePlayersHash;
+      }
     }
 
     if (this.activeTab === "Bombers" && !this._hasAirfields) {
