@@ -34,6 +34,9 @@ export class DevServerConfig extends DefaultServerConfig {
   gitCommit(): string {
     return "DEV";
   }
+  USE_BITMAP_TERRITORY_LAYER(): boolean {
+    return true;
+  }
 }
 
 export class DevConfig extends DefaultConfig {

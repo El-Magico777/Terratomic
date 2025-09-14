@@ -1042,6 +1042,10 @@ export class DefaultConfig implements Config {
     return 0.5; // 50%
   }
 
+  USE_BITMAP_TERRITORY_LAYER(): boolean {
+    return false;
+  }
+
   // --- International Cargo Trucks ---
 
   internationalCargoTrucksEnabled(): boolean {

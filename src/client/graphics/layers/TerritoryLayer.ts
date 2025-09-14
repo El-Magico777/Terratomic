@@ -41,6 +41,11 @@ export class TerritoryLayer implements Layer {
   private nodrawDragDuration = 200;
   private lastMousePosition: { x: number; y: number } | null = null;
 
+  private useBitmapRendering = false;
+  private bitmapInFlight = false;
+  private bitmapToken = 0;
+  private snapshotCanvas: HTMLCanvasElement;
+
   private refreshRate = 15; //refresh every 15ms
   private lastRefresh = 0;
 
@@ -182,6 +187,12 @@ export class TerritoryLayer implements Layer {
       // TODO: consider re-enabling this on mobile or low end devices for smoother dragging.
       // this.lastDragTime = Date.now();
     });
+
+    this.useBitmapRendering =
+      this.game.config().USE_BITMAP_TERRITORY_LAYER() &&
+      typeof createImageBitmap === "function";
+    this.snapshotCanvas = document.createElement("canvas");
+
     this.redraw();
   }
 
@@ -307,51 +318,91 @@ export class TerritoryLayer implements Layer {
     });
   }
 
-  renderLayer(context: CanvasRenderingContext2D) {
-    const now = Date.now();
-    if (
-      now > this.lastDragTime + this.nodrawDragDuration &&
-      now > this.lastRefresh + this.refreshRate
-    ) {
-      this.lastRefresh = now;
-      this.renderTerritory();
+  renderLayer(mainContext: CanvasRenderingContext2D): void {
+    // 1. ALWAYS process the data update queue. This keeps the game state from lagging.
+    this.renderTerritory();
 
+    // 2. Check if it's time to render a new visual frame based on throttling.
+    const now = Date.now();
+    if (now > this.lastRefresh + this.refreshRate) {
+      this.lastRefresh = now;
+
+      // 2a. Get the dimensions of the visible screen area.
       const [topLeft, bottomRight] = this.transformHandler.screenBoundingRect();
       const vx0 = Math.max(0, topLeft.x);
       const vy0 = Math.max(0, topLeft.y);
-      const vx1 = Math.min(this.game.width() - 1, bottomRight.x);
-      const vy1 = Math.min(this.game.height() - 1, bottomRight.y);
-
-      const w = vx1 - vx0 + 1;
-      const h = vy1 - vy0 + 1;
+      const w = Math.min(this.game.width(), bottomRight.x) - vx0 + 1;
+      const h = Math.min(this.game.height(), bottomRight.y) - vy0 + 1;
 
       if (w > 0 && h > 0) {
-        this.context.putImageData(
-          this.alternativeView ? this.alternativeImageData : this.imageData,
-          0,
-          0,
-          vx0,
-          vy0,
-          w,
-          h,
-        );
+        const sourceImageData = this.alternativeView
+          ? this.alternativeImageData
+          : this.imageData;
+
+        // 2b. If feature is disabled or a bitmap is already in flight, use the simple, reliable path.
+        if (!this.useBitmapRendering || this.bitmapInFlight) {
+          this.context.putImageData(sourceImageData, 0, 0, vx0, vy0, w, h);
+        } else {
+          // 2c. Otherwise, execute the safe bitmap path.
+          this.bitmapInFlight = true;
+          const token = ++this.bitmapToken;
+
+          // Create the safe snapshot.
+          this.snapshotCanvas.width = w;
+          this.snapshotCanvas.height = h;
+          const snapshotCtx = this.snapshotCanvas.getContext("2d");
+
+          if (snapshotCtx) {
+            snapshotCtx.putImageData(sourceImageData, 0, 0, vx0, vy0, w, h);
+
+            // Perform async work on the safe snapshot.
+            createImageBitmap(this.snapshotCanvas)
+              .then((bitmap) => {
+                if (token === this.bitmapToken) {
+                  // Check if still the latest frame
+                  const prevSmoothing = this.context.imageSmoothingEnabled;
+                  this.context.imageSmoothingEnabled = false;
+                  this.context.drawImage(bitmap, 0, 0, w, h);
+                  this.context.imageSmoothingEnabled = prevSmoothing;
+                }
+                bitmap.close(); // Close bitmap regardless of use to prevent memory leaks
+              })
+              .catch((err) => {
+                console.error("Bitmap creation failed, falling back.", err);
+                // On error, fall back to putImageData for this frame.
+                if (token === this.bitmapToken) {
+                  this.context.putImageData(
+                    sourceImageData,
+                    0,
+                    0,
+                    vx0,
+                    vy0,
+                    w,
+                    h,
+                  );
+                }
+              })
+              .finally(() => {
+                this.bitmapInFlight = false; // ALWAYS reset the guard
+              });
+          } else {
+            this.bitmapInFlight = false; // Could not get context
+          }
+        }
       }
     }
 
-    context.drawImage(
+    // 3. ALWAYS composite our updated off-screen canvas to the main display.
+    mainContext.drawImage(
       this.canvas,
       -this.game.width() / 2,
       -this.game.height() / 2,
-      this.game.width(),
-      this.game.height(),
     );
     if (this.game.inSpawnPhase()) {
-      context.drawImage(
+      mainContext.drawImage(
         this.highlightCanvas,
         -this.game.width() / 2,
         -this.game.height() / 2,
-        this.game.width(),
-        this.game.height(),
       );
     }
   }

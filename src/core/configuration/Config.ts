@@ -190,6 +190,7 @@ export interface Config {
   isReplay(): boolean;
   allianceExtensionPromptOffset(): number;
   maxProductivity(): number;
+  USE_BITMAP_TERRITORY_LAYER(): boolean;
 }
 
 export interface Theme {
