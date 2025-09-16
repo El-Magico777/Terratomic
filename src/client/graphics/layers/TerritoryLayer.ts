@@ -12,6 +12,13 @@ import {
   DragEvent,
   MouseOverEvent,
 } from "../../InputHandler";
+import {
+  MainToWorkerMessage,
+  TerritoryComputeState,
+  TerritoryFrameRequest,
+  WorkerTheme,
+  WorkerToMainMessage,
+} from "../../workers/types";
 import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
 
@@ -41,10 +48,21 @@ export class TerritoryLayer implements Layer {
   private nodrawDragDuration = 200;
   private lastMousePosition: { x: number; y: number } | null = null;
 
-  private useBitmapRendering = false;
-  private bitmapInFlight = false;
-  private bitmapToken = 0;
-  private snapshotCanvas: HTMLCanvasElement;
+  // --- Worker Properties ---
+  private worker: Worker | null = null;
+  private workerEnabled = false;
+  private workerInitialized = false;
+  private inFlight = false;
+  private latestToken = 0;
+  private inFlightTimeoutId: number | null = null;
+  private fallbackImageData: ImageData | null = null;
+  private snapshotCanvas: HTMLCanvasElement; // For legacy path
+  private bitmapInFlight = false; // For legacy path
+  private bitmapToken = 0; // For legacy path
+  private sentPlayerIDs = new Set<number>();
+  // --- End of Worker Properties ---
+
+  private useBitmapRendering = false; // Legacy path
 
   private refreshRate = 15; //refresh every 15ms
   private lastRefresh = 0;
@@ -71,7 +89,50 @@ export class TerritoryLayer implements Layer {
   }
 
   tick() {
-    this.game.recentlyUpdatedTiles().forEach((t) => this.enqueueTile(t));
+    if (this.workerEnabled && !this.workerInitialized) {
+      this.initializeWorker();
+    }
+
+    if (this.workerEnabled && this.workerInitialized) {
+      for (const player of this.game.playerViews()) {
+        if (!this.sentPlayerIDs.has(player.smallID())) {
+          const newPlayerData = {
+            id: player.smallID(),
+            allies: player.allies().map((ally) => ally.smallID()),
+          };
+          const theme = this.game.config().theme();
+          const newPlayerTheme = {
+            territoryColor: theme.territoryColor(player).toRgb(),
+            borderColor: theme.borderColor(player).toRgb(),
+            defendedBorderColors: {
+              light: theme.defendedBorderColors(player).light.toRgb(),
+              dark: theme.defendedBorderColors(player).dark.toRgb(),
+            },
+          };
+
+          this.worker?.postMessage({
+            type: "add-player",
+            player: newPlayerData,
+            theme: newPlayerTheme,
+          });
+
+          this.sentPlayerIDs.add(player.smallID());
+        }
+      }
+    }
+
+    this.game.recentlyUpdatedTiles().forEach((t) => {
+      if (this.workerEnabled) {
+        this.worker?.postMessage({
+          type: "update-tile",
+          tile: t,
+          ownerId: this.game.ownerID(t),
+          fallout: this.game.hasFallout(t),
+        });
+      } else {
+        this.enqueueTile(t);
+      }
+    });
     const updates = this.game.updatesSinceLastTick();
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
     unitUpdates.forEach((update) => {
@@ -188,12 +249,140 @@ export class TerritoryLayer implements Layer {
       // this.lastDragTime = Date.now();
     });
 
-    this.useBitmapRendering =
-      this.game.config().USE_BITMAP_TERRITORY_LAYER() &&
-      typeof createImageBitmap === "function";
-    this.snapshotCanvas = document.createElement("canvas");
+    this.workerEnabled = this.game.config().USE_WORKER_TERRITORY_LAYER();
+
+    // Note: Worker initialization is deferred to the tick() method to ensure myPlayer is available.
+    if (!this.workerEnabled) {
+      this.useBitmapRendering =
+        this.game.config().USE_BITMAP_TERRITORY_LAYER() &&
+        typeof createImageBitmap === "function";
+      this.snapshotCanvas = document.createElement("canvas");
+    }
 
     this.redraw();
+  }
+
+  private initializeWorker() {
+    const myPlayer = this.game.myPlayer();
+    if (!myPlayer) {
+      return; // Defer initialization
+    }
+
+    this.workerInitialized = true;
+
+    this.worker = new Worker(
+      new URL("../../workers/TerritoryWorker.ts", import.meta.url),
+    );
+
+    this.worker.onmessage = (event: MessageEvent<WorkerToMainMessage>) => {
+      if (this.inFlightTimeoutId) {
+        clearTimeout(this.inFlightTimeoutId);
+        this.inFlightTimeoutId = null;
+      }
+
+      const { result } = event.data;
+      if (result.token !== this.latestToken) {
+        if (result.kind === "bitmap") result.bitmap.close();
+        return; // Stale result, do nothing.
+      }
+
+      const { visibleRect } = result;
+      const w = visibleRect.x1 - visibleRect.x0 + 1;
+      const h = visibleRect.y1 - visibleRect.y0 + 1;
+
+      if (result.kind === "bitmap") {
+        this.context.clearRect(visibleRect.x0, visibleRect.y0, w, h);
+        this.context.drawImage(result.bitmap, visibleRect.x0, visibleRect.y0);
+        result.bitmap.close();
+      } else {
+        // Fallback for browsers without OffscreenCanvas
+        if (
+          !this.fallbackImageData ||
+          this.fallbackImageData.width !== w ||
+          this.fallbackImageData.height !== h
+        ) {
+          this.fallbackImageData = new ImageData(w, h);
+        }
+        this.fallbackImageData.data.set(result.buffer);
+        if (this.context && this.fallbackImageData) {
+          createImageBitmap(this.fallbackImageData).then((bmp) => {
+            this.context.clearRect(visibleRect.x0, visibleRect.y0, w, h);
+            this.context.drawImage(bmp, visibleRect.x0, visibleRect.y0);
+            bmp.close();
+          });
+        }
+      }
+
+      this.inFlight = false;
+    };
+
+    const players = this.game.playerViews().map((p) => ({
+      id: p.smallID(),
+      allies: p.allies().map((ally) => ally.smallID()),
+    }));
+
+    const theme = this.game.config().theme();
+    const workerTheme: WorkerTheme = {
+      territoryColors: {},
+      borderColors: {},
+      defendedBorderColors: {},
+      focusedBorderColor: theme.focusedBorderColor().toRgb(),
+      falloutColor: theme.falloutColor().toRgb(),
+      selfColor: theme.selfColor().toRgb(),
+      allyColor: theme.allyColor().toRgb(),
+      enemyColor: theme.enemyColor().toRgb(),
+    };
+
+    for (const player of this.game.playerViews()) {
+      workerTheme.territoryColors[player.smallID()] = theme
+        .territoryColor(player)
+        .toRgb();
+      workerTheme.borderColors[player.smallID()] = theme
+        .borderColor(player)
+        .toRgb();
+      const defendedColors = theme.defendedBorderColors(player);
+      workerTheme.defendedBorderColors[player.smallID()] = {
+        light: defendedColors.light.toRgb(),
+        dark: defendedColors.dark.toRgb(),
+      };
+    }
+
+    const numTiles = this.game.width() * this.game.height();
+    const tileOwnerBuffer = new Uint16Array(numTiles);
+    const tileFalloutBuffer = new Uint8Array(numTiles);
+    this.game.forEachTile((t) => {
+      tileOwnerBuffer[t] = this.game.ownerID(t);
+      tileFalloutBuffer[t] = this.game.hasFallout(t) ? 1 : 0;
+    });
+
+    const workerUnits = this.game.units(UnitType.DefensePost).map((u) => ({
+      type: u.type(),
+      tile: u.tile(),
+      ownerId: u.owner().smallID(),
+    }));
+
+    const initialState: TerritoryComputeState = {
+      tileOwnerBuffer,
+      tileFalloutBuffer,
+      players,
+      theme: workerTheme,
+      myPlayerId: myPlayer.smallID(),
+      width: this.game.width(),
+      height: this.game.height(),
+      units: workerUnits,
+      defensePostRange: this.game.config().defensePostRange(),
+    };
+
+    const initMessage: MainToWorkerMessage = {
+      type: "init",
+      state: initialState,
+    };
+    this.worker.postMessage(initMessage, [
+      tileOwnerBuffer.buffer,
+      tileFalloutBuffer.buffer,
+    ]);
+
+    this.sentPlayerIDs = new Set(players.map((p) => p.id));
   }
 
   onMouseOver(event: MouseOverEvent) {
@@ -319,80 +508,67 @@ export class TerritoryLayer implements Layer {
   }
 
   renderLayer(mainContext: CanvasRenderingContext2D): void {
-    // 1. ALWAYS process the data update queue. This keeps the game state from lagging.
-    this.renderTerritory();
+    // When the worker is enabled, the main thread's job is just to composite
+    // the latest canvas image and request new frames.
+    if (this.workerEnabled) {
+      const now = performance.now();
+      if (now > this.lastRefresh + this.refreshRate) {
+        this.lastRefresh = now;
 
-    // 2. Check if it's time to render a new visual frame based on throttling.
-    const now = Date.now();
-    if (now > this.lastRefresh + this.refreshRate) {
-      this.lastRefresh = now;
+        if (!this.inFlight) {
+          this.inFlight = true;
 
-      // 2a. Get the dimensions of the visible screen area.
-      const [topLeft, bottomRight] = this.transformHandler.screenBoundingRect();
-      const vx0 = Math.max(0, topLeft.x);
-      const vy0 = Math.max(0, topLeft.y);
-      const w = Math.min(this.game.width(), bottomRight.x) - vx0 + 1;
-      const h = Math.min(this.game.height(), bottomRight.y) - vy0 + 1;
+          // Set a timeout to handle unresponsive frames.
+          this.inFlightTimeoutId = setTimeout(() => {
+            console.warn("TerritoryLayer worker frame timed out.");
+            this.inFlight = false;
+            this.latestToken++; // Invalidate the in-flight request
+          }, 300) as unknown as number;
 
-      if (w > 0 && h > 0) {
-        const sourceImageData = this.alternativeView
-          ? this.alternativeImageData
-          : this.imageData;
+          const [topLeft, bottomRight] =
+            this.transformHandler.screenBoundingRect();
 
-        // 2b. If feature is disabled or a bitmap is already in flight, use the simple, reliable path.
-        if (!this.useBitmapRendering || this.bitmapInFlight) {
+          const request: TerritoryFrameRequest = {
+            token: this.latestToken,
+            visibleRect: {
+              x0: Math.max(0, topLeft.x),
+              y0: Math.max(0, topLeft.y),
+              x1: Math.min(this.game.width() - 1, bottomRight.x),
+              y1: Math.min(this.game.height() - 1, bottomRight.y),
+            },
+            alternativeView: this.alternativeView,
+            highlightedTerritoryId:
+              this.highlightedTerritory?.smallID() ?? null,
+            focusedPlayerId: this.game.focusedPlayer()?.smallID() ?? null,
+          };
+
+          const message: MainToWorkerMessage = { type: "render", request };
+          this.worker?.postMessage(message);
+        }
+      }
+    } else {
+      // Fallback to old rendering logic if worker is disabled
+      this.renderTerritory();
+      const now = Date.now();
+      if (now > this.lastRefresh + this.refreshRate) {
+        this.lastRefresh = now;
+        const [topLeft, bottomRight] =
+          this.transformHandler.screenBoundingRect();
+        const vx0 = Math.max(0, topLeft.x);
+        const vy0 = Math.max(0, topLeft.y);
+        const w = Math.min(this.game.width(), bottomRight.x) - vx0;
+        const h = Math.min(this.game.height(), bottomRight.y) - vy0;
+
+        if (w > 0 && h > 0) {
+          const sourceImageData = this.alternativeView
+            ? this.alternativeImageData
+            : this.imageData;
           this.context.putImageData(sourceImageData, 0, 0, vx0, vy0, w, h);
-        } else {
-          // 2c. Otherwise, execute the safe bitmap path.
-          this.bitmapInFlight = true;
-          const token = ++this.bitmapToken;
-
-          // Create the safe snapshot.
-          this.snapshotCanvas.width = w;
-          this.snapshotCanvas.height = h;
-          const snapshotCtx = this.snapshotCanvas.getContext("2d");
-
-          if (snapshotCtx) {
-            snapshotCtx.putImageData(sourceImageData, 0, 0, vx0, vy0, w, h);
-
-            // Perform async work on the safe snapshot.
-            createImageBitmap(this.snapshotCanvas)
-              .then((bitmap) => {
-                if (token === this.bitmapToken) {
-                  // Check if still the latest frame
-                  const prevSmoothing = this.context.imageSmoothingEnabled;
-                  this.context.imageSmoothingEnabled = false;
-                  this.context.drawImage(bitmap, 0, 0, w, h);
-                  this.context.imageSmoothingEnabled = prevSmoothing;
-                }
-                bitmap.close(); // Close bitmap regardless of use to prevent memory leaks
-              })
-              .catch((err) => {
-                console.error("Bitmap creation failed, falling back.", err);
-                // On error, fall back to putImageData for this frame.
-                if (token === this.bitmapToken) {
-                  this.context.putImageData(
-                    sourceImageData,
-                    0,
-                    0,
-                    vx0,
-                    vy0,
-                    w,
-                    h,
-                  );
-                }
-              })
-              .finally(() => {
-                this.bitmapInFlight = false; // ALWAYS reset the guard
-              });
-          } else {
-            this.bitmapInFlight = false; // Could not get context
-          }
         }
       }
     }
 
-    // 3. ALWAYS composite our updated off-screen canvas to the main display.
+    // ALWAYS composite our updated off-screen canvas to the main display.
     mainContext.drawImage(
       this.canvas,
       -this.game.width() / 2,

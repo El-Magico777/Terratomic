@@ -1046,6 +1046,10 @@ export class DefaultConfig implements Config {
     return false;
   }
 
+  USE_WORKER_TERRITORY_LAYER(): boolean {
+    return true;
+  }
+
   // --- International Cargo Trucks ---
 
   internationalCargoTrucksEnabled(): boolean {

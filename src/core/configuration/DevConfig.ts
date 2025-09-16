@@ -37,6 +37,9 @@ export class DevServerConfig extends DefaultServerConfig {
   USE_BITMAP_TERRITORY_LAYER(): boolean {
     return true;
   }
+  USE_WORKER_TERRITORY_LAYER(): boolean {
+    return true;
+  }
 }
 
 export class DevConfig extends DefaultConfig {

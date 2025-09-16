@@ -191,6 +191,7 @@ export interface Config {
   allianceExtensionPromptOffset(): number;
   maxProductivity(): number;
   USE_BITMAP_TERRITORY_LAYER(): boolean;
+  USE_WORKER_TERRITORY_LAYER(): boolean;
 }
 
 export interface Theme {
