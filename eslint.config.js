@@ -33,6 +33,7 @@ export default [
             "Terrain-Viewer/render.js",
             "tests/__mocks__/nanoid.cjs",
             "tests/transformers/removeImportAttributes.cjs",
+            "src/client/workers/PathfindingWorker.worker.ts",
           ],
         },
         tsconfigRootDir: import.meta.dirname,

@@ -40,9 +40,19 @@ export default async (env, argv) => {
           },
         },
         {
+          test: /\.worker\.ts$/,
+          use: {
+            loader: "ts-loader",
+            options: {
+              configFile: "tsconfig.worker.json",
+            },
+          },
+          exclude: /node_modules/,
+        },
+        {
           test: /\.ts$/,
           use: "ts-loader",
-          exclude: /node_modules/,
+          exclude: [/node_modules/, /\.worker\.ts$/],
         },
         {
           test: /\.css$/,

@@ -76,7 +76,7 @@ export class GameImpl implements Game {
 
   private updates: GameUpdates = createGameUpdatesMap();
   private unitGrid: UnitGrid;
-  private roadManager: RoadManager;
+  public roadManager: RoadManager;
   private _roads = new Map<number, Road>();
   private cargoManager: CargoManager;
 
@@ -207,6 +207,16 @@ export class GameImpl implements Game {
     return Array.from(this._players.values()).flatMap((p) => p.units(...types));
   }
 
+  unit(id: number): Unit | undefined {
+    for (const player of this._players.values()) {
+      const unit = player.units().find((u) => u.id() === id);
+      if (unit) {
+        return unit;
+      }
+    }
+    return undefined;
+  }
+
   unitCount(type: UnitType): number {
     let total = 0;
     for (const player of this._players.values()) {
@@ -285,6 +295,7 @@ export class GameImpl implements Game {
       request: request.toUpdate(),
       accepted: true,
     });
+    this.addUpdate({ type: GameUpdateType.AllianceChange });
   }
 
   rejectAllianceRequest(request: AllianceRequestImpl) {
@@ -316,7 +327,7 @@ export class GameImpl implements Game {
     return this._ticks;
   }
 
-  executeNextTick(): GameUpdates {
+  async executeNextTick(): Promise<GameUpdates> {
     this.updates = createGameUpdatesMap();
     this.execs.forEach((e) => {
       if (
@@ -353,7 +364,7 @@ export class GameImpl implements Game {
       });
     }
 
-    const roadChanges = this.roadManager.update();
+    const roadChanges = await this.roadManager.update();
     if (roadChanges.added.length > 0 || roadChanges.removed.length > 0) {
       this.addUpdate({
         type: GameUpdateType.Roads,
@@ -621,6 +632,7 @@ export class GameImpl implements Game {
       traitorID: breaker.smallID(),
       betrayedID: other.smallID(),
     });
+    this.addUpdate({ type: GameUpdateType.AllianceChange });
   }
 
   public expireAlliance(alliance: Alliance) {
@@ -640,6 +652,7 @@ export class GameImpl implements Game {
       player1ID: alliance.requestor().smallID(),
       player2ID: alliance.recipient().smallID(),
     });
+    this.addUpdate({ type: GameUpdateType.AllianceChange });
   }
 
   public bomberExplosion(tile: TileRef, radius: number, owner: Player): void {
@@ -774,6 +787,14 @@ export class GameImpl implements Game {
 
   addUnit(u: Unit) {
     this.unitGrid.addUnit(u);
+    if (isStructureType(u.type())) {
+      this.addUpdate({
+        type: GameUpdateType.StructureChange,
+        unitId: u.id(),
+        change: "created",
+        tile: u.tile(),
+      });
+    }
   }
   unitsAt(tile: TileRef): Unit[] {
     return this.unitGrid.unitsAt(tile) as Unit[];
@@ -781,6 +802,14 @@ export class GameImpl implements Game {
   removeUnit(u: Unit) {
     u.owner().invalidateEffectiveUnitsCache(u.type());
     this.unitGrid.removeUnit(u);
+    if (isStructureType(u.type())) {
+      this.addUpdate({
+        type: GameUpdateType.StructureChange,
+        unitId: u.id(),
+        change: "destroyed",
+        tile: u.tile(),
+      });
+    }
   }
   updateUnitTile(u: Unit) {
     this.unitGrid.updateUnitCell(u);
@@ -933,6 +962,12 @@ export class GameImpl implements Game {
   public markPlayerNodesForReconnection(player: Player): void {
     this.roadManager.markPlayerNodesForReconnection(player);
   }
+
+  public buildInitialRoadNetwork(player: Player): void {
+    this.roadManager.buildInitialRoadNetwork(player);
+  }
+
+  // Units
 }
 
 // Or a more dynamic approach that will catch new enum values:

@@ -32,7 +32,11 @@ describe("RoadLayer", () => {
     } as any;
 
     transformHandler = {
-      // mock any methods that are called
+      scale: 1,
+      screenBoundingRect: jest.fn().mockReturnValue([
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+      ]),
     } as any;
 
     roadLayer = new RoadLayer(gameView, transformHandler);
@@ -40,7 +44,7 @@ describe("RoadLayer", () => {
   });
 
   it("should redraw when there are road updates", () => {
-    const redrawSpy = jest.spyOn(roadLayer, "redraw");
+    const redrawSpy = jest.spyOn(roadLayer as any, "redrawDirtyChunks");
     const roadUpdate: RoadsUpdate = {
       type: GameUpdateType.Roads,
       added: ["1-2"],
@@ -50,8 +54,11 @@ describe("RoadLayer", () => {
       [GameUpdateType.Roads]: [roadUpdate],
     };
     gameView.updatesSinceLastTick.mockReturnValue(updates);
+    gameView.isValidCoord = jest.fn().mockReturnValue(true);
+    gameView.ref = jest.fn().mockReturnValue(1);
 
     roadLayer.tick();
+    roadLayer.renderLayer(new CanvasRenderingContext2D());
 
     expect(redrawSpy).toHaveBeenCalled();
   });

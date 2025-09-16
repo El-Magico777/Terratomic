@@ -5,10 +5,16 @@ import { GameView, PlayerView } from "../../../core/game/GameView";
 import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
 
+const CHUNK_TILES = 64; // Define chunks in tile space
+
 export class RoadLayer implements Layer {
-  private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
   private roadSegments = new Set<string>();
+  private tileToSegments = new Map<TileRef, Set<string>>();
+
+  // Chunk-based rendering state
+  private chunks = new Map<string, HTMLCanvasElement>();
+  private dirtyChunks = new Set<string>();
+  private lastZoom = 0;
 
   constructor(
     private game: GameView,
@@ -20,12 +26,8 @@ export class RoadLayer implements Layer {
   }
 
   init() {
-    this.canvas = document.createElement("canvas");
-    const ctx = this.canvas.getContext("2d");
-    if (!ctx) throw new Error("2D context not supported");
-    this.ctx = ctx;
-    this.canvas.width = this.game.width();
-    this.canvas.height = this.game.height();
+    // No longer need to create a single large canvas
+    this.lastZoom = this.transform.scale;
   }
 
   tick() {
@@ -36,95 +38,203 @@ export class RoadLayer implements Layer {
       | RoadsUpdate[]
       | undefined;
     if (roadUpdates && roadUpdates.length > 0) {
-      let changed = false;
       for (const update of roadUpdates) {
-        if (update.added.length > 0) {
-          changed = true;
-          for (const segment of update.added) {
-            this.roadSegments.add(segment);
-          }
-        }
-        if (update.removed.length > 0) {
-          changed = true;
-          for (const segment of update.removed) {
+        for (const segment of update.removed) {
+          if (this.roadSegments.has(segment)) {
             this.roadSegments.delete(segment);
+            const [tile1, tile2] = this.parseSegment(segment);
+            this.updateTileMap(tile1, segment, "remove");
+            this.updateTileMap(tile2, segment, "remove");
+            this.markChunkDirty(tile1);
+            this.markChunkDirty(tile2);
           }
         }
-      }
-      if (changed) {
-        this.redraw();
+        for (const segment of update.added) {
+          if (!this.roadSegments.has(segment)) {
+            this.roadSegments.add(segment);
+            const [tile1, tile2] = this.parseSegment(segment);
+            this.updateTileMap(tile1, segment, "add");
+            this.updateTileMap(tile2, segment, "add");
+            this.markChunkDirty(tile1);
+            this.markChunkDirty(tile2);
+          }
+        }
       }
     }
   }
 
-  redraw() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    if (this.roadSegments.size === 0) return;
+  private parseSegment(segment: string): [TileRef, TileRef] {
+    const [tile1Str, tile2Str] = segment.split("-");
+    return [
+      parseInt(tile1Str, 10) as TileRef,
+      parseInt(tile2Str, 10) as TileRef,
+    ];
+  }
 
-    const roadWidth = 1.2;
-    const edgeWidth = 1.8;
+  private updateTileMap(
+    tile: TileRef,
+    segment: string,
+    action: "add" | "remove",
+  ) {
+    if (!this.tileToSegments.has(tile)) {
+      this.tileToSegments.set(tile, new Set());
+    }
+    const segmentSet = this.tileToSegments.get(tile)!;
+    if (action === "add") {
+      segmentSet.add(segment);
+    } else {
+      segmentSet.delete(segment);
+    }
+  }
 
-    // Group segments by owner to apply the correct color
+  private getChunkKey(tile: TileRef): string {
+    const x = Math.floor(this.game.x(tile) / CHUNK_TILES);
+    const y = Math.floor(this.game.y(tile) / CHUNK_TILES);
+    return `${x}|${y}`;
+  }
+
+  private markChunkDirty(tile: TileRef) {
+    this.dirtyChunks.add(this.getChunkKey(tile));
+  }
+
+  private redrawDirtyChunks() {
+    if (this.dirtyChunks.size === 0) return;
+
+    for (const chunkKey of this.dirtyChunks) {
+      this.redrawChunk(chunkKey);
+    }
+    this.dirtyChunks.clear();
+  }
+
+  private redrawChunk(chunkKey: string) {
+    const [chunkX, chunkY] = chunkKey.split("|").map(Number);
+    const chunkCanvas = this.getOrCreateChunkCanvas(chunkKey);
+    const ctx = chunkCanvas.getContext("2d")!;
+
+    ctx.clearRect(0, 0, chunkCanvas.width, chunkCanvas.height);
+    ctx.save();
+    // Translate context to the chunk's origin for drawing
+    ctx.translate(-chunkX * CHUNK_TILES, -chunkY * CHUNK_TILES);
+
+    const segmentsToDraw = new Set<string>();
+    const startX = chunkX * CHUNK_TILES;
+    const startY = chunkY * CHUNK_TILES;
+    const endX = startX + CHUNK_TILES;
+    const endY = startY + CHUNK_TILES;
+
+    // Gather all segments that are part of this chunk
+    for (let y = startY; y < endY; y++) {
+      for (let x = startX; x < endX; x++) {
+        if (this.game.isValidCoord(x, y)) {
+          const tile = this.game.ref(x, y);
+          const segments = this.tileToSegments.get(tile);
+          if (segments) {
+            segments.forEach((seg) => segmentsToDraw.add(seg));
+          }
+        }
+      }
+    }
+
+    if (segmentsToDraw.size === 0) {
+      ctx.restore();
+      return;
+    }
+
+    // Group segments by owner for efficient color batching
     const segmentsByOwner = new Map<PlayerView | null, string[]>();
-    for (const segment of this.roadSegments) {
-      const [tile1Str] = segment.split("-");
-      const tile1 = parseInt(tile1Str, 10) as TileRef;
+    for (const segment of segmentsToDraw) {
+      const [tile1] = this.parseSegment(segment);
       const owner = this.game.owner(tile1);
       const playerOwner = owner.isPlayer() ? (owner as PlayerView) : null;
-
       if (!segmentsByOwner.has(playerOwner)) {
         segmentsByOwner.set(playerOwner, []);
       }
       segmentsByOwner.get(playerOwner)!.push(segment);
     }
 
+    // The actual drawing logic, now scoped to a single chunk
     for (const [owner, segments] of segmentsByOwner.entries()) {
-      let baseColor;
-      if (owner) {
-        baseColor = this.game.config().theme().territoryColor(owner);
-      } else {
-        baseColor = colord("#808080");
-      }
+      const baseColor = owner
+        ? this.game.config().theme().territoryColor(owner)
+        : colord("#808080");
       const darkerColor = baseColor.darken(0.05).toRgbString();
       const evenDarkerColor = baseColor.darken(0.1).toRgbString();
 
-      this.ctx.lineJoin = "round";
-      this.ctx.lineCap = "round";
+      const roadWidth = 1.2 / this.transform.scale; // Adjust width for zoom
+      const edgeWidth = 1.8 / this.transform.scale;
 
-      // Outer darker edge
-      this.ctx.strokeStyle = evenDarkerColor;
-      this.ctx.lineWidth = edgeWidth;
-      this.ctx.beginPath();
-      for (const segment of segments) {
-        const [tile1Str, tile2Str] = segment.split("-");
-        const tile1 = parseInt(tile1Str, 10) as TileRef;
-        const tile2 = parseInt(tile2Str, 10) as TileRef;
-        this.traceSegment(this.ctx, tile1, tile2);
-      }
-      this.ctx.stroke();
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
 
-      // Inner lighter road surface
-      this.ctx.strokeStyle = darkerColor;
-      this.ctx.lineWidth = roadWidth;
-      this.ctx.beginPath();
+      ctx.strokeStyle = evenDarkerColor;
+      ctx.lineWidth = edgeWidth;
+      ctx.beginPath();
       for (const segment of segments) {
-        const [tile1Str, tile2Str] = segment.split("-");
-        const tile1 = parseInt(tile1Str, 10) as TileRef;
-        const tile2 = parseInt(tile2Str, 10) as TileRef;
-        this.traceSegment(this.ctx, tile1, tile2);
+        const [tile1, tile2] = this.parseSegment(segment);
+        this.traceSegment(ctx, tile1, tile2);
       }
-      this.ctx.stroke();
+      ctx.stroke();
+
+      ctx.strokeStyle = darkerColor;
+      ctx.lineWidth = roadWidth;
+      ctx.beginPath();
+      for (const segment of segments) {
+        const [tile1, tile2] = this.parseSegment(segment);
+        this.traceSegment(ctx, tile1, tile2);
+      }
+      ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  private getOrCreateChunkCanvas(chunkKey: string): HTMLCanvasElement {
+    if (!this.chunks.has(chunkKey)) {
+      const canvas = document.createElement("canvas");
+      canvas.width = CHUNK_TILES;
+      canvas.height = CHUNK_TILES;
+      this.chunks.set(chunkKey, canvas);
+    }
+    return this.chunks.get(chunkKey)!;
   }
 
   renderLayer(context: CanvasRenderingContext2D) {
-    context.drawImage(
-      this.canvas,
-      -this.game.width() / 2,
-      -this.game.height() / 2,
-      this.game.width(),
-      this.game.height(),
-    );
+    // Check for zoom changes to invalidate all visible chunks
+    const currentZoom = this.transform.scale;
+    if (this.lastZoom !== currentZoom) {
+      this.lastZoom = currentZoom;
+      const [topLeft, bottomRight] = this.transform.screenBoundingRect();
+      const startChunkX = Math.floor(topLeft.x / CHUNK_TILES);
+      const startChunkY = Math.floor(topLeft.y / CHUNK_TILES);
+      const endChunkX = Math.ceil(bottomRight.x / CHUNK_TILES);
+      const endChunkY = Math.ceil(bottomRight.y / CHUNK_TILES);
+      for (let y = startChunkY; y < endChunkY; y++) {
+        for (let x = startChunkX; x < endChunkX; x++) {
+          this.dirtyChunks.add(`${x}|${y}`);
+        }
+      }
+    }
+
+    this.redrawDirtyChunks();
+
+    const [topLeft, bottomRight] = this.transform.screenBoundingRect();
+    const startChunkX = Math.floor(topLeft.x / CHUNK_TILES);
+    const startChunkY = Math.floor(topLeft.y / CHUNK_TILES);
+    const endChunkX = Math.ceil(bottomRight.x / CHUNK_TILES);
+    const endChunkY = Math.ceil(bottomRight.y / CHUNK_TILES);
+
+    for (let y = startChunkY; y < endChunkY; y++) {
+      for (let x = startChunkX; x < endChunkX; x++) {
+        const chunkKey = `${x}|${y}`;
+        if (this.chunks.has(chunkKey)) {
+          const chunkCanvas = this.chunks.get(chunkKey)!;
+          context.drawImage(
+            chunkCanvas,
+            x * CHUNK_TILES - this.game.width() / 2,
+            y * CHUNK_TILES - this.game.height() / 2,
+          );
+        }
+      }
+    }
   }
 
   private traceSegment(

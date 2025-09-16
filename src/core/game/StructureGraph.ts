@@ -6,6 +6,7 @@ type UnitId = number;
 export interface RoadEdge {
   path: TileRef[];
   length: number;
+  pending?: boolean;
 }
 
 export interface StructureNode {
@@ -38,12 +39,17 @@ export class StructureGraph {
     }
   }
 
-  public addEdge(unit1: Unit, unit2: Unit, path: TileRef[]): void {
+  public addEdge(
+    unit1: Unit,
+    unit2: Unit,
+    path: TileRef[],
+    pending = false,
+  ): void {
     const node1 = this.nodes.get(unit1.id());
     const node2 = this.nodes.get(unit2.id());
 
     if (node1 && node2) {
-      const edge: RoadEdge = { path, length: path.length };
+      const edge: RoadEdge = { path, length: path.length, pending };
       node1.connections.set(unit2.id(), edge);
       node2.connections.set(unit1.id(), edge);
     }
@@ -84,7 +90,15 @@ export class StructureGraph {
           at = cameFrom.get(at)!;
         }
         path.unshift(startUnit);
-        return path;
+
+        // Ensure the path is not solely made of pending edges
+        for (let i = 0; i < path.length - 1; i++) {
+          const edge = this.getEdge(path[i], path[i + 1]);
+          if (edge && !edge.pending) {
+            return path;
+          }
+        }
+        return null;
       }
 
       if (currentNode) {

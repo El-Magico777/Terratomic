@@ -139,7 +139,7 @@ export class GameRunner {
     this.turns.push(turn);
   }
 
-  public executeNextTick() {
+  public async executeNextTick() {
     if (this.isExecuting) {
       return;
     }
@@ -156,7 +156,7 @@ export class GameRunner {
     let updates: GameUpdates;
 
     try {
-      updates = this.game.executeNextTick();
+      updates = await this.game.executeNextTick();
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Game tick error:", error.message);
@@ -169,6 +169,21 @@ export class GameRunner {
       }
       return;
     }
+
+    updates[GameUpdateType.StructureChange].forEach((update) => {
+      if (update.change === "created") {
+        const unit = this.game.unit(update.unitId);
+        if (unit) {
+          this.game.roadManager.handleStructureCreated(unit);
+        }
+      } else {
+        this.game.roadManager.handleStructureDestroyed(update.tile);
+      }
+    });
+
+    updates[GameUpdateType.AllianceChange].forEach((update) => {
+      this.game.roadManager.handleAllianceChange();
+    });
 
     if (this.game.inSpawnPhase() && this.game.ticks() % 2 === 0) {
       this.game

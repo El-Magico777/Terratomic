@@ -47,6 +47,8 @@ export enum GameUpdateType {
   BomberExplosion,
   Roads,
   CargoTrucks,
+  StructureChange,
+  AllianceChange,
 }
 
 export interface SerializedCargoTruck {
@@ -64,6 +66,17 @@ export interface CargoTrucksUpdate {
   added: SerializedCargoTruck[];
   removed: number[];
   updated: { id: number; progress: number; position: [number, number] }[];
+}
+
+export interface StructureChangeUpdate {
+  type: GameUpdateType.StructureChange;
+  unitId: number;
+  change: "created" | "destroyed";
+  tile: TileRef;
+}
+
+export interface AllianceChangeUpdate {
+  type: GameUpdateType.AllianceChange;
 }
 
 export interface RoadsUpdate {
@@ -90,7 +103,9 @@ export type GameUpdate =
   | UnitIncomingUpdate
   | BomberExplosionUpdate
   | RoadsUpdate
-  | CargoTrucksUpdate;
+  | CargoTrucksUpdate
+  | StructureChangeUpdate
+  | AllianceChangeUpdate;
 
 export interface BomberExplosionUpdate {
   type: GameUpdateType.BomberExplosion;

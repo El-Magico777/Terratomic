@@ -8,7 +8,7 @@ import {
   UnitUpdate,
 } from "./GameUpdates";
 import { PlayerView } from "./GameView";
-import { Road } from "./RoadManager";
+import { Road, RoadManager } from "./RoadManager";
 import { Stats } from "./Stats";
 
 export type PlayerID = string;
@@ -682,20 +682,23 @@ export interface Game extends GameMap {
   expireAlliance(alliance: Alliance): void;
 
   // Roads
+  roadManager: RoadManager;
   roads(): Road[];
   hasRoadOnTile(tile: TileRef): boolean;
   destroyPlayerRoads(player: Player): void;
   markPlayerNodesForReconnection(player: Player): void;
+  buildInitialRoadNetwork(player: Player): void;
 
-  // Game State
+  // Units
   ticks(): Tick;
   inSpawnPhase(): boolean;
-  executeNextTick(): GameUpdates;
+  executeNextTick(): Promise<GameUpdates>;
   setWinner(winner: Player | Team, allPlayersStats: AllPlayersStats): void;
   config(): Config;
 
   // Units
   units(...types: UnitType[]): Unit[];
+  unit(id: number): Unit | undefined;
   unitsAt(tile: TileRef): Unit[];
   unitCount(type: UnitType): number;
   unitInfo(type: UnitType): UnitInfo;

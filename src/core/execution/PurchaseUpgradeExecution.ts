@@ -50,7 +50,7 @@ export class PurchaseUpgradeExecution implements Execution {
         this.player.removeUpgrade(UpgradeType.Roads);
         this.player.removeUpgrade(UpgradeType.ScorchedEarth);
       } else if (this.upgrade === UpgradeType.Roads) {
-        this.mg.markPlayerNodesForReconnection(this.player);
+        this.mg.buildInitialRoadNetwork(this.player);
       }
     }
     this._isActive = false;
