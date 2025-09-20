@@ -1,10 +1,12 @@
 import {
   FindPathRequest,
   FindPathResponse,
+  TerrainFlags,
 } from "../../client/workers/PathfindingWorkerTypes";
 import { Game, Player, PlayerID, Unit, UnitType, UpgradeType } from "./Game";
 import { PriorityQueue } from "./PriorityQueue";
 
+import { findPath } from "../pathfinding/AStarSearch";
 import { TileRef } from "./GameMap";
 import { RoadCache } from "./RoadCache";
 import { SpatialGrid } from "./SpatialGrid";
@@ -48,7 +50,7 @@ export class RoadManager {
   private lastSegmentReconcileTick = 0;
   private readonly RECONCILE_INTERVAL_TICKS = 600;
 
-  private worker: Worker;
+  private worker: Worker | null = null;
   private readonly MAX_IN_FLIGHT = 4;
   private readonly REQUEST_TIMEOUT_MS = 50;
   private pathfindingGeneration = 0;
@@ -91,15 +93,30 @@ export class RoadManager {
   }
 
   private initializeWorker(): void {
-    this.worker = new Worker(
-      new URL(
-        "../../client/workers/PathfindingWorker.worker.ts",
-        import.meta.url,
-      ),
-      { type: "module" },
-    );
+    if (typeof Worker === "undefined") {
+      this.worker = null;
+      return;
+    }
 
-    this.worker.onmessage = (e: MessageEvent<FindPathResponse>) => {
+    const workerScriptUrl = this.resolveWorkerScriptUrl();
+    const workerSource =
+      workerScriptUrl ?? "../../client/workers/PathfindingWorker.worker.ts";
+
+    let worker: Worker;
+    try {
+      worker = new Worker(workerSource, { type: "module" });
+    } catch (err) {
+      console.warn(
+        "RoadManager: Web Workers unavailable, falling back to in-process pathfinding.",
+        err,
+      );
+      this.worker = null;
+      return;
+    }
+
+    this.worker = worker;
+
+    worker.onmessage = (e: MessageEvent<FindPathResponse>) => {
       const { protocolVersion, requestId, generation, path } = e.data;
       const requestInfo = this.inFlightRequests.get(requestId);
 
@@ -116,16 +133,35 @@ export class RoadManager {
       this.processPathfindingQueue();
     };
 
-    this.worker.onmessageerror = (e) => {
+    worker.onmessageerror = (e) => {
       console.error("RoadManager: Worker onmessageerror:", e);
     };
 
-    this.worker.onerror = (err) => {
+    worker.onerror = (err) => {
       console.error("Pathfinding worker error:", err);
-      this.worker.terminate();
+      worker.terminate();
+      this.worker = null;
       this.initializeWorker();
       this.invalidatePendingPaths();
+      this.processPathfindingQueue();
     };
+  }
+
+  private resolveWorkerScriptUrl(): URL | null {
+    try {
+      const importMeta = new Function("return import.meta")() as
+        | { url?: string }
+        | undefined;
+      if (!importMeta || typeof importMeta.url !== "string") {
+        return null;
+      }
+      return new URL(
+        "../../client/workers/PathfindingWorker.worker.ts",
+        importMeta.url,
+      );
+    } catch {
+      return null;
+    }
   }
 
   private invalidatePendingPaths(): void {
@@ -278,8 +314,76 @@ export class RoadManager {
     return { added, removed };
   }
 
+  private getOrBuildRoadMask(): Uint8Array {
+    if (!this.cachedRoadMask || this.cachedRoadsEpoch !== this.roadsEpoch) {
+      const mask = new Uint8Array(this.game.width() * this.game.height());
+      this.roadTilesCache.forEach((id) => {
+        mask[id] = 1;
+      });
+      this.cachedRoadMask = mask;
+      this.cachedRoadsEpoch = this.roadsEpoch;
+    }
+    return this.cachedRoadMask!;
+  }
+
+  private getTerrainAndOwnerData(): {
+    terrain: Uint8Array;
+    ownerIds: Uint16Array;
+  } {
+    const mapImpl = this.game.map() as any;
+    return {
+      terrain: mapImpl.terrain as Uint8Array,
+      ownerIds: mapImpl.state as Uint16Array,
+    };
+  }
+
+  private runPathfindingInProcess(
+    request: FindPathRequest,
+    roadMask: Uint8Array,
+  ): Int32Array | null {
+    const { terrain, ownerIds } = this.getTerrainAndOwnerData();
+    const isLand = (id: number): boolean => {
+      return Boolean(terrain[id] & (1 << TerrainFlags.IS_LAND_BIT));
+    };
+
+    const friendlyLookup = new Uint8Array(65536);
+    const friendlyIds = request.friendlyPlayerIds;
+    for (let i = 0; i < friendlyIds.length; i++) {
+      friendlyLookup[friendlyIds[i]] = 1;
+    }
+    const isFriendly = (ownerId: number): boolean => {
+      return friendlyLookup[ownerId] === 1;
+    };
+
+    return findPath(
+      request.width,
+      request.height,
+      request.startId,
+      request.goalId,
+      isLand,
+      isFriendly,
+      ownerIds,
+      roadMask,
+      request.maxExpand,
+    );
+  }
+
   private processPathfindingQueue() {
+    if (!this.worker) {
+      while (this.pathfindingQueue.length > 0) {
+        const { request, promiseResolve, reqKey } =
+          this.pathfindingQueue.shift()!;
+        request.generation = this.pathfindingGeneration;
+        const roadMask = this.getOrBuildRoadMask();
+        const path = this.runPathfindingInProcess(request, roadMask);
+        this.inFlightKeys.delete(reqKey);
+        promiseResolve(path);
+      }
+      return;
+    }
+
     while (
+      this.worker &&
       this.inFlightRequests.size < this.MAX_IN_FLIGHT &&
       this.pathfindingQueue.length > 0
     ) {
@@ -294,20 +398,13 @@ export class RoadManager {
         reqKey,
       });
 
-      let roadMask: Uint8Array;
-      if (this.cachedRoadMask && this.cachedRoadsEpoch === this.roadsEpoch) {
-        roadMask = this.cachedRoadMask;
-      } else {
-        roadMask = new Uint8Array(this.game.width() * this.game.height());
-        this.roadTilesCache.forEach((id) => (roadMask[id] = 1));
-        this.cachedRoadMask = roadMask;
-        this.cachedRoadsEpoch = this.roadsEpoch;
-      }
+      const roadMask = this.getOrBuildRoadMask();
+      const { terrain, ownerIds } = this.getTerrainAndOwnerData();
 
       const requestToSend: FindPathRequest = {
         ...request,
-        terrain: (this.game.map() as any).terrain.buffer.slice(0),
-        ownerIds: (this.game.map() as any).state.buffer.slice(0),
+        terrain: terrain.buffer.slice(0),
+        ownerIds: ownerIds.buffer.slice(0),
         roadMask: roadMask.buffer.slice(0) as ArrayBuffer,
       };
 
@@ -316,7 +413,16 @@ export class RoadManager {
         requestToSend.ownerIds,
         requestToSend.roadMask,
       ];
-      this.worker.postMessage(requestToSend, transferables);
+
+      const worker = this.worker;
+      if (!worker) {
+        this.pathfindingQueue.unshift({ request, promiseResolve, reqKey });
+        this.inFlightRequests.delete(request.requestId);
+        this.processPathfindingQueue();
+        return;
+      }
+
+      worker.postMessage(requestToSend, transferables);
 
       setTimeout(() => {
         const requestInfo = this.inFlightRequests.get(request.requestId);
