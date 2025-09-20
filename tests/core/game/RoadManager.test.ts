@@ -24,6 +24,7 @@ describe("RoadManager", () => {
     (globalThis as any).Worker = originalWorker;
   });
 
+
   describe("when Web Workers are unavailable", () => {
     let game: GameImpl;
     let playerA: Player;
@@ -110,6 +111,7 @@ describe("RoadManager", () => {
         game.conquer(playerA as PlayerImpl, game.ref(0, i));
       }
 
+
       playerA.buildUnit(UnitType.City, tile1, {});
       playerA.buildUnit(UnitType.City, tile2, {});
 
@@ -139,6 +141,7 @@ describe("RoadManager", () => {
       for (let i = 10; i <= 15; i++) {
         game.conquer(playerA as PlayerImpl, game.ref(0, i));
       }
+
 
       const path = await (roadManager as any).computePath(tile1, tile2);
 
@@ -206,6 +209,7 @@ describe("RoadManager", () => {
       }
     }
 
+
     let game: GameImpl;
     let playerA: Player;
     let roadManager: RoadManager;
@@ -231,7 +235,8 @@ describe("RoadManager", () => {
         game.conquer(playerA as PlayerImpl, game.ref(0, i));
       }
 
-      const path = await (roadManager as any).computePath(tile1, tile2);
+     const path = await (roadManager as any).computePath(tile1, tile2);
+
 
       expect((roadManager as any).worker).toBeInstanceOf(PathfindingWorkerMock);
       expect(PathfindingWorkerMock.instance?.lastMessage).not.toBeNull();

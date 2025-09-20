@@ -51,7 +51,7 @@ describe("GameImpl", () => {
     );
 
     while (game.inSpawnPhase()) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     attacker = game.player(attackerInfo.id);
@@ -62,15 +62,15 @@ describe("GameImpl", () => {
     jest.spyOn(attacker, "canSendAllianceRequest").mockReturnValue(true);
     game.addExecution(new AllianceRequestExecution(attacker, defender.id()));
 
-    game.executeNextTick();
-    game.executeNextTick();
+    await game.executeNextTick();
+    await game.executeNextTick();
 
     game.addExecution(
       new AllianceRequestReplyExecution(attacker.id(), defender, true),
     );
 
-    game.executeNextTick();
-    game.executeNextTick();
+    await game.executeNextTick();
+    await game.executeNextTick();
 
     expect(attacker.allianceWith(defender)).toBeTruthy();
     expect(defender.allianceWith(attacker)).toBeTruthy();
@@ -78,13 +78,13 @@ describe("GameImpl", () => {
     //Defender is marked disconnected
     defender.markDisconnected(true);
 
-    game.executeNextTick();
-    game.executeNextTick();
+    await game.executeNextTick();
+    await game.executeNextTick();
 
     game.addExecution(new AttackExecution(100, attacker, defender.id()));
 
     do {
-      game.executeNextTick();
+      await game.executeNextTick();
     } while (attacker.outgoingAttacks().length > 0);
 
     expect(attacker.isTraitor()).toBe(false);
@@ -94,28 +94,28 @@ describe("GameImpl", () => {
     jest.spyOn(attacker, "canSendAllianceRequest").mockReturnValue(true);
     game.addExecution(new AllianceRequestExecution(attacker, defender.id()));
 
-    game.executeNextTick();
-    game.executeNextTick();
+    await game.executeNextTick();
+    await game.executeNextTick();
 
     game.addExecution(
       new AllianceRequestReplyExecution(attacker.id(), defender, true),
     );
 
-    game.executeNextTick();
-    game.executeNextTick();
+    await game.executeNextTick();
+    await game.executeNextTick();
 
     expect(attacker.allianceWith(defender)).toBeTruthy();
     expect(defender.allianceWith(attacker)).toBeTruthy();
 
     //Defender is NOT marked disconnected
 
-    game.executeNextTick();
-    game.executeNextTick();
+    await game.executeNextTick();
+    await game.executeNextTick();
 
     game.addExecution(new AttackExecution(100, attacker, defender.id()));
 
     do {
-      game.executeNextTick();
+      await game.executeNextTick();
     } while (attacker.outgoingAttacks().length > 0);
 
     expect(attacker.isTraitor()).toBe(true);

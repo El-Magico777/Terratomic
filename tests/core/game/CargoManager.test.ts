@@ -52,7 +52,7 @@ describe("CargoManager", () => {
 
     // Let roads form
     for (let i = 0; i < 200; i++) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
     expect(game.roads().length).toBeGreaterThan(0);
   });
@@ -61,7 +61,7 @@ describe("CargoManager", () => {
     jest.restoreAllMocks();
   });
 
-  it("spawns, moves, and completes domestic cargo trucks once roads exist", () => {
+  it("spawns, moves, and completes domestic cargo trucks once roads exist", async () => {
     // Force deterministic spawning and selection
     jest.spyOn(PseudoRandom.prototype, "chance").mockReturnValue(true);
     jest
@@ -71,19 +71,19 @@ describe("CargoManager", () => {
     // Align with player's spawn bucket (deterministic based on player id)
     const bucket = simpleHash(player.id()) % 10;
     while (game.ticks() % 10 !== bucket) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     const goldBefore = player.gold();
 
     // This tick should spawn at least one truck
-    let updates = game.executeNextTick();
+    let updates = await game.executeNextTick();
     const { added } = collectCargo(updates);
     expect(added.length).toBeGreaterThan(0);
     const truckId = added[0].id;
 
     // Next tick: truck should move (progress increases)
-    updates = game.executeNextTick();
+    updates = await game.executeNextTick();
     const { updated } = collectCargo(updates);
     const moved = updated.find((u) => u.id === truckId);
     expect(moved).toBeDefined();
@@ -92,7 +92,7 @@ describe("CargoManager", () => {
     // Keep ticking until the truck arrives and is removed
     let removedSeen = false;
     for (let i = 0; i < 100 && !removedSeen; i++) {
-      updates = game.executeNextTick();
+      updates = await game.executeNextTick();
       const { removed } = collectCargo(updates);
       removedSeen = removed.includes(truckId);
     }
@@ -102,7 +102,7 @@ describe("CargoManager", () => {
     expect(goldAfter > goldBefore).toBe(true);
   });
 
-  it("emits periodic domestic trade summary messages with accumulated gold", () => {
+  it("emits periodic domestic trade summary messages with accumulated gold", async () => {
     // Force deterministic spawning and selection
     jest.spyOn(PseudoRandom.prototype, "chance").mockReturnValue(true);
     jest
@@ -113,7 +113,7 @@ describe("CargoManager", () => {
     // and ensure some trucks have completed by then.
     let sawSummary = false;
     for (let i = 0; i < 400 && !sawSummary; i++) {
-      const updates = game.executeNextTick();
+      const updates = await game.executeNextTick();
       const messages = updates[GameUpdateType.DisplayEvent] as any[];
       if (
         messages.some(
