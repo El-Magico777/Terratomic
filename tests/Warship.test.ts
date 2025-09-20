@@ -42,7 +42,7 @@ describe("Warship", () => {
     );
 
     while (game.inSpawnPhase()) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     player1 = game.player("player_1_id");
@@ -66,17 +66,17 @@ describe("Warship", () => {
     );
     game.addExecution(new WarshipExecution(warship));
 
-    game.executeNextTick();
+    await game.executeNextTick();
 
     expect(warship.health()).toBe(maxHealth);
     warship.modifyHealth(-10);
     expect(warship.health()).toBe(maxHealth - 10);
-    game.executeNextTick();
+    await game.executeNextTick();
     expect(warship.health()).toBe(maxHealth - 9);
 
     port.delete();
 
-    game.executeNextTick();
+    await game.executeNextTick();
     expect(warship.health()).toBe(maxHealth - 9);
   });
 
@@ -102,7 +102,7 @@ describe("Warship", () => {
     expect(tradeShip.owner().id()).toBe(player2.id());
     // Let plenty of time for A* to execute
     for (let i = 0; i < 10; i++) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
     expect(tradeShip.owner()).toBe(player1);
   });
@@ -127,7 +127,7 @@ describe("Warship", () => {
     expect(tradeShip.owner().id()).toBe(player2.id());
     // Let plenty of time for warship to potentially capture trade ship
     for (let i = 0; i < 10; i++) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     expect(tradeShip.owner().id()).toBe(player2.id());
@@ -156,7 +156,7 @@ describe("Warship", () => {
 
     tradeShip.setSafeFromPirates();
 
-    executeTicks(game, 10);
+    await executeTicks(game, 10);
 
     expect(tradeShip.owner().id()).toBe(player2.id());
   });
@@ -178,7 +178,7 @@ describe("Warship", () => {
       new MoveWarshipExecution(player1, warship.id(), game.ref(coastX + 5, 15)),
     );
 
-    executeTicks(game, 10);
+    await executeTicks(game, 10);
 
     expect(warship.patrolTile()).toBe(game.ref(coastX + 5, 15));
   });
@@ -206,7 +206,7 @@ describe("Warship", () => {
       },
     );
 
-    executeTicks(game, 10);
+    await executeTicks(game, 10);
 
     // Trade ship should not be captured
     expect(tradeShip.owner().id()).toBe(player2.id());

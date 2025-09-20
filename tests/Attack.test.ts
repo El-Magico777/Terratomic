@@ -58,7 +58,7 @@ describe("Attack", () => {
     );
 
     while (game.inSpawnPhase()) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     attacker = game.player(attackerInfo.id);
@@ -67,9 +67,9 @@ describe("Attack", () => {
     game.addExecution(
       new AttackExecution(100, defender, game.terraNullius().id()),
     );
-    game.executeNextTick();
+    await game.executeNextTick();
     while (defender.outgoingAttacks().length > 0) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     (game.config() as TestConfig).setDefaultNukeSpeed(50);
@@ -78,10 +78,10 @@ describe("Attack", () => {
   test("Nuke reduce attacking troop counts", async () => {
     // Not building exactly spawn to it's better protected from attacks (but still
     // on defender territory)
-    constructionExecution(game, defender, 1, 1, UnitType.MissileSilo);
+    await constructionExecution(game, defender, 1, 1, UnitType.MissileSilo);
     expect(defender.units(UnitType.MissileSilo)).toHaveLength(1);
     game.addExecution(new AttackExecution(100, attacker, defender.id()));
-    constructionExecution(game, defender, 0, 15, UnitType.AtomBomb, 3);
+    await constructionExecution(game, defender, 0, 15, UnitType.AtomBomb, 3);
     const nuke = defender.units(UnitType.AtomBomb)[0];
     expect(nuke.isActive()).toBe(true);
 
@@ -89,26 +89,26 @@ describe("Attack", () => {
     expect(attacker.outgoingAttacks()[0].troops()).toBe(98);
 
     // Make the nuke go kaboom
-    game.executeNextTick();
+    await game.executeNextTick();
     expect(nuke.isActive()).toBe(false);
     expect(attacker.outgoingAttacks()[0].troops()).not.toBe(97);
     expect(attacker.outgoingAttacks()[0].troops()).toBeLessThan(90);
   });
 
   test("Nuke reduce attacking boat troop count", async () => {
-    constructionExecution(game, defender, 1, 1, UnitType.MissileSilo);
+    await constructionExecution(game, defender, 1, 1, UnitType.MissileSilo);
     expect(defender.units(UnitType.MissileSilo)).toHaveLength(1);
 
     sendBoat(game.ref(15, 8), game.ref(10, 5), 100);
 
-    constructionExecution(game, defender, 0, 15, UnitType.AtomBomb, 3);
+    await constructionExecution(game, defender, 0, 15, UnitType.AtomBomb, 3);
     const nuke = defender.units(UnitType.AtomBomb)[0];
     expect(nuke.isActive()).toBe(true);
 
     const ship = defender.units(UnitType.TransportShip)[0];
     expect(ship.troops()).toBe(100);
 
-    game.executeNextTick();
+    await game.executeNextTick();
 
     expect(nuke.isActive()).toBe(false);
     expect(defender.units(UnitType.TransportShip)[0].troops()).toBeLessThan(90);
