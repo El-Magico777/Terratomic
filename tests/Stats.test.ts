@@ -36,7 +36,7 @@ describe("Stats", () => {
     ]);
 
     while (game.inSpawnPhase()) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     player1 = game.player("player_1_id");

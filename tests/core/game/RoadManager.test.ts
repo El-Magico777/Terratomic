@@ -23,7 +23,7 @@ describe("RoadManager", () => {
     roadManager = (game as any).roadManager;
   });
 
-  it("should form a road between two cities for a player with the Roads upgrade", () => {
+  it("should form a road between two cities for a player with the Roads upgrade", async () => {
     playerA.addUpgrade(UpgradeType.Roads);
 
     const tile1 = game.ref(0, 10);
@@ -39,7 +39,7 @@ describe("RoadManager", () => {
 
     const city1 = playerA.buildUnit(UnitType.City, tile1, {});
     const city2 = playerA.buildUnit(UnitType.City, tile2, {});
-    executeTicks(game, 15);
+    await executeTicks(game, 15);
 
     const roads = (roadManager as any).roads;
     expect(roads.size).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ describe("RoadManager", () => {
     expect((roadManager as any).existingRoadSegments.has(segment)).toBe(true);
   });
 
-  it("should NOT form a road if the player does not have the Roads upgrade", () => {
+  it("should NOT form a road if the player does not have the Roads upgrade", async () => {
     const tile1 = game.ref(0, 10);
     const tile2 = game.ref(0, 15);
     game.conquer(playerA as PlayerImpl, tile1);
@@ -59,13 +59,13 @@ describe("RoadManager", () => {
 
     playerA.buildUnit(UnitType.City, tile1, {});
     playerA.buildUnit(UnitType.City, tile2, {});
-    executeTicks(game, 15);
+    await executeTicks(game, 15);
 
     const roads = (roadManager as any).roads;
     expect(roads.size).toBe(0);
   });
 
-  it("destroyPlayerRoads should clear all road state for a player", () => {
+  it("destroyPlayerRoads should clear all road state for a player", async () => {
     playerA.addUpgrade(UpgradeType.Roads);
     const tile1 = game.ref(0, 10);
     const tile2 = game.ref(0, 15);
@@ -75,7 +75,7 @@ describe("RoadManager", () => {
 
     const city1 = playerA.buildUnit(UnitType.City, tile1, {});
     const city2 = playerA.buildUnit(UnitType.City, tile2, {});
-    executeTicks(game, 15);
+    await executeTicks(game, 15);
     expect((roadManager as any).roads.size).toBeGreaterThan(0);
 
     const segment = (roadManager as any).getCanonicalSegment(
@@ -94,7 +94,7 @@ describe("RoadManager", () => {
     expect(edge).toBeUndefined();
   });
 
-  it("should rebuild the road network after using markPlayerNodesForReconnection", () => {
+  it("should rebuild the road network after using markPlayerNodesForReconnection", async () => {
     playerA.addUpgrade(UpgradeType.Roads);
     const tile1 = game.ref(0, 10);
     const tile2 = game.ref(0, 15);
@@ -104,7 +104,7 @@ describe("RoadManager", () => {
 
     playerA.buildUnit(UnitType.City, tile1, {});
     playerA.buildUnit(UnitType.City, tile2, {});
-    executeTicks(game, 15);
+    await executeTicks(game, 15);
     expect((roadManager as any).roads.size).toBeGreaterThan(0);
 
     roadManager.destroyPlayerRoads(playerA);
@@ -113,7 +113,7 @@ describe("RoadManager", () => {
     // Re-add the upgrade before marking for reconnection
     playerA.addUpgrade(UpgradeType.Roads);
     roadManager.markPlayerNodesForReconnection(playerA);
-    executeTicks(game, 15);
+    await executeTicks(game, 15);
 
     expect((roadManager as any).roads.size).toBeGreaterThan(0);
   });

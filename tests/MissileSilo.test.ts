@@ -14,7 +14,7 @@ import { constructionExecution } from "./util/utils";
 let game: Game;
 let attacker: Player;
 
-function attackerBuildsNuke(
+async function attackerBuildsNuke(
   source: TileRef | null,
   target: TileRef,
   initialize = true,
@@ -23,8 +23,8 @@ function attackerBuildsNuke(
     new NukeExecution(UnitType.AtomBomb, attacker, target, source),
   );
   if (initialize) {
-    game.executeNextTick();
-    game.executeNextTick();
+    await game.executeNextTick();
+    await game.executeNextTick();
   }
 }
 
@@ -45,47 +45,47 @@ describe("MissileSilo", () => {
     );
 
     while (game.inSpawnPhase()) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
 
     attacker = game.player("attacker_id");
 
-    constructionExecution(game, attacker, 1, 1, UnitType.MissileSilo);
+    await constructionExecution(game, attacker, 1, 1, UnitType.MissileSilo);
   });
 
   test("missilesilo should launch nuke", async () => {
-    attackerBuildsNuke(null, game.ref(7, 7));
+    await attackerBuildsNuke(null, game.ref(7, 7));
     expect(attacker.units(UnitType.AtomBomb)).toHaveLength(1);
     expect(attacker.units(UnitType.AtomBomb)[0].tile()).not.toBe(
       game.map().ref(7, 7),
     );
 
     for (let i = 0; i < 5; i++) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
     expect(attacker.units(UnitType.AtomBomb)).toHaveLength(0);
   });
 
   test("missilesilo should only launch one nuke at a time", async () => {
-    attackerBuildsNuke(null, game.ref(7, 7));
-    attackerBuildsNuke(null, game.ref(7, 7));
+    await attackerBuildsNuke(null, game.ref(7, 7));
+    await attackerBuildsNuke(null, game.ref(7, 7));
     expect(attacker.units(UnitType.AtomBomb)).toHaveLength(1);
   });
 
   test("missilesilo should cooldown as long as configured", async () => {
     expect(attacker.units(UnitType.MissileSilo)[0].isInCooldown()).toBeFalsy();
     // send the nuke far enough away so it doesnt destroy the silo
-    attackerBuildsNuke(null, game.ref(50, 50));
+    await attackerBuildsNuke(null, game.ref(50, 50));
     expect(attacker.units(UnitType.AtomBomb)).toHaveLength(1);
 
     for (let i = 0; i < game.config().SiloCooldown() - 2; i++) {
-      game.executeNextTick();
+      await game.executeNextTick();
       expect(
         attacker.units(UnitType.MissileSilo)[0].isInCooldown(),
       ).toBeTruthy();
     }
 
-    game.executeNextTick();
+    await game.executeNextTick();
     expect(attacker.units(UnitType.MissileSilo)[0].isInCooldown()).toBeFalsy();
   });
 });

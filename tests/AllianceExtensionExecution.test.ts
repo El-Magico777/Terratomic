@@ -50,7 +50,7 @@ describe("AllianceExtensionExecution", () => {
 
     let safety = 0;
     while (game.inSpawnPhase() && safety++ < 500) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
     expect(safety).toBeLessThan(500); // Sanity check
 
@@ -61,21 +61,21 @@ describe("AllianceExtensionExecution", () => {
       new PlayerExecution(player1),
       new PlayerExecution(player2),
     );
-    game.executeNextTick();
+    await game.executeNextTick();
   });
 
-  test("Successfully extends existing alliance", () => {
+  test("Successfully extends existing alliance", async () => {
     jest.spyOn(player1, "canSendAllianceRequest").mockReturnValue(true);
     game.addExecution(new AllianceRequestExecution(player1, player2.id()));
-    game.executeNextTick(); // toevoegen
-    game.executeNextTick(); // uitvoeren
+    await game.executeNextTick(); // toevoegen
+    await game.executeNextTick(); // uitvoeren
 
     // 2. Accept alliance request
     game.addExecution(
       new AllianceRequestReplyExecution(player1.id(), player2, true),
     );
-    game.executeNextTick(); // add
-    game.executeNextTick(); // execute
+    await game.executeNextTick(); // add
+    await game.executeNextTick(); // execute
 
     // ✅ After accepting, both players should have an alliance
     expect(player1.allianceWith(player2)).toBeTruthy();
@@ -87,7 +87,7 @@ describe("AllianceExtensionExecution", () => {
 
     // 3. Extend the alliance
     game.addExecution(new AllianceExtensionExecution(player1, player2));
-    game.executeNextTick();
+    await game.executeNextTick();
 
     const allianceAfter = player1.allianceWith(player2)!;
 
@@ -100,9 +100,9 @@ describe("AllianceExtensionExecution", () => {
     expect(expirationAfter).toBeGreaterThanOrEqual(expirationBefore);
   });
 
-  test("Fails gracefully if no alliance exists", () => {
+  test("Fails gracefully if no alliance exists", async () => {
     game.addExecution(new AllianceExtensionExecution(player1, player2));
-    game.executeNextTick();
+    await game.executeNextTick();
 
     expect(player1.allianceWith(player2)).toBeFalsy();
     expect(player2.allianceWith(player1)).toBeFalsy();

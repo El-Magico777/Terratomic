@@ -28,7 +28,7 @@ describe("Scorched Earth Full Cycle Integration Test", () => {
     // Step 1: Buy Roads and verify network creation
     game.addExecution(new PurchaseUpgradeExecution(player, UpgradeType.Roads));
     for (let i = 0; i < 200; i++) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
     expect(game.roads().length).toBeGreaterThan(0);
 
@@ -36,14 +36,14 @@ describe("Scorched Earth Full Cycle Integration Test", () => {
     game.addExecution(
       new PurchaseUpgradeExecution(player, UpgradeType.ScorchedEarth),
     );
-    game.executeNextTick();
+    await game.executeNextTick();
     expect(game.roads().length).toBe(0);
     expect(player.hasUpgrade(UpgradeType.Roads)).toBe(false);
 
     // Step 3: Re-buy Roads and verify network reformation
     game.addExecution(new PurchaseUpgradeExecution(player, UpgradeType.Roads));
     for (let i = 0; i < 20; i++) {
-      game.executeNextTick();
+      await game.executeNextTick();
     }
     expect(game.roads().length).toBeGreaterThan(0);
   });
