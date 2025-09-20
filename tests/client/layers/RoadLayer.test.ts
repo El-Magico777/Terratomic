@@ -58,7 +58,11 @@ describe("RoadLayer", () => {
     gameView.ref = jest.fn().mockReturnValue(1);
 
     roadLayer.tick();
-    roadLayer.renderLayer(new CanvasRenderingContext2D());
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    expect(context).not.toBeNull();
+
+    roadLayer.renderLayer(context!);
 
     expect(redrawSpy).toHaveBeenCalled();
   });
