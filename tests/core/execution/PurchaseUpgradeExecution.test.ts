@@ -25,7 +25,7 @@ describe("PurchaseUpgradeExecution", () => {
         }),
       }),
       destroyPlayerRoads: jest.fn(),
-      markPlayerNodesForReconnection: jest.fn(),
+      buildInitialRoadNetwork: jest.fn(),
     } as unknown as jest.Mocked<GameImpl>;
   });
 
@@ -88,8 +88,6 @@ describe("PurchaseUpgradeExecution", () => {
     const exec = new PurchaseUpgradeExecution(mockPlayer, UpgradeType.Roads);
     exec.init(mockGame, 0);
 
-    expect(mockGame.markPlayerNodesForReconnection).toHaveBeenCalledWith(
-      mockPlayer,
-    );
+    expect(mockGame.buildInitialRoadNetwork).toHaveBeenCalledWith(mockPlayer);
   });
 });
