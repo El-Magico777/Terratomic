@@ -316,7 +316,17 @@ export class GameImpl implements Game {
         (!this.inSpawnPhase() || e.activeDuringSpawnPhase()) &&
         e.isActive()
       ) {
+        const startTime = performance.now();
         e.tick(this._ticks);
+        const duration = performance.now() - startTime;
+        if (duration > 5) {
+          // Log any execution taking longer than 5ms
+          console.log(
+            `[Profiler] Execution ${e.constructor.name} took ${duration.toFixed(
+              2,
+            )}ms`,
+          );
+        }
       }
     });
     const inited: Execution[] = [];
