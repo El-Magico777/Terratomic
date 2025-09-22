@@ -162,6 +162,29 @@ export enum UnitType {
   FighterJet = "Fighter Jet", // Represents a Fighter Jet unit.
 }
 
+export enum UpgradeType {
+  LandUpgrade1 = "LandUpgrade1",
+
+  // Dummy Land Upgrades
+  LandUpgrade2 = "LandUpgrade2",
+  LandUpgrade3 = "LandUpgrade3",
+
+  // Dummy Water Upgrades
+  WaterUpgrade1 = "WaterUpgrade1",
+  WaterUpgrade2 = "WaterUpgrade2",
+  WaterUpgrade3 = "WaterUpgrade3",
+
+  // Dummy Air Upgrades
+  AirUpgrade1 = "AirUpgrade1",
+  AirUpgrade2 = "AirUpgrade2",
+  AirUpgrade3 = "AirUpgrade3",
+
+  // Dummy Economy Upgrades
+  EconomyUpgrade1 = "EconomyUpgrade1",
+  EconomyUpgrade2 = "EconomyUpgrade2",
+  EconomyUpgrade3 = "EconomyUpgrade3",
+}
+
 const _structureTypes: ReadonlySet<UnitType> = new Set([
   UnitType.City,
   UnitType.Construction,
@@ -544,6 +567,10 @@ export interface Player {
     spawnTile: TileRef,
     params: UnitParams<T>,
   ): Unit;
+
+  // Upgrades
+  hasUpgrade(upgrade: UpgradeType): boolean;
+  addUpgrade(upgrade: UpgradeType): void;
 
   captureUnit(unit: Unit): void;
 

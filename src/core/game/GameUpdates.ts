@@ -10,6 +10,7 @@ import {
   Team,
   Tick,
   UnitType,
+  UpgradeType,
 } from "./Game";
 import { TileRef, TileUpdate } from "./GameMap";
 
@@ -144,6 +145,7 @@ export interface PlayerUpdate {
   betrayals?: bigint;
   effectiveUnits: Record<UnitType, number>;
   unitsOwned: Record<UnitType, number>;
+  upgrades: UpgradeType[];
 }
 
 export interface AllianceRequestUpdate {

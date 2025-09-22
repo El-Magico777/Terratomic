@@ -21,6 +21,7 @@ import {
   Tick,
   UnitInfo,
   UnitType,
+  UpgradeType,
 } from "./Game";
 import { GameMap, TileRef, TileUpdate } from "./GameMap";
 import {
@@ -287,6 +288,10 @@ export class PlayerView {
 
   isFriendly(other: PlayerView): boolean {
     return this.isAlliedWith(other) || this.isOnSameTeam(other);
+  }
+
+  hasUpgrade(upgrade: UpgradeType): boolean {
+    return this.data.upgrades.includes(upgrade);
   }
 
   isRequestingAllianceWith(other: PlayerView) {

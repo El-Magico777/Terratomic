@@ -8,6 +8,7 @@ import {
   PlayerType,
   Tick,
   UnitType,
+  UpgradeType,
 } from "../core/game/Game";
 import { TileRef } from "../core/game/GameMap";
 import { PlayerView } from "../core/game/GameView";
@@ -50,6 +51,10 @@ export class SendUpgradeStructureIntentEvent implements GameEvent {
     public readonly unitId: number,
     public readonly unitType: UnitType,
   ) {}
+}
+
+export class SendPurchaseUpgradeIntentEvent implements GameEvent {
+  constructor(public readonly upgradeType: UpgradeType) {}
 }
 
 export class SendAllianceReplyIntentEvent implements GameEvent {
@@ -218,6 +223,9 @@ export class Transport {
     );
     this.eventBus.on(SendBreakAllianceIntentEvent, (e) =>
       this.onBreakAllianceRequestUIEvent(e),
+    );
+    this.eventBus.on(SendPurchaseUpgradeIntentEvent, (e) =>
+      this.onSendPurchaseUpgradeIntent(e),
     );
     this.eventBus.on(SendAllianceExtensionIntentEvent, (e) =>
       this.onSendAllianceExtensionIntent(e),
@@ -446,6 +454,14 @@ export class Transport {
       type: "breakAlliance",
       clientID: this.lobbyConfig.clientID,
       recipient: event.recipient.id(),
+    });
+  }
+
+  private onSendPurchaseUpgradeIntent(event: SendPurchaseUpgradeIntentEvent) {
+    this.sendIntent({
+      type: "purchase_upgrade",
+      clientID: this.lobbyConfig.clientID,
+      upgrade: event.upgradeType,
     });
   }
 

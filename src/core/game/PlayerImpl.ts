@@ -39,6 +39,7 @@ import {
   Unit,
   UnitParams,
   UnitType,
+  UpgradeType,
 } from "./Game";
 import { GameImpl } from "./GameImpl";
 import { andFN, manhattanDistFN, TileRef } from "./GameMap";
@@ -113,6 +114,7 @@ export class PlayerImpl implements Player {
     null;
   private _autoBombingEnabled: boolean = false;
   public bombersOnTarget = new Map<TileRef, number>();
+  private _upgrades: Set<UpgradeType> = new Set();
 
   constructor(
     private mg: GameImpl,
@@ -129,6 +131,14 @@ export class PlayerImpl implements Player {
     this._gold = 0n;
     this._displayName = this._name; // processName(this._name)
     this._pseudo_random = new PseudoRandom(simpleHash(this.playerInfo.id));
+  }
+
+  public hasUpgrade(upgrade: UpgradeType): boolean {
+    return this._upgrades.has(upgrade);
+  }
+
+  public addUpgrade(upgrade: UpgradeType): void {
+    this._upgrades.add(upgrade);
   }
 
   largestClusterBoundingBox: { min: Cell; max: Cell } | null;
@@ -203,6 +213,7 @@ export class PlayerImpl implements Player {
         },
         {} as Record<UnitType, number>,
       ),
+      upgrades: Array.from(this._upgrades),
     };
   }
 

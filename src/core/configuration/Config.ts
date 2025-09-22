@@ -14,6 +14,7 @@ import {
   Tick,
   UnitInfo,
   UnitType,
+  UpgradeType,
 } from "../game/Game";
 import { GameMap, TileRef } from "../game/GameMap";
 import { PlayerView } from "../game/GameView";
@@ -124,6 +125,9 @@ export interface Config {
   donateCooldown(): Tick;
   defaultDonationAmount(sender: Player): number;
   unitInfo(type: UnitType): UnitInfo;
+  upgradeInfo(type: UpgradeType): {
+    cost: (player: Player | PlayerView) => Gold;
+  };
   tradeShipGold(dist: number): Gold;
   tradeShipSpawnRate(numberOfPorts: number): number;
   cargoPlaneGold(dist: number): Gold;
