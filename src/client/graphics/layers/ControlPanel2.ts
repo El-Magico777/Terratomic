@@ -538,6 +538,12 @@ export class ControlPanel2 extends LitElement implements Layer {
     const canPurchaseUpgrade = (upgradeType: UpgradeType) => {
       if (!player) return true;
 
+      if (upgradeType === UpgradeType.ScorchedEarth) {
+        if (!player.hasUpgrade(UpgradeType.Roads)) {
+          return true;
+        }
+      }
+
       const cost = getUpgradeCost(upgradeType);
       const hasUpgrade = player.hasUpgrade(upgradeType);
       const canAfford = player.gold() >= cost;
@@ -607,29 +613,6 @@ export class ControlPanel2 extends LitElement implements Layer {
           padding: 5px;
           font-size: 12px;
           text-align: center;
-        }
-        .upgrade-available {
-          background-color: #4c516d;
-          border-color: #5a617c;
-          color: #e2e8f0;
-        }
-        .upgrade-available:hover {
-          background-color: #5a617c;
-          border-color: #6a718c;
-        }
-        .upgrade-available:active {
-          background-color: #3c4157;
-        }
-        .upgrade-locked {
-          background-color: #1a202c;
-          border-color: #2d3748;
-          color: #718096;
-        }
-        .upgrade-unlocked {
-          background-color: #2d3748;
-          border-color: #4a5568;
-          color: #a0aec0;
-          cursor: default;
         }
         .upgrade-available {
           background-color: #4c516d;
@@ -1059,19 +1042,20 @@ export class ControlPanel2 extends LitElement implements Layer {
                       ? html`
                           <div class="grid grid-cols-3 gap-4">
                             ${renderUpgradeButton(
-                              UpgradeType.LandUpgrade1,
-                              "Land 1",
+                              UpgradeType.Roads,
+                              "Roads",
                               1,
                             )}
                             ${renderUpgradeButton(
-                              UpgradeType.LandUpgrade2,
-                              "Land 2",
+                              UpgradeType.InternationalTrade,
+                              "International Trade",
                               2,
                             )}
                             ${renderUpgradeButton(
-                              UpgradeType.LandUpgrade3,
-                              "Land 3",
+                              UpgradeType.ScorchedEarth,
+                              "Scorched Earth",
                               3,
+                              "This upgrade will remove your road network",
                             )}
                           </div>
                         `

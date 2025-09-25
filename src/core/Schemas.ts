@@ -37,6 +37,7 @@ export type Intent =
   | TargetTroopRatioIntent
   | InvestmentRateIntent
   | BuildUnitIntent
+  | PurchaseUpgradeIntent
   | EmbargoIntent
   | QuickChatIntent
   | MoveWarshipIntent
@@ -66,6 +67,7 @@ export type TargetTroopRatioIntent = z.infer<
 >;
 export type InvestmentRateIntent = z.infer<typeof InvestmentRateIntentSchema>;
 export type BuildUnitIntent = z.infer<typeof BuildUnitIntentSchema>;
+export type PurchaseUpgradeIntent = z.infer<typeof PurchaseUpgradeIntentSchema>;
 export type MoveWarshipIntent = z.infer<typeof MoveWarshipIntentSchema>;
 export type MoveFighterJetIntent = z.infer<typeof MoveFighterJetIntentSchema>;
 export type BomberIntent = z.infer<typeof BomberIntentSchema>;
@@ -315,6 +317,11 @@ export const BuildUnitIntentSchema = BaseIntentSchema.extend({
   tile: z.number(),
 });
 
+export const PurchaseUpgradeIntentSchema = BaseIntentSchema.extend({
+  type: z.literal("purchase_upgrade"),
+  upgrade: z.enum(UpgradeType),
+});
+
 export const CancelAttackIntentSchema = BaseIntentSchema.extend({
   type: z.literal("cancel_attack"),
   attackID: z.string(),
@@ -382,6 +389,7 @@ const IntentSchema = z.discriminatedUnion("type", [
   TargetTroopRatioIntentSchema,
   InvestmentRateIntentSchema,
   BuildUnitIntentSchema,
+  PurchaseUpgradeIntentSchema,
   EmbargoIntentSchema,
   MoveWarshipIntentSchema,
   MoveFighterJetIntentSchema,

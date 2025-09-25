@@ -8,6 +8,7 @@ import {
   UnitUpdate,
 } from "./GameUpdates";
 import { PlayerView } from "./GameView";
+import { Road } from "./RoadManager";
 import { Stats } from "./Stats";
 
 export type PlayerID = string;
@@ -163,11 +164,11 @@ export enum UnitType {
 }
 
 export enum UpgradeType {
-  LandUpgrade1 = "LandUpgrade1",
+  Roads = "Roads",
 
-  // Dummy Land Upgrades
-  LandUpgrade2 = "LandUpgrade2",
-  LandUpgrade3 = "LandUpgrade3",
+  // Land Upgrades
+  InternationalTrade = "InternationalTrade",
+  ScorchedEarth = "ScorchedEarth",
 
   // Dummy Water Upgrades
   WaterUpgrade1 = "WaterUpgrade1",
@@ -571,6 +572,7 @@ export interface Player {
   // Upgrades
   hasUpgrade(upgrade: UpgradeType): boolean;
   addUpgrade(upgrade: UpgradeType): void;
+  removeUpgrade(upgrade: UpgradeType): void;
 
   captureUnit(unit: Unit): void;
 
@@ -678,6 +680,12 @@ export interface Game extends GameMap {
   // Alliances
   alliances(): MutableAlliance[];
   expireAlliance(alliance: Alliance): void;
+
+  // Roads
+  roads(): Road[];
+  hasRoadOnTile(tile: TileRef): boolean;
+  destroyPlayerRoads(player: Player): void;
+  markPlayerNodesForReconnection(player: Player): void;
 
   // Game State
   ticks(): Tick;

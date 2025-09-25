@@ -97,6 +97,10 @@ export class BuildUnitIntentEvent implements GameEvent {
   ) {}
 }
 
+export class SendPurchaseUpgradeIntentEvent implements GameEvent {
+  constructor(public readonly upgrade: UpgradeType) {}
+}
+
 export class SendTargetPlayerIntentEvent implements GameEvent {
   constructor(public readonly targetID: PlayerID) {}
 }
@@ -260,6 +264,10 @@ export class Transport {
     this.eventBus.on(SendBomberIntentEvent, (e) => this.onSendBomberIntent(e));
     this.eventBus.on(SendSetAutoBombingEvent, (e) =>
       this.onSendSetAutoBombingEvent(e),
+    );
+
+    this.eventBus.on(SendPurchaseUpgradeIntentEvent, (e) =>
+      this.onSendPurchaseUpgradeIntent(e),
     );
 
     this.eventBus.on(BuildUnitIntentEvent, (e) => this.onBuildUnitIntent(e));
@@ -592,6 +600,14 @@ export class Transport {
       clientID: this.lobbyConfig.clientID,
       unit: event.unit,
       tile: event.tile,
+    });
+  }
+
+  private onSendPurchaseUpgradeIntent(event: SendPurchaseUpgradeIntentEvent) {
+    this.sendIntent({
+      type: "purchase_upgrade",
+      clientID: this.lobbyConfig.clientID,
+      upgrade: event.upgrade,
     });
   }
 

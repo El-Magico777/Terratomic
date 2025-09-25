@@ -86,6 +86,7 @@ export class PlayerImpl implements Player {
   public _units: Unit[] = [];
   private _effectiveUnitsCache: Map<UnitType, number> = new Map();
   public _tiles: Set<TileRef> = new Set();
+  private _upgrades: Set<UpgradeType> = new Set();
 
   private _flag: string | undefined;
   private _name: string;
@@ -302,6 +303,18 @@ export class PlayerImpl implements Player {
       total++;
     }
     return total;
+  }
+
+  hasUpgrade(upgrade: UpgradeType): boolean {
+    return this._upgrades.has(upgrade);
+  }
+
+  addUpgrade(upgrade: UpgradeType): void {
+    this._upgrades.add(upgrade);
+  }
+
+  removeUpgrade(upgrade: UpgradeType): void {
+    this._upgrades.delete(upgrade);
   }
 
   invalidateEffectiveUnitsCache(type: UnitType): void {

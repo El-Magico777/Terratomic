@@ -63,6 +63,10 @@ export interface NukeMagnitude {
   outer: number;
 }
 
+export interface UpgradeInfo {
+  cost: (player: Player | PlayerView) => Gold;
+}
+
 export interface Config {
   samNukeHittingChance(): number;
   samPlaneHittingChance(): number;
@@ -125,11 +129,20 @@ export interface Config {
   donateCooldown(): Tick;
   defaultDonationAmount(sender: Player): number;
   unitInfo(type: UnitType): UnitInfo;
-  upgradeInfo(type: UpgradeType): {
-    cost: (player: Player | PlayerView) => Gold;
-  };
+  upgradeInfo(type: UpgradeType): UpgradeInfo;
   tradeShipGold(dist: number): Gold;
   tradeShipSpawnRate(numberOfPorts: number): number;
+  cargoTruckSpawnRate(numberOfStructures: number): number;
+  cargoTruckGold(distance: number): Gold;
+  roadUpdatesPerTick(): number;
+  maxRoadLength(): number;
+
+  // International Cargo Trucks
+  internationalCargoTrucksEnabled(): boolean;
+  internationalCargoTruckSpawnChance(): number;
+  internationalCargoTruckGoldMultiplier(): number;
+  internationalCargoTruckGoldSplitRatio(): number;
+
   cargoPlaneGold(dist: number): Gold;
   cargoPlaneSpawnRate(numberOfAirplanes: number): number;
   cargoPlaneMaxNumber(): number;
