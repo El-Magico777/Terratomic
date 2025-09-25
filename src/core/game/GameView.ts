@@ -295,10 +295,6 @@ export class PlayerView {
     return this.isAlliedWith(other) || this.isOnSameTeam(other);
   }
 
-  hasUpgrade(upgrade: UpgradeType): boolean {
-    return this.data.upgrades.includes(upgrade);
-  }
-
   isRequestingAllianceWith(other: PlayerView) {
     return this.data.outgoingAllianceRequests.some((id) => other.id() === id);
   }

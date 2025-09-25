@@ -44,8 +44,7 @@ export type Intent =
   | MoveFighterJetIntent
   | BomberIntent
   | MarkDisconnectedIntent
-  | SetAutoBombingIntent
-  | PurchaseUpgradeIntent;
+  | SetAutoBombingIntent;
 
 export type AttackIntent = z.infer<typeof AttackIntentSchema>;
 export type CancelAttackIntent = z.infer<typeof CancelAttackIntentSchema>;
@@ -72,7 +71,6 @@ export type MoveWarshipIntent = z.infer<typeof MoveWarshipIntentSchema>;
 export type MoveFighterJetIntent = z.infer<typeof MoveFighterJetIntentSchema>;
 export type BomberIntent = z.infer<typeof BomberIntentSchema>;
 export type SetAutoBombingIntent = z.infer<typeof SetAutoBombingIntentSchema>;
-export type PurchaseUpgradeIntent = z.infer<typeof PurchaseUpgradeIntentSchema>;
 
 export type QuickChatIntent = z.infer<typeof QuickChatIntentSchema>;
 export type MarkDisconnectedIntent = z.infer<
@@ -366,11 +364,6 @@ export const SetAutoBombingIntentSchema = BaseIntentSchema.extend({
   enabled: z.boolean(),
 });
 
-export const PurchaseUpgradeIntentSchema = BaseIntentSchema.extend({
-  type: z.literal("purchase_upgrade"),
-  upgrade: z.enum(UpgradeType),
-});
-
 const IntentSchema = z.discriminatedUnion("type", [
   AttackIntentSchema,
   CancelAttackIntentSchema,
@@ -396,7 +389,6 @@ const IntentSchema = z.discriminatedUnion("type", [
   BomberIntentSchema,
   QuickChatIntentSchema,
   SetAutoBombingIntentSchema,
-  PurchaseUpgradeIntentSchema,
 ]);
 
 //
