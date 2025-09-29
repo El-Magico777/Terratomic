@@ -414,7 +414,7 @@ export class RadialMenu implements Layer {
   }
 
   private shouldShowAirAttack(player: PlayerView, tile: TileRef): boolean {
-    if (!player.hasUpgrade(UpgradeType.AirUpgrade1)) {
+    if (!player.hasUpgrade(UpgradeType.Paratrooper)) {
       return false;
     }
     if (player.units(UnitType.Airfield).length === 0) {

@@ -1080,7 +1080,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                       ? html`
                           <div class="grid grid-cols-3 gap-4">
                             ${renderUpgradeButton(
-                              UpgradeType.AirUpgrade1,
+                              UpgradeType.Paratrooper,
                               "Paratroopers",
                               1,
                             )}
@@ -1090,8 +1090,8 @@ export class ControlPanel2 extends LitElement implements Layer {
                               2,
                             )}
                             ${renderUpgradeButton(
-                              UpgradeType.AirUpgrade3,
-                              "Air 3",
+                              UpgradeType.FighterJetNavalTargeting,
+                              "Fighter Jet `Naval Targeting",
                               3,
                             )}
                           </div>
