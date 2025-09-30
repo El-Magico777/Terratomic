@@ -48,6 +48,7 @@ export enum GameUpdateType {
   Roads,
   CargoTrucks,
   CitySamCooldown,
+  TileOwnerChanged,
 }
 
 export interface SerializedCargoTruck {
@@ -92,7 +93,8 @@ export type GameUpdate =
   | BomberExplosionUpdate
   | RoadsUpdate
   | CargoTrucksUpdate
-  | CitySamCooldownUpdate;
+  | CitySamCooldownUpdate
+  | TileOwnerChangedUpdate;
 
 export interface CitySamCooldownUpdate {
   type: GameUpdateType.CitySamCooldown;
@@ -262,6 +264,12 @@ export interface AllianceExtensionAcceptedUpdate {
   type: GameUpdateType.AllianceExtensionAccepted;
   playerID: number;
   allianceID: number;
+}
+
+export interface TileOwnerChangedUpdate {
+  type: GameUpdateType.TileOwnerChanged;
+  tile: TileRef;
+  newOwnerID: PlayerID;
 }
 
 export interface AllianceViewData {
