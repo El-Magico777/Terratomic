@@ -176,6 +176,10 @@ export interface Config {
   fighterJetTargetReachedDistance(): number;
   fighterJetDogfightDistance(): number;
   fighterJetMinDogfightDistance(): number;
+  warshipAARange(): number;
+  warshipAACooldown(): number;
+  warshipAAScanInterval(): number;
+  warshipAAHittingChance(): number;
   // 0-1
   traitorDefenseDebuff(): number;
   traitorDuration(): number;
