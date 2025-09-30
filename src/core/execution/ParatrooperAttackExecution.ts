@@ -10,6 +10,10 @@ import {
 import { TileRef } from "../game/GameMap";
 import { StraightPathFinder } from "../pathfinding/PathFinding";
 import { AttackExecution } from "./AttackExecution";
+import {
+  attemptInterception,
+  findEligibleCitiesForBomber,
+} from "./utils/CityAntiAirUtils";
 
 export class ParatrooperAttackExecution implements Execution {
   private paratrooperUnitID: number | null = null;
@@ -20,6 +24,7 @@ export class ParatrooperAttackExecution implements Execution {
   private targetPlayerID: string | null;
   private attacker: Player;
   private mg: Game; // Add this line
+  private interceptionCheckDone = false;
 
   constructor(
     attacker: Player,
@@ -142,6 +147,16 @@ export class ParatrooperAttackExecution implements Execution {
     if (!paratrooper || !paratrooper.isActive()) {
       this.paratrooperUnitID = null; // Unit was destroyed or became inactive
       return;
+    }
+
+    // Allow cities to intercept the paratrooper
+    if (!this.interceptionCheckDone) {
+      const eligibleCities = findEligibleCitiesForBomber(paratrooper, game);
+      if (eligibleCities.length > 0) {
+        // For simplicity, have the first eligible city attempt interception
+        attemptInterception(paratrooper, game, eligibleCities[0]);
+      }
+      this.interceptionCheckDone = true;
     }
 
     if (this.pathFinder === null) {

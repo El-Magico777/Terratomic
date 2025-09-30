@@ -1,4 +1,4 @@
-import { Execution, Game } from "../game/Game";
+import { Execution, Game, UpgradeType } from "../game/Game";
 import { PseudoRandom } from "../PseudoRandom";
 import { ClientID, GameID, Intent, Turn } from "../Schemas";
 import { simpleHash } from "../Util";
@@ -132,7 +132,10 @@ export class Executor {
       case "build_unit":
         return new ConstructionExecution(player, intent.unit, intent.tile);
       case "purchase_upgrade":
-        return new PurchaseUpgradeExecution(player, intent.upgrade);
+        return new PurchaseUpgradeExecution(
+          player,
+          intent.upgrade as UpgradeType,
+        );
 
       case "quick_chat":
         return new QuickChatExecution(
