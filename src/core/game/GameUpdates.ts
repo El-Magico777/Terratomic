@@ -28,6 +28,7 @@ export interface ErrorUpdate {
 }
 
 export enum GameUpdateType {
+  SubmarinePing,
   Tile,
   Unit,
   Player,
@@ -72,7 +73,13 @@ export interface RoadsUpdate {
   removed: string[];
 }
 
+export interface SubmarinePingUpdate {
+  type: GameUpdateType.SubmarinePing;
+  unitId: number;
+}
+
 export type GameUpdate =
+  | SubmarinePingUpdate
   | TileUpdateWrapper
   | UnitUpdate
   | PlayerUpdate
@@ -125,6 +132,8 @@ export interface UnitUpdate {
   ticksLeftInCooldown?: Tick;
   returning?: boolean;
   cooldownDuration?: Tick;
+  isAttacking?: boolean;
+  isDetectedByNavalUnit?: boolean;
 }
 
 export interface AttackUpdate {
