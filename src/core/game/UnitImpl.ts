@@ -34,8 +34,16 @@ export class UnitImpl implements Unit {
   private _targetable: boolean = true;
   private _accumulatedRegen: number = 0;
   public lastVisibleTick?: number;
-  public isDetectedByNavalUnit?: boolean;
-  public isAttacking?: boolean;
+  isDetectedByNavalUnit?: boolean;
+  isAttacking?: boolean;
+
+  isPeriodicallyVisible(): boolean {
+    if (this.lastVisibleTick === undefined) {
+      return false;
+    }
+    // 3 seconds * 10 ticks/sec = 30 ticks
+    return this.mg.ticks() - this.lastVisibleTick < 30;
+  }
 
   constructor(
     private _type: UnitType,

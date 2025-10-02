@@ -95,6 +95,7 @@ export class FighterJetExecution implements Execution {
         UnitType.TransportShip,
         UnitType.Warship,
         UnitType.TradeShip,
+        UnitType.Submarine,
       );
     }
 
@@ -118,12 +119,14 @@ export class FighterJetExecution implements Execution {
           return 3;
         case UnitType.CargoPlane:
           return 4;
-        case UnitType.TransportShip:
+        case UnitType.Submarine:
           return 5;
-        case UnitType.Warship:
+        case UnitType.TransportShip:
           return 6;
-        case UnitType.TradeShip:
+        case UnitType.Warship:
           return 7;
+        case UnitType.TradeShip:
+          return 8;
         default:
           return 99;
       }
@@ -137,6 +140,17 @@ export class FighterJetExecution implements Execution {
         !unit.isTargetable()
       ) {
         continue;
+      }
+
+      if (unit.type() === UnitType.Submarine) {
+        const isVisible =
+          (unit.isAttacking ?? false) ||
+          (unit.isDetectedByNavalUnit ?? false) ||
+          unit.isInCooldown() ||
+          unit.isPeriodicallyVisible();
+        if (!isVisible) {
+          continue; // Skip this submarine if it's not visible
+        }
       }
 
       if (unit.type() === UnitType.CargoPlane) {
