@@ -12,6 +12,7 @@ import {
 } from "../../InputHandler";
 import {
   MoveFighterJetIntentEvent,
+  MoveSubmarineIntentEvent, // <-- Add this
   MoveWarshipIntentEvent,
 } from "../../Transport";
 import { TransformHandler } from "../TransformHandler";
@@ -53,6 +54,7 @@ export class UnitLayer implements Layer {
 
   // Configuration for unit selection
   private readonly WARSHIP_SELECTION_RADIUS = 10; // Radius in game cells for warship selection hit zone
+  private readonly SUBMARINE_SELECTION_RADIUS = 10;
   private readonly FIGHTER_JET_SELECTION_RADIUS = 10;
 
   constructor(
@@ -115,6 +117,28 @@ export class UnitLayer implements Layer {
       });
   }
 
+  private findSubmarinesNearCell(cell: { x: number; y: number }): UnitView[] {
+    if (!this.game.isValidCoord(cell.x, cell.y)) {
+      return [];
+    }
+    const clickRef = this.game.ref(cell.x, cell.y);
+
+    return this.game
+      .units(UnitType.Submarine) // <-- Change this line
+      .filter(
+        (unit) =>
+          unit.isActive() &&
+          unit.owner() === this.game.myPlayer() &&
+          this.game.manhattanDist(unit.tile(), clickRef) <=
+            this.SUBMARINE_SELECTION_RADIUS, // <-- Change this line
+      )
+      .sort((a, b) => {
+        const distA = this.game.manhattanDist(a.tile(), clickRef);
+        const distB = this.game.manhattanDist(b.tile(), clickRef);
+        return distA - distB;
+      });
+  }
+
   private findFighterJetsNearCell(cell: { x: number; y: number }): UnitView[] {
     if (!this.game.isValidCoord(cell.x, cell.y)) {
       return [];
@@ -146,6 +170,7 @@ export class UnitLayer implements Layer {
 
     // Find warships near this cell, sorted by distance
     const nearbyWarships = this.findWarshipsNearCell(cell);
+    const nearbySubmarines = this.findSubmarinesNearCell(cell);
     const nearbyFighterJets = this.findFighterJetsNearCell(cell);
 
     if (this.selectedUnit) {
@@ -161,6 +186,13 @@ export class UnitLayer implements Layer {
         this.eventBus.emit(
           new MoveWarshipIntentEvent(this.selectedUnit.id(), clickRef),
         );
+      } else if (
+        this.selectedUnit.type() === UnitType.Submarine &&
+        this.game.isOcean(clickRef)
+      ) {
+        this.eventBus.emit(
+          new MoveSubmarineIntentEvent(this.selectedUnit.id(), clickRef),
+        );
       }
       // Deselect
       this.eventBus.emit(new UnitSelectionEvent(this.selectedUnit, false));
@@ -168,6 +200,10 @@ export class UnitLayer implements Layer {
     } else if (nearbyWarships.length > 0) {
       // Toggle selection of the closest warship
       const clickedUnit = nearbyWarships[0];
+      this.eventBus.emit(new UnitSelectionEvent(clickedUnit, true));
+    } else if (nearbySubmarines.length > 0) {
+      // Toggle selection of the closest submarine
+      const clickedUnit = nearbySubmarines[0];
       this.eventBus.emit(new UnitSelectionEvent(clickedUnit, true));
     } else if (nearbyFighterJets.length > 0) {
       const clickedUnit = nearbyFighterJets[0];
@@ -314,11 +350,55 @@ export class UnitLayer implements Layer {
       this.handleUnitDeactivation(unit);
     }
 
+    if (
+      unit.type() === UnitType.Submarine &&
+      unit.owner() !== this.game.myPlayer()
+    ) {
+      const isPeriodicallyVisible = this.game.isUnitPeriodicallyVisible(
+        unit.id(),
+      );
+      const isAttacking = unit.isAttacking();
+      const isDetected = unit.isDetectedByNavalUnit();
+
+      if (
+        !isPeriodicallyVisible &&
+        !isAttacking &&
+        !isDetected &&
+        !unit.isCooldown()
+      ) {
+        return; // Don't render the submarine
+      }
+    }
+
+    // START: Custom rendering for owner's submarine visibility
+    if (
+      unit.type() === UnitType.Submarine &&
+      unit.owner() === this.game.myPlayer()
+    ) {
+      const isPeriodicallyVisible = this.game.isUnitPeriodicallyVisible(
+        unit.id(),
+      );
+      const isAttacking = unit.isAttacking();
+      const isDetected = unit.isDetectedByNavalUnit();
+      const isOnCooldown = unit.isCooldown();
+
+      const isVisibleToEnemies =
+        isPeriodicallyVisible || isAttacking || isDetected || isOnCooldown;
+
+      if (!isVisibleToEnemies) {
+        // If hidden, draw it smaller and return early
+        this.drawSprite(unit, undefined, 0.75);
+        return;
+      }
+    }
+    // END: Custom rendering
+
     switch (unit.type()) {
       case UnitType.TransportShip:
       case UnitType.Paratrooper:
         this.handleBoatEvent(unit);
         break;
+      case UnitType.Submarine:
       case UnitType.Warship:
         this.handleWarShipEvent(unit);
         break;
@@ -571,7 +651,11 @@ export class UnitLayer implements Layer {
     context.clearRect(x, y, 1, 1);
   }
 
-  drawSprite(unit: UnitView, customTerritoryColor?: Colord) {
+  drawSprite(
+    unit: UnitView,
+    customTerritoryColor?: Colord,
+    sizeMultiplier: number = 1.0,
+  ) {
     const x = this.game.x(unit.tile());
     const y = this.game.y(unit.tile());
 
@@ -630,12 +714,15 @@ export class UnitLayer implements Layer {
         this.context.translate(-x, -y);
       }
 
+      const newWidth = sprite.width * sizeMultiplier;
+      const newHeight = sprite.width * sizeMultiplier; // Keep aspect ratio square
+
       this.context.drawImage(
         sprite,
-        Math.round(x - sprite.width / 2),
-        Math.round(y - sprite.height / 2),
-        sprite.width,
-        sprite.width,
+        Math.round(x - newWidth / 2),
+        Math.round(y - newHeight / 2),
+        newWidth,
+        newHeight,
       );
 
       if (angle !== null) {
