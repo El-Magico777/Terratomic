@@ -713,12 +713,8 @@ export class DefaultConfig implements Config {
           prerequisite: (p: Player) =>
             p.hasUpgrade(UpgradeType.SubmarineResearch),
         };
-      case UpgradeType.WaterUpgrade1:
-        return { cost: costForPlayer(1_000_000n) };
       case UpgradeType.WarshipAntiAir:
         return { cost: costForPlayer(2_000_000n) };
-      case UpgradeType.WaterUpgrade3:
-        return { cost: costForPlayer(3_000_000n) };
 
       // Air
       case UpgradeType.Paratrooper:
