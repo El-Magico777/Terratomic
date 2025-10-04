@@ -191,6 +191,14 @@ export interface Config {
   isReplay(): boolean;
   allianceExtensionPromptOffset(): number;
   maxProductivity(): number;
+  urbanPlanningPopulationBonusNum(): number;
+  urbanPlanningPopulationBonusDen(): number;
+  structureInsuranceRefundNum(): number;
+  structureInsuranceRefundDen(): number;
+  automationTradeIncomeMultiplierNum(): number;
+  automationTradeIncomeMultiplierDen(): number;
+  automationTroopRegenMultiplierNum(): number;
+  automationTroopRegenMultiplierDen(): number;
 }
 
 export interface Theme {
