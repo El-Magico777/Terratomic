@@ -206,6 +206,14 @@ export interface Config {
   allianceExtensionPromptOffset(): number;
   maxProductivity(): number;
   forceCanBuildBomberInTests?(): boolean; // Change to optional method
+  urbanPlanningPopulationBonusNum(): number;
+  urbanPlanningPopulationBonusDen(): number;
+  structureInsuranceRefundNum(): number;
+  structureInsuranceRefundDen(): number;
+  automationTradeIncomeMultiplierNum(): number;
+  automationTradeIncomeMultiplierDen(): number;
+  automationTroopRegenMultiplierNum(): number;
+  automationTroopRegenMultiplierDen(): number;
 }
 
 export interface Theme {

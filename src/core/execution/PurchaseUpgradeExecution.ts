@@ -1,4 +1,10 @@
-import { Execution, Player, UnitType, UpgradeType } from "../game/Game";
+import {
+  Execution,
+  Player,
+  PlayerType,
+  UnitType,
+  UpgradeType,
+} from "../game/Game";
 import { GameImpl } from "../game/GameImpl";
 
 export class PurchaseUpgradeExecution implements Execution {
@@ -51,6 +57,22 @@ export class PurchaseUpgradeExecution implements Execution {
     if (this.player.gold() >= cost) {
       this.player.removeGold(cost);
       this.player.addUpgrade(this.upgrade);
+
+      // If a bot just purchased the Roads upgrade, give it all the eco upgrades.
+      if (
+        this.player.type() === PlayerType.Bot &&
+        this.upgrade === UpgradeType.Roads
+      ) {
+        this.player.addUpgrade(UpgradeType.UrbanPlanning);
+        this.player.addUpgrade(UpgradeType.StructureInsurance);
+        this.player.addUpgrade(UpgradeType.Automation);
+      }
+
+      if (this.upgrade === UpgradeType.StructureInsurance) {
+        this.player.units().forEach((unit) => {
+          unit.insure(this.player);
+        });
+      }
 
       if (this.upgrade === UpgradeType.ScorchedEarth) {
         this.mg.destroyPlayerRoads(this.player);

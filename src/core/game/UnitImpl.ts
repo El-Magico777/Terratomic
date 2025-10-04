@@ -1,12 +1,14 @@
 import { simpleHash, toInt, withinInt } from "../Util";
 import {
   AllUnitParams,
+  isStructureType,
   MessageType,
   Player,
   Tick,
   Unit,
   UnitInfo,
   UnitType,
+  UpgradeType,
 } from "./Game";
 import { GameImpl } from "./GameImpl";
 import { TileRef } from "./GameMap";
@@ -36,6 +38,7 @@ export class UnitImpl implements Unit {
   public lastVisibleTick?: number;
   isDetectedByNavalUnit?: boolean;
   isAttacking?: boolean;
+  private _insuredBy: Player | null = null;
 
   isPeriodicallyVisible(): boolean {
     if (this.lastVisibleTick === undefined) {
@@ -66,6 +69,13 @@ export class UnitImpl implements Unit {
       "patrolTile" in params ? (params.patrolTile ?? undefined) : undefined;
     this._targetUnit =
       "targetUnit" in params ? (params.targetUnit ?? undefined) : undefined;
+
+    if (
+      isStructureType(this._type) &&
+      this._owner.hasUpgrade(UpgradeType.StructureInsurance)
+    ) {
+      this._insuredBy = this._owner;
+    }
 
     switch (this._type) {
       case UnitType.Warship:
@@ -186,6 +196,24 @@ export class UnitImpl implements Unit {
   }
 
   setOwner(newOwner: PlayerImpl): void {
+    if (this._insuredBy) {
+      const baseCost = this.info().cost(this._insuredBy);
+      if (baseCost > 0n) {
+        const num = BigInt(this.mg.config().structureInsuranceRefundNum());
+        const den = BigInt(this.mg.config().structureInsuranceRefundDen());
+        const refundAmount = (baseCost * num) / den;
+        this._insuredBy.addGold(refundAmount);
+        this.mg.displayMessage(
+          "messages.insurance_refund_conquest",
+          MessageType.INSURANCE_REFUND,
+          this._insuredBy.id(),
+          refundAmount,
+          { amount: refundAmount.toString() },
+        );
+      }
+    }
+
+    this._insuredBy = null;
     switch (this._type) {
       case UnitType.Warship:
       case UnitType.FighterJet:
@@ -248,6 +276,24 @@ export class UnitImpl implements Unit {
     if (!this.isActive()) {
       throw new Error(`cannot delete ${this} not active`);
     }
+
+    if (this._insuredBy) {
+      const baseCost = this.info().cost(this._insuredBy);
+      if (baseCost > 0n) {
+        const num = BigInt(this.mg.config().structureInsuranceRefundNum());
+        const den = BigInt(this.mg.config().structureInsuranceRefundDen());
+        const refundAmount = (baseCost * num) / den;
+        this._insuredBy.addGold(refundAmount);
+        this.mg.displayMessage(
+          "messages.insurance_refund",
+          MessageType.INSURANCE_REFUND,
+          this._insuredBy.id(),
+          refundAmount,
+          { amount: refundAmount.toString() },
+        );
+      }
+    }
+
     this._owner._units = this._owner._units.filter((b) => b !== this);
     this._active = false;
     this.mg.addUpdate(this.toUpdate());
@@ -330,7 +376,7 @@ export class UnitImpl implements Unit {
     if (duration !== undefined) {
       this._cooldownDuration = duration;
     } else {
-      this._cooldownDuration = this.mg.config().SAMNukeCooldown(); // Default for nukes
+      this.mg.config().SAMNukeCooldown(); // Default for nukes
     }
     this.mg.addUpdate(this.toUpdate());
   }
@@ -422,5 +468,11 @@ export class UnitImpl implements Unit {
       this.mg.ticks() - this._lastSetSafeFromPirates <
       this.mg.config().safeFromPiratesCooldownMax()
     );
+  }
+
+  insure(player: Player): void {
+    if (isStructureType(this._type)) {
+      this._insuredBy = player;
+    }
   }
 }

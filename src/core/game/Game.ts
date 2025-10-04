@@ -182,10 +182,10 @@ export enum UpgradeType {
   CityAntiAir = "CityAntiAir",
   FighterJetNavalTargeting = "FighterJetNavalTargeting",
 
-  // Dummy Economy Upgrades
-  EconomyUpgrade1 = "EconomyUpgrade1",
-  EconomyUpgrade2 = "EconomyUpgrade2",
-  EconomyUpgrade3 = "EconomyUpgrade3",
+  // Economy Upgrades
+  UrbanPlanning = "UrbanPlanning",
+  StructureInsurance = "StructureInsurance",
+  Automation = "Automation",
 }
 
 const _structureTypes: ReadonlySet<UnitType> = new Set([
@@ -463,6 +463,9 @@ export interface Unit {
   setTargetable(targetable: boolean): void;
   returning(): boolean;
   setReturning(returning: boolean): void;
+
+  // Insurance
+  insure(player: Player): void;
 
   // Health
   hasHealth(): boolean;
@@ -830,6 +833,7 @@ export enum MessageType {
   RECEIVED_TROOPS_FROM_PLAYER,
   CHAT,
   WARN,
+  INSURANCE_REFUND,
 }
 
 // Message categories used for filtering events in the EventsDisplay
@@ -838,6 +842,7 @@ export enum MessageCategory {
   ALLIANCE = "ALLIANCE",
   TRADE = "TRADE",
   CHAT = "CHAT",
+  FINANCIAL = "FINANCIAL",
 }
 
 // Ensures that all message types are included in a category
@@ -868,6 +873,7 @@ export const MESSAGE_TYPE_CATEGORIES: Record<MessageType, MessageCategory> = {
   [MessageType.SENT_TROOPS_TO_PLAYER]: MessageCategory.TRADE,
   [MessageType.RECEIVED_TROOPS_FROM_PLAYER]: MessageCategory.TRADE,
   [MessageType.CHAT]: MessageCategory.CHAT,
+  [MessageType.INSURANCE_REFUND]: MessageCategory.FINANCIAL,
 } as const;
 
 /**
