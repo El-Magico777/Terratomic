@@ -18,7 +18,8 @@
     "prepare": "husky",
     "perf:ws-baseline": "npx tsx tests/perf/ws_perf_harness.ts --impl=ws --clients=300 --rate=20 --size=256 --duration=20",
     "perf:ws-heavy": "npx tsx tests/perf/ws_perf_harness.ts --impl=ws --clients=800 --rate=30 --size=256 --duration=30",
-    "perf:ultimate-same": "WS_IMPL=ultimate npx tsx tests/perf/ws_perf_harness.ts --clients=300 --rate=20 --size=256 --duration=20"
+    "perf:ultimate-same": "cross-env WS_IMPL=ultimate npx tsx tests/perf/ws_perf_harness.ts --clients=300 --rate=20 --size=256 --duration=20",
+    "perf:ultimate-heavy": "cross-env WS_IMPL=ultimate npx tsx tests/perf/ws_perf_harness.ts --clients=800 --rate=30 --size=256 --duration=30"
   },
   "lint-staged": {
     "**/*": [
@@ -126,6 +127,7 @@
     "sharp": "^0.34.2",
     "ts-node": "^10.9.2",
     "twemoji": "^14.0.2",
+    "ultimate-ws": "^2.0.5",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "ws": "^8.18.0",

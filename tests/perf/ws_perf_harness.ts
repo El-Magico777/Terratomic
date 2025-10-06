@@ -53,16 +53,35 @@ async function makeServer(
   impl: "ws" | "ultimate",
   port: number,
 ): Promise<ServerBundle> {
-  const server = http.createServer();
-  let WebSocketServerCtor: any;
-
   if (impl === "ws") {
+    const server = http.createServer();
     const { WebSocketServer } = await import("ws");
-    WebSocketServerCtor = WebSocketServer;
+    const wss = new WebSocketServer({ server });
+    const sockets = new Set<any>();
+    wss.on("connection", (ws: any) => {
+      sockets.add(ws);
+      ws.on("close", () => sockets.delete(ws));
+      ws.on("error", () => sockets.delete(ws));
+    });
+
+    await new Promise<void>((resolve) => server.listen(port, resolve));
+
+    return {
+      server,
+      wss,
+      broadcast: (payload: string) => {
+        for (const ws of sockets) {
+          if (ws.readyState === 1 /* OPEN */) {
+            ws.send(payload);
+          }
+        }
+      },
+      close: () =>
+        new Promise<void>((resolve) => server.close(() => resolve())),
+    };
   } else {
-    // ultimate-ws is optional; if not installed, fail with a clear message
+    let WebSocketServerCtor: any;
     try {
-      // @ts-expect-error ultimate-ws is an optional dependency
       const { WebSocketServer } = await import("ultimate-ws");
       WebSocketServerCtor = WebSocketServer;
     } catch (e) {
@@ -71,30 +90,30 @@ async function makeServer(
       );
       process.exit(1);
     }
-  }
 
-  const wss = new WebSocketServerCtor({ server });
-  const sockets = new Set<any>();
-  wss.on("connection", (ws: any) => {
-    sockets.add(ws);
-    ws.on("close", () => sockets.delete(ws));
-    ws.on("error", () => sockets.delete(ws));
-  });
+    const wss = new WebSocketServerCtor({ port });
+    const sockets = new Set<any>();
+    wss.on("connection", (ws: any) => {
+      sockets.add(ws);
+      ws.on("close", () => sockets.delete(ws));
+      ws.on("error", () => sockets.delete(ws));
+    });
 
-  await new Promise<void>((resolve) => server.listen(port, resolve));
-
-  return {
-    server,
-    wss,
-    broadcast: (payload: string) => {
-      for (const ws of sockets) {
-        if (ws.readyState === 1 /* OPEN */) {
-          ws.send(payload);
+    return {
+      server: null as any,
+      wss,
+      broadcast: (payload: string) => {
+        for (const ws of sockets) {
+          if (ws.readyState === 1 /* OPEN */) {
+            ws.send(payload);
+          }
         }
-      }
-    },
-    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
-  };
+      },
+      close: async () => {
+        wss.close();
+      },
+    };
+  }
 }
 
 // ---- Client factory ----

@@ -27,7 +27,8 @@ npm run perf:ultimate-same
 Paste JSON outputs for A/B comparison:
 
 ```
-<!-- ultimate outputs go here -->
+{"impl":"ultimate","clients":300,"rate":20,"size":256,"duration_s":20,"delivered_msgs":81200,"delivered_msgs_per_sec":4060,"avg_latency_ms":3.7,"p95_latency_ms":5,"cpu_user_ms":500,"cpu_system_ms":1016,"rss_delta_mb":-14.3,"node":"v22.16.0"}
+{"impl":"ultimate","clients":800,"rate":30,"size":256,"duration_s":30,"delivered_msgs":241802,"delivered_msgs_per_sec":8060,"avg_latency_ms":5.59,"p95_latency_ms":7,"cpu_user_ms":1110,"cpu_system_ms":3204,"rss_delta_mb":-1.81,"node":"v22.16.0"}
 ```
 
 ## Suggested quick compare fields
