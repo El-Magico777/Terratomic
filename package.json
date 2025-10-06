@@ -15,7 +15,10 @@
     "format": "prettier --ignore-unknown --write .",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "perf:ws-baseline": "npx tsx tests/perf/ws_perf_harness.ts --impl=ws --clients=300 --rate=20 --size=256 --duration=20",
+    "perf:ws-heavy": "npx tsx tests/perf/ws_perf_harness.ts --impl=ws --clients=800 --rate=30 --size=256 --duration=30",
+    "perf:ultimate-same": "WS_IMPL=ultimate npx tsx tests/perf/ws_perf_harness.ts --clients=300 --rate=20 --size=256 --duration=20"
   },
   "lint-staged": {
     "**/*": [
