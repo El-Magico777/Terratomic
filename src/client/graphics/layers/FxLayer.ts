@@ -27,6 +27,7 @@ export class FxLayer implements Layer {
   private hasLiveFx: boolean = false;
   private lastFrameBounds: FxBounds | null = null;
   private forceFullClear: boolean = false;
+  private currentDrawBounds: FxBounds | null = null;
 
   constructor(private game: GameView) {
     this.theme = this.game.config().theme();
@@ -192,12 +193,47 @@ export class FxLayer implements Layer {
       if (!this.canvasDirty && !this.hasLiveFx) {
         return;
       }
-      // If the offscreen canvas size matches the game size, use 3-arg drawImage (no scaling) for minor perf gain.
-      // Otherwise, fall back to 5-arg drawImage to scale correctly.
-      if (
+      const drawBounds = this.currentDrawBounds;
+      const sameSize =
         this.canvas.width === this.game.width() &&
-        this.canvas.height === this.game.height()
-      ) {
+        this.canvas.height === this.game.height();
+      if (drawBounds && sameSize) {
+        const sx = Math.max(0, Math.floor(drawBounds.minX));
+        const sy = Math.max(0, Math.floor(drawBounds.minY));
+        const sw = Math.min(
+          this.canvas.width - sx,
+          Math.ceil(drawBounds.maxX) - sx,
+        );
+        const sh = Math.min(
+          this.canvas.height - sy,
+          Math.ceil(drawBounds.maxY) - sy,
+        );
+        if (sw > 0 && sh > 0) {
+          const dx = sx - this.game.width() / 2;
+          const dy = sy - this.game.height() / 2;
+          context.drawImage(this.canvas, sx, sy, sw, sh, dx, dy, sw, sh);
+        }
+      } else if (drawBounds && !sameSize) {
+        const sx = Math.max(0, Math.floor(drawBounds.minX));
+        const sy = Math.max(0, Math.floor(drawBounds.minY));
+        const sw = Math.min(
+          this.canvas.width - sx,
+          Math.ceil(drawBounds.maxX) - sx,
+        );
+        const sh = Math.min(
+          this.canvas.height - sy,
+          Math.ceil(drawBounds.maxY) - sy,
+        );
+        if (sw > 0 && sh > 0) {
+          const scaleX = this.game.width() / this.canvas.width;
+          const scaleY = this.game.height() / this.canvas.height;
+          const dx = sx * scaleX - this.game.width() / 2;
+          const dy = sy * scaleY - this.game.height() / 2;
+          const dw = sw * scaleX;
+          const dh = sh * scaleY;
+          context.drawImage(this.canvas, sx, sy, sw, sh, dx, dy, dw, dh);
+        }
+      } else if (sameSize) {
         context.drawImage(
           this.canvas,
           -this.game.width() / 2,
@@ -213,6 +249,7 @@ export class FxLayer implements Layer {
         );
       }
       this.canvasDirty = false;
+      this.currentDrawBounds = null;
     }
   }
 
@@ -220,14 +257,28 @@ export class FxLayer implements Layer {
     if (this.allFx.length === 0) {
       const cleared = this.clearPreviousFrame();
       this.hasLiveFx = false;
-      if (cleared) {
+      if (cleared !== undefined) {
         this.canvasDirty = true;
+        this.currentDrawBounds = cleared ?? null;
+      } else {
+        this.canvasDirty = false;
+        this.currentDrawBounds = null;
       }
       return;
     }
 
     const t0 = performance.now();
-    this.clearPreviousFrame();
+    const cleared = this.clearPreviousFrame();
+    let drawBounds: FxBounds | null = null;
+    let clearedFullCanvas = false;
+    if (cleared !== undefined) {
+      if (cleared === null) {
+        clearedFullCanvas = true;
+      } else {
+        drawBounds = { ...cleared };
+      }
+    }
+
     const { hasActive, bounds, missingBounds } = this.renderContextFx(delta);
 
     this.canvasDirty = true;
@@ -236,8 +287,16 @@ export class FxLayer implements Layer {
     if (missingBounds) {
       this.forceFullClear = true;
       this.lastFrameBounds = null;
+      this.currentDrawBounds = null;
     } else {
       this.lastFrameBounds = bounds;
+      if (clearedFullCanvas) {
+        this.currentDrawBounds = null;
+      } else if (bounds) {
+        this.currentDrawBounds = this.combineBounds(drawBounds, bounds);
+      } else {
+        this.currentDrawBounds = drawBounds;
+      }
     }
 
     if (this.adaptiveRefresh) {
@@ -266,7 +325,7 @@ export class FxLayer implements Layer {
         hasActive = true;
         const fxBounds = fx.getBounds?.();
         if (fxBounds) {
-          bounds = this.mergeBounds(bounds, fxBounds);
+          bounds = this.combineBounds(bounds, fxBounds);
         } else {
           missingBounds = true;
         }
@@ -276,22 +335,22 @@ export class FxLayer implements Layer {
     return { hasActive, bounds, missingBounds };
   }
 
-  private clearPreviousFrame(): boolean {
+  private clearPreviousFrame(): FxBounds | null | undefined {
     if (this.forceFullClear) {
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.forceFullClear = false;
       this.lastFrameBounds = null;
-      return true;
+      return null;
     }
     if (this.lastFrameBounds) {
-      this.clearBounds(this.lastFrameBounds);
+      const cleared = this.clearBounds(this.lastFrameBounds);
       this.lastFrameBounds = null;
-      return true;
+      return cleared;
     }
-    return false;
+    return undefined;
   }
 
-  private clearBounds(bounds: FxBounds) {
+  private clearBounds(bounds: FxBounds): FxBounds | null {
     const padding = 4;
     const minX = Math.max(0, Math.floor(bounds.minX) - padding);
     const minY = Math.max(0, Math.floor(bounds.minY) - padding);
@@ -299,19 +358,28 @@ export class FxLayer implements Layer {
     const maxY = Math.min(this.canvas.height, Math.ceil(bounds.maxY) + padding);
     const width = Math.max(0, maxX - minX);
     const height = Math.max(0, maxY - minY);
-    if (width === 0 || height === 0) return;
+    if (width === 0 || height === 0) return null;
     this.context.clearRect(minX, minY, width, height);
+    return {
+      minX,
+      minY,
+      maxX: minX + width,
+      maxY: minY + height,
+    };
   }
 
-  private mergeBounds(existing: FxBounds | null, next: FxBounds): FxBounds {
-    if (!existing) {
-      return { ...next };
-    }
+  private combineBounds(
+    base: FxBounds | null,
+    addition: FxBounds | null,
+  ): FxBounds | null {
+    if (!base && !addition) return null;
+    if (!base) return addition ? { ...addition } : null;
+    if (!addition) return { ...base };
     return {
-      minX: Math.min(existing.minX, next.minX),
-      minY: Math.min(existing.minY, next.minY),
-      maxX: Math.max(existing.maxX, next.maxX),
-      maxY: Math.max(existing.maxY, next.maxY),
+      minX: Math.min(base.minX, addition.minX),
+      minY: Math.min(base.minY, addition.minY),
+      maxX: Math.max(base.maxX, addition.maxX),
+      maxY: Math.max(base.maxY, addition.maxY),
     };
   }
 }
