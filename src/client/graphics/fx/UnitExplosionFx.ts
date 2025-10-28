@@ -1,6 +1,6 @@
 import { GameView } from "../../../core/game/GameView";
 import { AnimatedSpriteLoader } from "../AnimatedSpriteLoader";
-import { Fx, FxType } from "./Fx";
+import { Fx, FxBounds, FxType } from "./Fx";
 import { SpriteFx } from "./SpriteFx";
 import { Timeline } from "./Timeline";
 
@@ -43,5 +43,22 @@ export class UnitExplosionFx implements Fx {
     }
 
     return !allDone || !this.timeline.isComplete();
+  }
+
+  getBounds(): FxBounds | null {
+    let bounds: FxBounds | null = null;
+    for (const fx of this.explosions) {
+      const childBounds = fx.getBounds?.();
+      if (!childBounds) continue;
+      if (!bounds) {
+        bounds = { ...childBounds };
+      } else {
+        bounds.minX = Math.min(bounds.minX, childBounds.minX);
+        bounds.minY = Math.min(bounds.minY, childBounds.minY);
+        bounds.maxX = Math.max(bounds.maxX, childBounds.maxX);
+        bounds.maxY = Math.max(bounds.maxY, childBounds.maxY);
+      }
+    }
+    return bounds;
   }
 }

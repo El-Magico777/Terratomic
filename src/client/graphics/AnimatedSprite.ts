@@ -79,4 +79,24 @@ export class AnimatedSprite {
     this.originX = xRatio;
     this.originY = yRatio;
   }
+
+  getFrameWidth(): number {
+    return this.frameWidth;
+  }
+
+  getFrameHeight(): number {
+    return this.frameHeight;
+  }
+
+  getOriginX(): number {
+    return this.originX;
+  }
+
+  getOriginY(): number {
+    return this.originY;
+  }
+
+  getScale(): number {
+    return this.scale;
+  }
 }

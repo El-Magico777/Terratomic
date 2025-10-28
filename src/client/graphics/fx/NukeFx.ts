@@ -1,6 +1,6 @@
 import { GameView } from "../../../core/game/GameView";
 import { AnimatedSpriteLoader } from "../AnimatedSpriteLoader";
-import { Fx, FxType } from "./Fx";
+import { Fx, FxBounds, FxType } from "./Fx";
 import { FadeFx, SpriteFx } from "./SpriteFx";
 
 /**
@@ -28,6 +28,19 @@ export class ShockwaveFx implements Fx {
     ctx.lineWidth = 0.5;
     ctx.stroke();
     return true;
+  }
+
+  getBounds(): FxBounds | null {
+    const clamped = Math.min(this.lifeTime, this.duration);
+    const t = this.duration === 0 ? 1 : clamped / this.duration;
+    const radius = Math.max(0, t * this.maxRadius);
+    const padded = radius + 2;
+    return {
+      minX: this.x - padded,
+      minY: this.y - padded,
+      maxX: this.x + padded,
+      maxY: this.y + padded,
+    };
   }
 }
 

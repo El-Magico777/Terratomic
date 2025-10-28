@@ -3,7 +3,7 @@ import { UnitType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { GameView, UnitView } from "../../../core/game/GameView";
 import { AnimatedSpriteLoader } from "../AnimatedSpriteLoader";
-import { Fx, FxType } from "../fx/Fx";
+import { Fx, FxBounds, FxType } from "../fx/Fx";
 import { nukeFxFactory, ShockwaveFx } from "../fx/NukeFx";
 import { SpriteFx } from "../fx/SpriteFx";
 import { UnitExplosionFx } from "../fx/UnitExplosionFx";
@@ -25,6 +25,8 @@ export class FxLayer implements Layer {
   private allFx: Fx[] = [];
   private canvasDirty: boolean = false;
   private hasLiveFx: boolean = false;
+  private lastFrameBounds: FxBounds | null = null;
+  private forceFullClear: boolean = false;
 
   constructor(private game: GameView) {
     this.theme = this.game.config().theme();
@@ -216,15 +218,27 @@ export class FxLayer implements Layer {
 
   renderAllFx(delta: number) {
     if (this.allFx.length === 0) {
+      const cleared = this.clearPreviousFrame();
       this.hasLiveFx = false;
+      if (cleared) {
+        this.canvasDirty = true;
+      }
       return;
     }
 
     const t0 = performance.now();
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    const hasActiveFx = this.renderContextFx(delta);
+    this.clearPreviousFrame();
+    const { hasActive, bounds, missingBounds } = this.renderContextFx(delta);
+
     this.canvasDirty = true;
-    this.hasLiveFx = hasActiveFx || this.allFx.length > 0;
+    this.hasLiveFx = hasActive || this.allFx.length > 0;
+
+    if (missingBounds) {
+      this.forceFullClear = true;
+      this.lastFrameBounds = null;
+    } else {
+      this.lastFrameBounds = bounds;
+    }
 
     if (this.adaptiveRefresh) {
       const elapsed = performance.now() - t0;
@@ -232,15 +246,16 @@ export class FxLayer implements Layer {
       this.refreshRate =
         elapsed > 12 ? Math.min(33, Math.ceil(elapsed * 2)) : 16;
     }
-
-    if (!this.hasLiveFx) {
-      // Ensure we blit once more to clear the main canvas.
-      this.canvasDirty = true;
-    }
   }
 
-  renderContextFx(duration: number): boolean {
+  renderContextFx(duration: number): {
+    hasActive: boolean;
+    bounds: FxBounds | null;
+    missingBounds: boolean;
+  } {
     let hasActive = false;
+    let bounds: FxBounds | null = null;
+    let missingBounds = false;
     for (let i = 0; i < this.allFx.length; ) {
       const fx = this.allFx[i];
       if (!fx.renderTick(duration, this.context)) {
@@ -249,9 +264,54 @@ export class FxLayer implements Layer {
         this.allFx.pop();
       } else {
         hasActive = true;
+        const fxBounds = fx.getBounds?.();
+        if (fxBounds) {
+          bounds = this.mergeBounds(bounds, fxBounds);
+        } else {
+          missingBounds = true;
+        }
         i++;
       }
     }
-    return hasActive;
+    return { hasActive, bounds, missingBounds };
+  }
+
+  private clearPreviousFrame(): boolean {
+    if (this.forceFullClear) {
+      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.forceFullClear = false;
+      this.lastFrameBounds = null;
+      return true;
+    }
+    if (this.lastFrameBounds) {
+      this.clearBounds(this.lastFrameBounds);
+      this.lastFrameBounds = null;
+      return true;
+    }
+    return false;
+  }
+
+  private clearBounds(bounds: FxBounds) {
+    const padding = 4;
+    const minX = Math.max(0, Math.floor(bounds.minX) - padding);
+    const minY = Math.max(0, Math.floor(bounds.minY) - padding);
+    const maxX = Math.min(this.canvas.width, Math.ceil(bounds.maxX) + padding);
+    const maxY = Math.min(this.canvas.height, Math.ceil(bounds.maxY) + padding);
+    const width = Math.max(0, maxX - minX);
+    const height = Math.max(0, maxY - minY);
+    if (width === 0 || height === 0) return;
+    this.context.clearRect(minX, minY, width, height);
+  }
+
+  private mergeBounds(existing: FxBounds | null, next: FxBounds): FxBounds {
+    if (!existing) {
+      return { ...next };
+    }
+    return {
+      minX: Math.min(existing.minX, next.minX),
+      minY: Math.min(existing.minY, next.minY),
+      maxX: Math.max(existing.maxX, next.maxX),
+      maxY: Math.max(existing.maxY, next.maxY),
+    };
   }
 }

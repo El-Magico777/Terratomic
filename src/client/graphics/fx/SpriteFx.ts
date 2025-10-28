@@ -2,7 +2,7 @@ import { Theme } from "../../../core/configuration/Config";
 import { PlayerView } from "../../../core/game/GameView";
 import { AnimatedSprite } from "../AnimatedSprite";
 import { AnimatedSpriteLoader } from "../AnimatedSpriteLoader";
-import { Fx, FxType } from "./Fx";
+import { Fx, FxBounds, FxType } from "./Fx";
 
 function fadeInOut(
   t: number,
@@ -36,6 +36,10 @@ export class FadeFx implements Fx {
     const result = this.fxToFade.renderTick(duration, ctx);
     ctx.restore();
     return result;
+  }
+
+  getBounds(): FxBounds | null {
+    return this.fxToFade.getBounds?.() ?? null;
   }
 }
 
@@ -89,5 +93,28 @@ export class SpriteFx implements Fx {
 
   getDuration(): number {
     return this.duration;
+  }
+
+  getBounds(): FxBounds | null {
+    if (!this.animatedSprite) return null;
+    const scale = this.animatedSprite.getScale();
+    const originX = this.animatedSprite.getOriginX() * scale;
+    const originY = this.animatedSprite.getOriginY() * scale;
+    const drawX = Math.round(this.x - originX);
+    const drawY = Math.round(this.y - originY);
+    const width = Math.max(
+      1,
+      Math.ceil(this.animatedSprite.getFrameWidth() * scale),
+    );
+    const height = Math.max(
+      1,
+      Math.ceil(this.animatedSprite.getFrameHeight() * scale),
+    );
+    return {
+      minX: drawX,
+      minY: drawY,
+      maxX: drawX + width,
+      maxY: drawY + height,
+    };
   }
 }
