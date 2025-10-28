@@ -23,6 +23,8 @@ export class FxLayer implements Layer {
     new AnimatedSpriteLoader();
 
   private allFx: Fx[] = [];
+  private canvasDirty: boolean = false;
+  private hasLiveFx: boolean = false;
 
   constructor(private game: GameView) {
     this.theme = this.game.config().theme();
@@ -182,8 +184,11 @@ export class FxLayer implements Layer {
     if (this.game.config().userSettings()?.fxLayer()) {
       if (now > this.lastRefresh + this.refreshRate) {
         const delta = now - this.lastRefresh;
-        this.renderAllFx(context, delta);
+        this.renderAllFx(delta);
         this.lastRefresh = now;
+      }
+      if (!this.canvasDirty && !this.hasLiveFx) {
+        return;
       }
       // If the offscreen canvas size matches the game size, use 3-arg drawImage (no scaling) for minor perf gain.
       // Otherwise, fall back to 5-arg drawImage to scale correctly.
@@ -205,24 +210,37 @@ export class FxLayer implements Layer {
           this.game.height(),
         );
       }
+      this.canvasDirty = false;
     }
   }
 
-  renderAllFx(context: CanvasRenderingContext2D, delta: number) {
-    if (this.allFx.length > 0) {
-      const t0 = performance.now();
-      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-      this.renderContextFx(delta);
-      if (this.adaptiveRefresh) {
-        const elapsed = performance.now() - t0;
-        // If FX rendering takes longer than ~12ms, drop FX FPS a bit
-        this.refreshRate =
-          elapsed > 12 ? Math.min(33, Math.ceil(elapsed * 2)) : 16;
-      }
+  renderAllFx(delta: number) {
+    if (this.allFx.length === 0) {
+      this.hasLiveFx = false;
+      return;
+    }
+
+    const t0 = performance.now();
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    const hasActiveFx = this.renderContextFx(delta);
+    this.canvasDirty = true;
+    this.hasLiveFx = hasActiveFx || this.allFx.length > 0;
+
+    if (this.adaptiveRefresh) {
+      const elapsed = performance.now() - t0;
+      // If FX rendering takes longer than ~12ms, drop FX FPS a bit
+      this.refreshRate =
+        elapsed > 12 ? Math.min(33, Math.ceil(elapsed * 2)) : 16;
+    }
+
+    if (!this.hasLiveFx) {
+      // Ensure we blit once more to clear the main canvas.
+      this.canvasDirty = true;
     }
   }
 
-  renderContextFx(duration: number) {
+  renderContextFx(duration: number): boolean {
+    let hasActive = false;
     for (let i = 0; i < this.allFx.length; ) {
       const fx = this.allFx[i];
       if (!fx.renderTick(duration, this.context)) {
@@ -230,8 +248,10 @@ export class FxLayer implements Layer {
         if (i !== last) this.allFx[i] = this.allFx[last];
         this.allFx.pop();
       } else {
+        hasActive = true;
         i++;
       }
     }
+    return hasActive;
   }
 }
