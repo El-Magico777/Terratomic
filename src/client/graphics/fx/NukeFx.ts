@@ -47,6 +47,9 @@ export class ShockwaveFx implements Fx {
 /**
  * Spawn @p number of @p type animation within a perimeter
  */
+const MAX_TOTAL_DEBRIS_SPRITES = 80;
+const MAX_DEBRIS_PER_TYPE = 28;
+
 function addSpriteInCircle(
   animatedSpriteLoader: AnimatedSpriteLoader,
   x: number,
@@ -57,9 +60,28 @@ function addSpriteInCircle(
   result: Fx[],
   game: GameView,
   scale: number = 1,
-) {
-  const count = Math.max(0, Math.floor(num));
-  for (let i = 0; i < count; i++) {
+  maxPerType: number = MAX_DEBRIS_PER_TYPE,
+  totalRemaining?: { value: number },
+): number {
+  const desired = Math.max(0, num);
+  if (desired <= 0) return 0;
+  const limitRemaining = totalRemaining ? totalRemaining.value : Infinity;
+  const integerPart = Math.floor(desired);
+  let spawnTarget = Math.min(integerPart, maxPerType, limitRemaining);
+  const fractional = desired - integerPart;
+  if (
+    spawnTarget < maxPerType &&
+    spawnTarget < limitRemaining &&
+    fractional > 0 &&
+    Math.random() < fractional
+  ) {
+    spawnTarget++;
+  }
+  if (spawnTarget <= 0) return 0;
+
+  let spawned = 0;
+  for (let i = 0; i < spawnTarget; i++) {
+    if (totalRemaining && totalRemaining.value <= 0) break;
     const angle = Math.random() * 2 * Math.PI;
     const distance = Math.random() * (radius / 2);
     const spawnX = Math.floor(x + Math.cos(angle) * distance);
@@ -83,8 +105,11 @@ function addSpriteInCircle(
         0.8,
       );
       result.push(sprite as Fx);
+      spawned++;
+      if (totalRemaining) totalRemaining.value--;
     }
   }
+  return spawned;
 }
 
 /**
@@ -118,6 +143,7 @@ export function nukeFxFactory(
   // Shockwave animation
   nukeFx.push(new ShockwaveFx(x, y, 1500, radius * 1.5));
   // Ruins and desolation sprites
+  const remaining = { value: MAX_TOTAL_DEBRIS_SPRITES };
   const debrisPlan: Array<{
     type: FxType;
     radiusFactor: number;
@@ -130,6 +156,7 @@ export function nukeFxFactory(
   ];
 
   for (const { type, radiusFactor, density } of debrisPlan) {
+    if (remaining.value <= 0) break;
     addSpriteInCircle(
       animatedSpriteLoader,
       x,
@@ -140,6 +167,8 @@ export function nukeFxFactory(
       nukeFx,
       game,
       scale,
+      MAX_DEBRIS_PER_TYPE,
+      remaining,
     );
   }
   return nukeFx;
