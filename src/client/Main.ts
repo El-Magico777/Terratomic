@@ -4,8 +4,6 @@ import { getServerConfigFromClient } from "../core/configuration/ConfigLoader";
 import { GameType } from "../core/game/Game";
 import { UserSettings } from "../core/game/UserSettings";
 import { joinLobby } from "./ClientGameRunner";
-import "./DarkModeButton";
-import { DarkModeButton } from "./DarkModeButton";
 import "./FlagInput";
 import { FlagInput } from "./FlagInput";
 import { GameStartingModal } from "./GameStartingModal";
@@ -21,6 +19,7 @@ import { NewsModal } from "./NewsModal";
 import "./PublicLobby";
 import { PublicLobby } from "./PublicLobby";
 import { SinglePlayerModal } from "./SinglePlayerModal";
+import "./SoundButton";
 import { SendKickPlayerIntentEvent } from "./Transport";
 import { UserSettingModal } from "./UserSettingModal";
 import "./UsernameInput";
@@ -76,16 +75,34 @@ class Client {
 
   private usernameInput: UsernameInput | null = null;
   private flagInput: FlagInput | null = null;
-  private darkModeButton: DarkModeButton | null = null;
 
   private joinModal: JoinPrivateLobbyModal;
   private publicLobby: PublicLobby;
   private googleAds: NodeListOf<GoogleAdElement>;
   private userSettings: UserSettings = new UserSettings();
+  // Main menu background music (loops on menu, paused during gameplay)
+  private menuMusic: HTMLAudioElement | null = null;
+  // Track whether the UI is currently on the main menu (not in-game)
+  private isOnMainMenu = true;
 
   constructor() {}
 
   initialize(): void {
+    // Prepare main menu background music
+    this.setupMenuMusic();
+    // Sync menu music with persisted mute state and react to changes
+    const syncMute = (muted: boolean) => {
+      if (this.menuMusic) this.menuMusic.muted = muted;
+    };
+    syncMute(this.userSettings.soundMuted());
+    window.addEventListener("sound-muted-changed", (e: Event) => {
+      const event = e as CustomEvent<{ muted: boolean }>;
+      syncMute(event.detail.muted);
+      // If unmuting while on main menu, attempt to play
+      if (!event.detail.muted && this.isOnMainMenu) {
+        this.menuMusic?.play().catch(() => {});
+      }
+    });
     const newsModal = document.querySelector("news-modal") as NewsModal;
     if (!newsModal) {
       console.warn("News modal element not found");
@@ -121,12 +138,7 @@ class Client {
       console.warn("Flag input element not found");
     }
 
-    this.darkModeButton = document.querySelector(
-      "dark-mode-button",
-    ) as DarkModeButton;
-    if (!this.darkModeButton) {
-      console.warn("Dark mode button element not found");
-    }
+    // Dark mode button removed from UI; mechanic persists via UserSettings
 
     // const loginDiscordButton = document.getElementById(
     //   "login-discord",
@@ -163,6 +175,9 @@ class Client {
       if (this.gameStop !== null) {
         this.gameStop();
       }
+      // Ensure music is stopped on unload
+      this.menuMusic?.pause();
+      if (this.menuMusic) this.menuMusic.currentTime = 0;
     });
 
     document.addEventListener("join-lobby", this.handleJoinLobby.bind(this));
@@ -319,6 +334,50 @@ class Client {
     }
   }
 
+  private setupMenuMusic(): void {
+    try {
+      // Avoid creating multiple elements
+      if (!this.menuMusic) {
+        const audio = new Audio("/music/berlin-beat-362757.mp3");
+        audio.loop = true;
+        audio.preload = "auto";
+        audio.volume = 0.35; // pleasant background level
+        // Respect persisted mute state immediately
+        audio.muted = this.userSettings.soundMuted();
+        this.menuMusic = audio;
+
+        // Try to start on first user interaction to comply with autoplay policies
+        const tryPlay = () => {
+          // Only play if we're actually on the main menu
+          if (this.isOnMainMenu && !this.userSettings.soundMuted()) {
+            this.menuMusic?.play().catch(() => {
+              // Ignore autoplay rejections; another interaction will retry
+            });
+          }
+        };
+        // One-time listeners for common interactions on the menu
+        window.addEventListener("pointerdown", tryPlay, { once: true });
+        window.addEventListener("keydown", tryPlay, { once: true });
+
+        // Also attempt a delayed play in case policies allow without gesture
+        setTimeout(() => {
+          if (this.isOnMainMenu && !this.userSettings.soundMuted()) {
+            this.menuMusic?.play().catch(() => {});
+          }
+        }, 500);
+      }
+
+      // Ensure music plays when we're on the main menu initially
+      if (this.isOnMainMenu && !this.userSettings.soundMuted()) {
+        this.menuMusic?.play().catch(() => {
+          // Will be retried on user gesture
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to set up menu music", e);
+    }
+  }
+
   private handleHash() {
     const { hash } = window.location;
     if (hash.startsWith("#")) {
@@ -357,6 +416,10 @@ class Client {
       },
       () => {
         console.log("Closing modals");
+        // We're leaving the main menu and entering the game
+        this.isOnMainMenu = false;
+        // Pause menu music when the game is loading/starting
+        this.menuMusic?.pause();
         document.getElementById("settings-button")?.classList.add("hidden");
         document
           .getElementById("username-validation-error")
@@ -416,6 +479,19 @@ class Client {
     this.gameStop();
     this.gameStop = null;
     this.publicLobby.leaveLobby();
+    // We're back on the main menu; allow music again
+    this.isOnMainMenu = true;
+    // Resume menu music when returning to main menu
+    this.menuMusic?.play().catch(() => {
+      // If autoplay blocks this, attach a one-off listener to start on next interaction
+      const resumeOnGesture = () => {
+        if (this.isOnMainMenu) {
+          this.menuMusic?.play().catch(() => {});
+        }
+      };
+      window.addEventListener("pointerdown", resumeOnGesture, { once: true });
+      window.addEventListener("keydown", resumeOnGesture, { once: true });
+    });
   }
 
   private handleKickPlayer(event: CustomEvent) {

@@ -114,6 +114,15 @@ export class AttackExecution implements Execution {
       new Set<TileRef>(),
     );
 
+    // War declaration and aggression tracking on first contact
+    if (this.target.isPlayer()) {
+      const targetPlayer = this.target as Player;
+      this._owner.setWarWith(targetPlayer);
+      targetPlayer.setWarWith(this._owner);
+      this._owner.recordAggression(targetPlayer);
+      targetPlayer.recordAggression(this._owner);
+    }
+
     const penalty = Math.floor(this._owner.population() * 0.01);
     this._owner.removeTroops(penalty);
 
@@ -233,16 +242,8 @@ export class AttackExecution implements Execution {
       this.breakAlliance = false;
       this._owner.breakAlliance(alliance);
     }
-    if (
-      targetPlayer &&
-      this._owner.isAlliedWith(targetPlayer) &&
-      !this.wasAlliedAtInit
-    ) {
-      // In this case a new alliance was created AFTER the attack started.
-      // We should retreat to avoid the attacker becoming a traitor.
-      this.retreat();
-      return;
-    }
+    // Consolidated: retreats on alliance/peace are now handled centrally via
+    // PlayerImpl.setNeutralWith, which orders retreats on hostile actions.
 
     let numTilesPerTick = this.mg
       .config()

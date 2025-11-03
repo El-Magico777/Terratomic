@@ -257,7 +257,8 @@ export class BuildMenu extends LitElement {
       width: 120px;
       height: 50px;
       border: 2px solid #0e1a33;
-      background: linear-gradient(to bottom, #0b1220, #101b33);
+      /* Darker idle surface to improve separation */
+      background: #183152;
       color: #c9dbff; /* submarine palette light blue */
       border-radius: 6px;
       box-shadow:
@@ -326,7 +327,7 @@ export class BuildMenu extends LitElement {
       text-align: left;
       line-height: 1.2;
       color: #e3edff; /* brighten primary label */
-      font-family: "Azeret Mono", monospace;
+      font-family: monospace;
     }
     .build-description {
       font-size: 0.6rem;

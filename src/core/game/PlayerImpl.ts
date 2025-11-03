@@ -1,6 +1,7 @@
 import { renderNumber, renderTroops } from "../../client/Utils";
 import { PseudoRandom } from "../PseudoRandom";
 import { ClientID } from "../Schemas";
+import { applyTechCompletionEffects } from "../tech/TechEffects";
 import {
   assertNever,
   distSortUnit,
@@ -92,6 +93,10 @@ export class PlayerImpl implements Player {
   private _upgrades: Set<UpgradeType> = new Set();
   // Per-match research tree selections (IDs are client-defined strings)
   private _researchTreeTechs: Set<string> = new Set();
+  // Per-match research progress (beakers) per tech
+  private _researchBeakers: Map<string, number> = new Map();
+  // Currently selected research priority tech id
+  private _researchPriority: string | null = null;
 
   private _flag: string | undefined;
   private _name: string;
@@ -108,6 +113,10 @@ export class PlayerImpl implements Player {
   private sentDonations: Donation[] = [];
 
   private relations = new Map<Player, number>();
+
+  // War/peace and aggression tracking
+  private _wars: Set<PlayerID> = new Set();
+  private _lastAggression: Map<PlayerID, Tick> = new Map();
 
   public _incomingAttacks: Attack[] = [];
   public _outgoingAttacks: Attack[] = [];
@@ -176,6 +185,7 @@ export class PlayerImpl implements Player {
       productivityGrowthPerMinute: this.productivityGrowthPerMinute(),
       investmentRate: this.investmentRate(),
       allies: this.alliances().map((a) => a.other(this).smallID()),
+      wars: Array.from(this._wars).map((pid) => this.mg.player(pid).smallID()),
       embargoes: new Set([...this.embargoes.keys()].map((p) => p.toString())),
       isTraitor: this.isTraitor(),
       targets: this.targets().map((p) => p.smallID()),
@@ -217,6 +227,11 @@ export class PlayerImpl implements Player {
       ),
       upgrades: Array.from(this._upgrades),
       researchTreeTechs: Array.from(this._researchTreeTechs),
+      researchTreeBeakers:
+        this._researchBeakers.size > 0
+          ? Object.fromEntries(this._researchBeakers)
+          : undefined,
+      researchPriorityTech: this._researchPriority,
     };
   }
 
@@ -321,10 +336,42 @@ export class PlayerImpl implements Player {
 
   // Research tree (standalone) API
   addResearchedTech(techId: string): void {
+    // Add tech to researched set
     this._researchTreeTechs.add(techId);
+
+    // Apply centralized side-effects upon research completion
+    applyTechCompletionEffects(this, this.mg, techId);
   }
   hasResearchedTech(techId: string): boolean {
     return this._researchTreeTechs.has(techId);
+  }
+  researchBeakers(techId: string): number {
+    return this._researchBeakers.get(techId) ?? 0;
+  }
+  addResearchBeakers(
+    techId: string,
+    beakers: number,
+    cost: number,
+  ): {
+    completed: boolean;
+    newBeakers: number;
+  } {
+    const prev = this._researchBeakers.get(techId) ?? 0;
+    const total = Math.min(cost, prev + beakers);
+    this._researchBeakers.set(techId, total);
+    const completed = total >= cost;
+    if (completed) {
+      // Route all completions through addResearchedTech to ensure side-effects fire consistently
+      this.addResearchedTech(techId);
+      // Do not carry over excess; keep capped at cost
+    }
+    return { completed, newBeakers: total };
+  }
+  setResearchPriority(techId: string | null): void {
+    this._researchPriority = techId;
+  }
+  researchPriority(): string | null {
+    return this._researchPriority;
   }
 
   invalidateEffectiveUnitsCache(type: UnitType): void {
@@ -556,6 +603,70 @@ export class PlayerImpl implements Player {
         player: r.player,
         relation: this.relationFromValue(r.relation),
       }));
+  }
+
+  // --- War/Peace API ---
+  isAtWarWith(other: Player): boolean {
+    if (other === this) return false;
+    return this._wars.has(other.id());
+  }
+
+  setWarWith(other: Player): void {
+    if (other === this) return;
+    // Disable war mechanism for bots: never enter war state if either side is a Bot
+    if (this.type() === PlayerType.Bot || other.type() === PlayerType.Bot) {
+      return;
+    }
+    if (this._wars.has(other.id())) return;
+    this._wars.add(other.id());
+    // Auto-embargo while at war
+    this.addEmbargo(other.id(), true);
+    // Event: notify this player that they are at war with the other
+    this.mg.displayMessage(
+      `At war with ${other.displayName()}`,
+      MessageType.WAR_DECLARED,
+      this.id(),
+    );
+  }
+
+  setNeutralWith(other: Player): void {
+    if (other === this) return;
+    if (!this._wars.has(other.id())) return;
+    this._wars.delete(other.id());
+    // End any embargo we have against the other as part of making peace
+    this.stopEmbargo(other.id());
+    // Event: notify this player that peace was made
+    this.mg.displayMessage(
+      `Peace made with ${other.displayName()}`,
+      MessageType.PEACE_MADE,
+      this.id(),
+    );
+
+    // Cancel all ongoing land attacks targeting the other player
+    for (const a of [...this._outgoingAttacks]) {
+      if (a.target() === other && a.isActive()) {
+        // Use the same cancel flow as manual cancel: order then execute
+        a.orderRetreat();
+        a.executeRetreat();
+      }
+    }
+
+    // Cancel only transport ships targeting the other player
+    for (const boat of this.units(UnitType.TransportShip)) {
+      const targetPID = (boat as any).boatTargetPlayerID?.();
+      if (targetPID === other.id() && !boat.retreating()) {
+        boat.orderBoatRetreat();
+      }
+    }
+  }
+
+  recordAggression(other: Player): void {
+    if (other === this) return;
+    this._lastAggression.set(other.id(), this.mg.ticks());
+  }
+
+  lastAggressionTick(other: Player): Tick {
+    return this._lastAggression.get(other.id()) ?? -1;
   }
 
   updateRelation(other: Player, delta: number): void {

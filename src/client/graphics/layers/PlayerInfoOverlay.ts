@@ -167,6 +167,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
     const myPlayer = this.game.myPlayer();
     const isFriendly = myPlayer?.isFriendly(player);
     let relationHtml: TemplateResult | null = null;
+    let relationClassForType = "";
     const attackingTroops = player
       .outgoingAttacks()
       .map((a) => a.troops)
@@ -193,6 +194,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         relationHtml = html`
           <span class="${relationClass}">${relationName}</span>
         `;
+        relationClassForType = relationClass;
       }
     }
     let playerType = "";
@@ -241,21 +243,26 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
           class="flex justify-center items-center gap-2 mb-2 w-full border border-gray-400 rounded p-1"
         >
           <div
-            class="text-bold text-lg font-bold inline-flex break-all ${isFriendly
+            class="text-bold text-lg font-bold inline-flex items-center break-all ${isFriendly
               ? "text-green-500"
               : "text-white"}"
           >
             ${player.flag()
               ? html`<img
-                  class="h-8 mr-1 aspect-[3/4]"
+                  class="h-8 mr-1 aspect-[3/4] self-center"
                   src=${`/flags/${player.flag()}.svg`}
                 />`
               : ""}
             ${player.name()}
           </div>
-          <div class="text-sm opacity-80">
+          <div class="text-sm opacity-80 relative top-[1px]">
             ${relationHtml}
-            <span class="${isFriendly ? "text-green-500" : ""}"
+            <span
+              class="${relationHtml
+                ? relationClassForType
+                : isFriendly
+                  ? "text-green-500"
+                  : ""}"
               >${playerType}</span
             >
           </div>
@@ -265,7 +272,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         <div class="flex flex-row gap-2 items-stretch">
           <!-- Left Column (Box 2 & 3 Merged) -->
           <div
-            class="flex flex-col justify-between p-1 border border-gray-400 rounded w-40"
+            class="flex flex-col justify-between p-1 border border-gray-400 rounded w-56"
           >
             <!-- Box 2 Content -->
             <div class="flex items-center gap-2 text-sm opacity-80">
@@ -313,6 +320,15 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
                   alt="Productivity"
                 />
                 ${Math.round(player.productivity() * 100)}%
+              </span>
+              <span translate="no">
+                <img
+                  src="/images/flask.png"
+                  class="inline-block w-4 h-4 mr-1"
+                  style="transform: translateY(-1px);"
+                  alt="Research"
+                />
+                ${player.researchTechLevel().toFixed(1)}
               </span>
             </div>
           </div>
@@ -385,7 +401,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
         @contextmenu=${(e) => e.preventDefault()}
       >
         <div
-          class="absolute top-0 lg:top-2.5 left-1/2 transform -translate-x-1/2 submarine-panel military-panel transition-all duration-300 text-lg md:text-base ${containerClasses}"
+          class="absolute top-0 lg:top-2.5 left-1/2 transform -translate-x-1/2 scale-[0.9] origin-top submarine-panel transition-all duration-300 text-lg md:text-base ${containerClasses}"
           style="box-shadow: inset 0 0 18px rgba(2, 8, 20, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);"
         >
           ${this.player !== null ? this.renderPlayerInfo(this.player) : ""}

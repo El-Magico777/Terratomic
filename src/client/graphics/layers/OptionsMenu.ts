@@ -5,7 +5,7 @@ import { GameType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { GameView } from "../../../core/game/GameView";
 import { UserSettings } from "../../../core/game/UserSettings";
-import { AlternateViewEvent, RefreshGraphicsEvent } from "../../InputHandler";
+import { AlternateViewEvent } from "../../InputHandler";
 import { PauseGameEvent } from "../../Transport";
 import { translateText } from "../../Utils";
 import { Layer } from "./Layer";
@@ -116,12 +116,6 @@ export class OptionsMenu extends LitElement implements Layer {
     this.requestUpdate();
   }
 
-  private onToggleDarkModeButtonClick() {
-    this.userSettings.toggleDarkMode();
-    this.requestUpdate();
-    this.eventBus.emit(new RefreshGraphicsEvent());
-  }
-
   private onToggleRandomNameModeButtonClick() {
     this.userSettings.toggleRandomName();
   }
@@ -183,7 +177,7 @@ export class OptionsMenu extends LitElement implements Layer {
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
       >
         <div
-          class="submarine-panel military-panel p-1 lg:p-2"
+          class="submarine-panel p-1 lg:p-2"
           style="box-shadow: inset 0 0 18px rgba(2, 8, 20, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);"
         >
           <div class="flex items-stretch gap-1 lg:gap-2">
@@ -229,7 +223,7 @@ export class OptionsMenu extends LitElement implements Layer {
       </div>
 
         <div
-          class="submarine-panel military-panel options-menu flex flex-col justify-around gap-y-3 mt-2 p-1 lg:p-2 ${
+          class="submarine-panel options-menu flex flex-col justify-around gap-y-3 mt-2 p-1 lg:p-2 ${
             !this.showSettings ? "hidden" : ""
           }"
           style="box-shadow: inset 0 0 18px rgba(2, 8, 20, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);"
@@ -253,11 +247,6 @@ export class OptionsMenu extends LitElement implements Layer {
             onClick: this.onToggleSpecialEffectsButtonClick,
             title: "Toggle Special effects",
             children: "💥: " + (this.userSettings.fxLayer() ? "On" : "Off"),
-          })}
-          ${button({
-            onClick: this.onToggleDarkModeButtonClick,
-            title: "Dark Mode",
-            children: "🌙: " + (this.userSettings.darkMode() ? "On" : "Off"),
           })}
           ${button({
             onClick: this.onToggleRandomNameModeButtonClick,

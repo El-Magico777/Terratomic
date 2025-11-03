@@ -30,6 +30,7 @@ export type Intent =
   | AllianceRequestReplyIntent
   | AllianceExtensionIntent
   | BreakAllianceIntent
+  | PeaceRequestIntent
   | TargetPlayerIntent
   | EmojiIntent
   | DonateGoldIntent
@@ -60,6 +61,7 @@ export type AllianceRequestReplyIntent = z.infer<
   typeof AllianceRequestReplyIntentSchema
 >;
 export type BreakAllianceIntent = z.infer<typeof BreakAllianceIntentSchema>;
+export type PeaceRequestIntent = z.infer<typeof PeaceRequestIntentSchema>;
 export type TargetPlayerIntent = z.infer<typeof TargetPlayerIntentSchema>;
 export type EmojiIntent = z.infer<typeof EmojiIntentSchema>;
 export type DonateGoldIntent = z.infer<typeof DonateGoldIntentSchema>;
@@ -178,6 +180,8 @@ export const GameConfigSchema = z.object({
   infiniteGold: z.boolean(),
   infiniteTroops: z.boolean(),
   instantBuild: z.boolean(),
+  // If true, human player's tech selection instantly researches that tech
+  instantResearchHumanOnly: z.boolean().optional(),
   maxPlayers: z.number().optional(),
   disabledUnits: z.enum(UnitType).array().optional(),
   playerTeams: TeamCountConfigSchema.optional(),
@@ -292,6 +296,11 @@ export type AllianceExtensionIntent = z.infer<
 
 export const BreakAllianceIntentSchema = BaseIntentSchema.extend({
   type: z.literal("breakAlliance"),
+  recipient: ID,
+});
+
+export const PeaceRequestIntentSchema = BaseIntentSchema.extend({
+  type: z.literal("peaceRequest"),
   recipient: ID,
 });
 
@@ -421,6 +430,7 @@ const IntentSchema = z.discriminatedUnion("type", [
   AllianceRequestReplyIntentSchema,
   AllianceExtensionIntentSchema,
   BreakAllianceIntentSchema,
+  PeaceRequestIntentSchema,
   TargetPlayerIntentSchema,
   EmojiIntentSchema,
   DonateGoldIntentSchema,

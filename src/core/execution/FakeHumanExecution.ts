@@ -13,12 +13,12 @@ import {
 import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { GameID } from "../Schemas";
-import { RESEARCH_TECH_IDS } from "../tech/TechEffects";
 import { flattenedEmojiTable, simpleHash } from "../Util";
 import { EmojiExecution } from "./EmojiExecution";
 import { NukeExecutionHelper } from "./NukeExecutionHelper";
+import { PeaceRequestExecution } from "./PeaceRequestExecution";
 import { PurchaseUpgradeExecution } from "./PurchaseUpgradeExecution";
-import { ResearchTreeSelectExecution } from "./ResearchTreeSelectExecution";
+import { SetResearchInvestmentExecution } from "./SetResearchInvestmentExecution";
 import { SetRoadInvestmentExecution } from "./SetRoadInvestmentExecution";
 import { SpawnExecution } from "./SpawnExecution";
 import { TransportShipExecution } from "./TransportShipExecution";
@@ -136,14 +136,10 @@ export class FakeHumanExecution implements Execution {
       }
       this.player.addUpgrade(UpgradeType.InternationalTrade);
 
-      // Immediately research first Economy tech and set road investment to 20%
-      // - ResearchTreeSelectExecution will also unlock the Roads upgrade
-      //   and trigger network reconnection when Economy-1 is researched.
+      // Set research slider to 20% and set road investment to 20% at game start.
+      // Do NOT set any research priority here so the AI leaves research priority null.
       this.mg.addExecution(
-        new ResearchTreeSelectExecution(
-          this.player,
-          RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION,
-        ),
+        new SetResearchInvestmentExecution(this.player, 0.2),
       );
       this.mg.addExecution(new SetRoadInvestmentExecution(this.player, 0.2));
     }
@@ -206,6 +202,25 @@ export class FakeHumanExecution implements Execution {
       }
       this.unitCreationHelper.handleUnits();
       this.handleEmbargoesToHostileNations();
+
+      // Auto-peace: if at war but no aggression between sides for 30 seconds, request peace
+      // NOTE: Only auto-initiated between AIs (FakeHuman/Bot). Do not initiate peace with human players.
+      const turnMs = this.mg.config().serverConfig().turnIntervalMs();
+      const thresholdTicks = Math.ceil(30_000 / Math.max(1, turnMs));
+      const me = this.player;
+      for (const other of this.mg.players()) {
+        if (!other.isPlayer?.() || other === me) continue;
+        if (!me.isAtWarWith(other)) continue;
+        // Skip if the other side is a human; let them initiate peace explicitly.
+        if (other.type() === PlayerType.Human) continue;
+        const lastMe = me.lastAggressionTick(other);
+        const lastOther = other.lastAggressionTick(me);
+        const last = Math.max(lastMe, lastOther);
+        if (last >= 0 && this.mg.ticks() - last > thresholdTicks) {
+          // Immediate peace request (auto-accept via execution)
+          this.mg.addExecution(new PeaceRequestExecution(me, other.id()));
+        }
+      }
     }
 
     if (ticks % this.attackRate === this.attackTick) {

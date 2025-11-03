@@ -1,6 +1,5 @@
 import { html, LitElement } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import goldCoinIcon from "../../../../resources/images/GoldCoinIcon.svg";
 import { EventBus } from "../../../core/EventBus";
 import {
   Gold,
@@ -10,16 +9,13 @@ import {
   UpgradeType,
 } from "../../../core/game/Game";
 import { GameView, PlayerView } from "../../../core/game/GameView";
-import {
-  RESEARCH_TECH_IDS,
-  TECH_METADATA,
-} from "../../../core/tech/TechEffects";
+import { getTechNodes } from "../../../core/tech/ResearchTree";
+import { getTechMeta, RESEARCH_TECH_IDS } from "../../../core/tech/TechEffects";
 import { PlayerListChangedEvent } from "../../events/PlayerListChangedEvent";
 import { AttackRatioEvent } from "../../InputHandler";
 import "../../ResearchTreeModal";
 import {
   SendBomberIntentEvent,
-  SendPurchaseUpgradeIntentEvent,
   SendSetAutoBombingEvent,
   SendSetInvestmentRateEvent,
   SendSetResearchInvestmentEvent,
@@ -805,68 +801,7 @@ export class ControlPanel2 extends LitElement implements Layer {
 
     const player = this.game.myPlayer();
     const hasRoads = player?.hasUpgrade(UpgradeType.Roads) ?? false;
-
-    const getUpgradeCost = (upgradeType: UpgradeType) => {
-      if (!player) return 0n;
-      return this.game.config().upgradeInfo(upgradeType).cost(player);
-    };
-
-    const canPurchaseUpgrade = (upgradeType: UpgradeType) => {
-      if (!player) return true;
-
-      if (upgradeType === UpgradeType.ScorchedEarth) {
-        if (!player.hasUpgrade(UpgradeType.Roads)) {
-          return true;
-        }
-      }
-
-      const cost = getUpgradeCost(upgradeType);
-      const hasUpgrade = player.hasUpgrade(upgradeType);
-      const canAfford = player.gold() >= cost;
-      return hasUpgrade || !canAfford;
-    };
-
-    const renderUpgradeButton = (
-      upgradeType: UpgradeType,
-      name: string,
-      level: number,
-      tooltip: string = "",
-    ) => {
-      const cost = getUpgradeCost(upgradeType);
-      const hasUpgrade = player?.hasUpgrade(upgradeType);
-      const canAfford = player && player.gold() >= cost;
-      const buttonClass = hasUpgrade
-        ? "build-button upgrade-unlocked"
-        : canAfford
-          ? "build-button upgrade-available"
-          : "build-button upgrade-locked";
-
-      const buttonText = hasUpgrade
-        ? html`${name} Unlocked`
-        : html`<div class="build-item-details flex flex-col items-center">
-            <span class="build-name">${name}</span>
-            <span class="build-cost flex items-center gap-1" translate="no">
-              ${(Number(cost) / 1_000_000).toFixed(0)}M
-              <img src=${goldCoinIcon} alt="gold" width="12" height="12" />
-            </span>
-          </div>`;
-      return html`
-        <button
-          class="build-button"
-          title=${tooltip}
-          ?disabled=${canPurchaseUpgrade(upgradeType)}
-          @click=${() => {
-            if (!hasUpgrade) {
-              this.eventBus.emit(
-                new SendPurchaseUpgradeIntentEvent(upgradeType),
-              );
-            }
-          }}
-        >
-          ${buttonText}
-        </button>
-      `;
-    };
+    // Research tab has been simplified; upgrade buttons and sub-tabs removed.
 
     return html`
       <style>
@@ -878,7 +813,8 @@ export class ControlPanel2 extends LitElement implements Layer {
           width: 100%; /* Full width of the column */
           height: 50px;
           border: 2px solid #2d3748;
-          background-color: #2d3748;
+          /* Darker idle surface */
+          background-color: #232d40;
           color: #e2e8f0;
           border-radius: 6px;
           box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
@@ -999,7 +935,7 @@ export class ControlPanel2 extends LitElement implements Layer {
           padding: 4px 10px;
           text-transform: uppercase;
           font-size: 12px;
-          font-family: "Azeret Mono", monospace;
+          font-family: monospace;
           transition:
             background-color 0.15s ease-in-out,
             box-shadow 0.15s ease-in-out,
@@ -1011,6 +947,20 @@ export class ControlPanel2 extends LitElement implements Layer {
           background-color: #1d3a60;
           border-color: #32629b;
           box-shadow: 0 0 0 2px rgba(50, 98, 155, 0.45) inset;
+        }
+
+        /* Simple progress bar for research items */
+        .progress-track {
+          width: 100%;
+          height: 6px;
+          background: rgba(39, 71, 110, 0.25);
+          border: 1px solid rgba(39, 71, 110, 0.35);
+          border-radius: 6px;
+          overflow: hidden;
+        }
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #60a5fa, #3b82f6);
         }
 
         input[type="range"] {
@@ -1093,7 +1043,7 @@ export class ControlPanel2 extends LitElement implements Layer {
       </style>
       <div
         class="${this._isVisible && this.isOpen
-          ? `w-full h-[260px] text-sm lg:text-m submarine-panel military-panel border-2 border-gray-700 p-2 pr-3 lg:p-4 flex flex-col transition-all duration-300 ml-8`
+          ? `w-full h-[260px] text-sm lg:text-m submarine-panel border-2 border-gray-700 p-2 pr-3 lg:p-4 flex flex-col transition-all duration-300 ml-8`
           : "hidden"}"
         style="box-shadow: inset 0 0 18px rgba(2, 8, 20, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);"
         @contextmenu=${(e: MouseEvent) => e.preventDefault()}
@@ -1528,7 +1478,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                           ${!hasRoads
                             ? html`<span
                                 class="lock-badge"
-                                title=${`Research '${TECH_METADATA[RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION]?.name ?? "Post-War Reconstruction"}' to enable road investment`}
+                                title=${`Research '${getTechMeta(RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION, { strict: false }).name}' to enable road investment`}
                               >
                                 <svg
                                   class="lock-icon"
@@ -1618,7 +1568,7 @@ export class ControlPanel2 extends LitElement implements Layer {
                         .value=${(this._roadInvestmentRate * 100).toString()}
                         ?disabled=${!hasRoads}
                         title=${!hasRoads
-                          ? `Research '${TECH_METADATA[RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION]?.name ?? "Post-War Reconstruction"}' to enable road investment`
+                          ? `Research '${getTechMeta(RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION, { strict: false }).name}' to enable road investment`
                           : ""}
                         @input=${(e: Event) => {
                           if (!hasRoads) return;
@@ -1854,139 +1804,79 @@ export class ControlPanel2 extends LitElement implements Layer {
               `
             : ""}
           ${this.activeTab === "Research"
-            ? html`
-                <div class="flex flex-col h-full">
-                  <!-- Research Sub-Tab Content -->
-                  <div class="flex-grow pt-4 overflow-x-hidden relative">
-                    ${this.activeResearchTab === "Land"
-                      ? html`
-                          <div class="grid grid-cols-3 gap-4">
-                            ${renderUpgradeButton(
-                              UpgradeType.InternationalTrade,
-                              "International Trade",
-                              1,
-                            )}
-                            ${renderUpgradeButton(
-                              UpgradeType.ScorchedEarth,
-                              "Scorched Earth",
-                              2,
-                              "This upgrade will remove your road network",
-                            )}
-                          </div>
-                        `
-                      : ""}
-                    ${this.activeResearchTab === "Water"
-                      ? html`
-                          <div class="grid grid-cols-3 gap-4">
-                            ${renderUpgradeButton(
-                              UpgradeType.WaterUpgrade1,
-                              "Water 1",
-                              1,
-                            )}
-                            ${renderUpgradeButton(
-                              UpgradeType.WaterUpgrade2,
-                              "Water 2",
-                              2,
-                            )}
-                            ${renderUpgradeButton(
-                              UpgradeType.WaterUpgrade3,
-                              "Water 3",
-                              3,
-                            )}
-                          </div>
-                        `
-                      : ""}
-                    ${this.activeResearchTab === "Air"
-                      ? html`
-                          <div class="grid grid-cols-3 gap-4">
-                            ${renderUpgradeButton(
-                              UpgradeType.AirUpgrade1,
-                              "Air 1",
-                              1,
-                            )}
-                            ${renderUpgradeButton(
-                              UpgradeType.AirUpgrade2,
-                              "Air 2",
-                              2,
-                            )}
-                            ${renderUpgradeButton(
-                              UpgradeType.AirUpgrade3,
-                              "Air 3",
-                              3,
-                            )}
-                          </div>
-                        `
-                      : ""}
-                    ${this.activeResearchTab === "Economy"
-                      ? html`
-                          <div class="grid grid-cols-3 gap-4">
-                            ${renderUpgradeButton(
-                              UpgradeType.EconomyUpgrade1,
-                              "Econ 1",
-                              1,
-                            )}
-                            ${renderUpgradeButton(
-                              UpgradeType.EconomyUpgrade2,
-                              "Econ 2",
-                              2,
-                            )}
-                            ${renderUpgradeButton(
-                              UpgradeType.EconomyUpgrade3,
-                              "Econ 3",
-                              3,
-                            )}
-                          </div>
-                        `
-                      : ""}
+            ? (() => {
+                const me = this.game?.myPlayer?.();
+                const techs = getTechNodes();
+                const researched = new Set<string>();
+                if (me) {
+                  for (const t of techs)
+                    if (me.hasResearchedTech(t.id)) researched.add(t.id);
+                }
+                const active = me
+                  ? techs
+                      .map((t) => {
+                        const beakers = me.researchBeakers?.(t.id) ?? 0;
+                        const cost = t.cost || 1;
+                        const pct = Math.max(
+                          0,
+                          Math.min(100, Math.floor((beakers / cost) * 100)),
+                        );
+                        return {
+                          id: t.id,
+                          name: t.name,
+                          beakers,
+                          cost,
+                          pct,
+                          isDone: researched.has(t.id),
+                        };
+                      })
+                      .filter((x) => x.beakers > 0 && !x.isDone)
+                      .sort((a, b) => b.pct - a.pct)
+                  : [];
+                const priorityId = me?.researchPriorityTech?.() ?? null;
+                const priorityName = priorityId
+                  ? getTechMeta(priorityId, { strict: false }).name
+                  : "None";
+                return html`<div class="flex h-full flex-col">
+                  <h3 class="military-heading mb-2">Research</h3>
+                  <div class="mb-2 military-label" style="font-size: 11px;">
+                    Current Priority:
+                    <span class="font-semibold">${priorityName}</span>
                   </div>
-
-                  <!-- Research Sub-Tabs -->
                   <div
-                    class="research-tabs"
-                    style="display:flex; align-items:center; justify-content:space-between; gap:16px;"
+                    class="grid grid-cols-2 gap-x-3 gap-y-1 pr-1"
+                    style="font-size: 11px;"
                   >
-                    <div
-                      class="research-tab-buttons"
-                      style="display:flex; gap:16px; flex-wrap:wrap;"
-                    >
-                      <button
-                        class="research-tab ${this.activeResearchTab === "Land"
-                          ? "active"
-                          : ""}"
-                        style="padding: 6px 10px;"
-                        @click=${() => (this.activeResearchTab = "Land")}
-                      >
-                        Land
-                      </button>
-                      <button
-                        class="research-tab ${this.activeResearchTab === "Water"
-                          ? "active"
-                          : ""}"
-                        style="padding: 6px 10px;"
-                        @click=${() => (this.activeResearchTab = "Water")}
-                      >
-                        Water
-                      </button>
-                      <button
-                        class="research-tab ${this.activeResearchTab === "Air"
-                          ? "active"
-                          : ""}"
-                        style="padding: 6px 10px;"
-                        @click=${() => (this.activeResearchTab = "Air")}
-                      >
-                        Air
-                      </button>
-                      <button
-                        class="research-tab ${this.activeResearchTab ===
-                        "Economy"
-                          ? "active"
-                          : ""}"
-                        style="padding: 6px 10px;"
-                        @click=${() => (this.activeResearchTab = "Economy")}
-                      >
-                        Economy
-                      </button>
-                    </div>
+                    ${active.length === 0
+                      ? html`<div class="opacity-70 col-span-2">
+                          No active research yet. Set a priority in the Research
+                          Tree or allocate Research investment.
+                        </div>`
+                      : (() => {
+                          const n = active.length;
+                          const leftCount = Math.ceil(n / 2);
+                          const remapped: typeof active = [];
+                          for (let i = 0; i < leftCount; i++) {
+                            remapped.push(active[i]);
+                            if (i + leftCount < n)
+                              remapped.push(active[i + leftCount]);
+                          }
+                          return remapped.map(
+                            (it) =>
+                              html`<div
+                                class="flex items-center justify-between"
+                                title="${it.name}"
+                              >
+                                <div class="truncate pr-2">${it.name}</div>
+                                <div class="opacity-80" translate="no">
+                                  ${it.beakers.toLocaleString()} /
+                                  ${it.cost.toLocaleString()} (${it.pct}%)
+                                </div>
+                              </div>`,
+                          );
+                        })()}
+                  </div>
+                  <div class="mt-auto flex justify-end pt-2">
                     <button
                       class="research-button"
                       title="Open Research Tree"
@@ -2004,15 +1894,10 @@ export class ControlPanel2 extends LitElement implements Layer {
                       Research Tree
                     </button>
                   </div>
-                </div>
-              `
+                </div>`;
+              })()
             : ""}
         </div>
-        <!-- Attach ResearchTreeModal instance to the DOM once -->
-        <research-tree-modal
-          .game=${this.game}
-          .eventBus=${this.eventBus}
-        ></research-tree-modal>
       </div>
     `;
   }

@@ -39,6 +39,9 @@ export function createCanvas(): HTMLCanvasElement {
   canvas.style.width = "100%";
   canvas.style.height = "100%";
   canvas.style.touchAction = "none";
+  // Ensure the gameplay canvas renders above the site footer (z-20)
+  // but below in-game HUD overlays (z-50).
+  canvas.style.zIndex = "30";
 
   return canvas;
 }
@@ -180,9 +183,13 @@ export function getMessageTypeClasses(type: MessageType): string {
     case MessageType.WARN:
     case MessageType.PEACE_TIMER_BLOCKED:
       return severityColors["warn"];
+    case MessageType.WAR_DECLARED:
+      return severityColors["warn"]; // war start: highlight prominently
     case MessageType.CHAT:
     case MessageType.ALLIANCE_REQUEST:
       return severityColors["info"];
+    case MessageType.PEACE_MADE:
+      return severityColors["success"]; // peace achieved: green
     default:
       console.warn(`Message type ${type} has no explicit color`);
       return severityColors["white"];

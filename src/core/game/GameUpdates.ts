@@ -169,6 +169,8 @@ export interface PlayerUpdate {
   attackingTroops: number;
   targetTroopRatio: number;
   allies: number[];
+  // Diplomacy: explicit wars (smallIDs), separate from trade embargoes
+  wars?: number[];
   embargoes: Set<PlayerID>;
   isTraitor: boolean;
   targets: number[];
@@ -183,6 +185,10 @@ export interface PlayerUpdate {
   upgrades: UpgradeType[];
   // Techs researched in the standalone research tree (per-match only)
   researchTreeTechs: string[];
+  // Research progress (beakers) per tech id (optional; omitted if none)
+  researchTreeBeakers?: Record<string, number>;
+  // Currently selected research priority tech id (optional)
+  researchPriorityTech?: string | null;
 }
 
 export interface AllianceRequestUpdate {

@@ -5,11 +5,14 @@ import {
   Game,
   MessageType,
   Player,
+  PlayerType,
   UnitType,
   UpgradeType,
 } from "../game/Game";
 import { GameImpl } from "../game/GameImpl";
 import { GameMap, TileRef } from "../game/GameMap";
+import { PseudoRandom } from "../PseudoRandom";
+import { getTechNodes, isTechAvailable } from "../tech/ResearchTree";
 import { calculateBoundingBox, getMode, inscribed, simpleHash } from "../Util";
 
 export class PlayerExecution implements Execution {
@@ -19,6 +22,9 @@ export class PlayerExecution implements Execution {
   private lastCalc = 0;
   private mg: Game;
   private active = true;
+  private random: PseudoRandom | null = null;
+  // Accumulate research "intensity" allocation since last innovation calculation
+  private _researchAccum: Map<string, number> = new Map();
 
   constructor(private player: Player) {}
 
@@ -31,6 +37,8 @@ export class PlayerExecution implements Execution {
     this.config = mg.config();
     this.lastCalc =
       ticks + (simpleHash(this.player.name()) % this.ticksPerClusterCalc);
+    // Seed RNG for per-player deterministic-ish behavior
+    this.random = new PseudoRandom(ticks + simpleHash(this.player.id()));
   }
 
   tick(ticks: number) {
@@ -149,6 +157,173 @@ export class PlayerExecution implements Execution {
           console.log(`player ${this.player.name()}, took ${end - start}ms`);
         }
       }
+    }
+
+    // --- Research system per-tick processing ---
+    this.tickResearch();
+  }
+
+  private tickResearch() {
+    // Ensure RNG and config are ready
+    if (!this.random) return;
+
+    // Determine research investment (gold) this tick and transform via f(x) = A * investment^B
+    const grossGold = this.config.grossGoldAdditionRate(this.player);
+    const investRate = (this.player as any).researchInvestmentRate?.() ?? 0;
+    if (investRate <= 0 || grossGold <= 0) return;
+
+    const investment = Math.max(0, grossGold * investRate);
+    const A = this.config.researchAlpha();
+    const B = this.config.researchBeta();
+    const xTotal = A * Math.pow(investment, B);
+    if (!Number.isFinite(xTotal) || xTotal <= 0) return;
+
+    // Build researched set and available techs
+    const nodes = getTechNodes();
+    const researched = new Set<string>();
+    for (const n of nodes) {
+      if ((this.player as any).hasResearchedTech?.(n.id)) researched.add(n.id);
+    }
+    const available = nodes.filter(
+      (n) => !researched.has(n.id) && isTechAvailable(n.id, researched),
+    );
+    if (available.length === 0) return;
+
+    // Allocation: 50% to priority, 50% split among remaining; if no valid priority, split evenly
+    const priorityId: string | null =
+      (this.player as any).researchPriority?.() ?? null;
+    const priorityInSet =
+      priorityId !== null && available.some((n) => n.id === priorityId);
+
+    const k = this.config.researchK();
+    const bMin = this.config.researchBeakerMin();
+    const bMax = this.config.researchBeakerMax();
+
+    // Helper to get node by id and same-category filtering
+    const byId = new Map(nodes.map((n) => [n.id, n] as const));
+    const sameCat = (a: string, b: string) =>
+      (byId.get(a)?.category ?? "") === (byId.get(b)?.category ?? "");
+
+    // Build prerequisite path set for a target within same category, including only missing techs
+    const buildMissingPrereqPath = (targetId: string): Set<string> => {
+      const path = new Set<string>();
+      const seen = new Set<string>();
+      const dfs = (tid: string) => {
+        if (seen.has(tid)) return;
+        seen.add(tid);
+        const node = byId.get(tid);
+        if (!node) return;
+        // If already available given current researched, stop here
+        // We collect missing prereqs only
+        const reqAll = (node.requiresAllOf ?? []).filter((p) =>
+          sameCat(p, tid),
+        );
+        const reqOne = (node.requiresOneOf ?? []).filter((p) =>
+          sameCat(p, tid),
+        );
+
+        // Handle requiresAllOf: include those not yet researched
+        for (const r of reqAll) {
+          if (!researched.has(r)) {
+            path.add(r);
+            dfs(r);
+          }
+        }
+        // Handle requiresOneOf: if none are researched, choose one deterministically
+        if (reqOne.length > 0 && !reqOne.some((p) => researched.has(p))) {
+          // Choose the lower-level option first; fallback to first listed
+          const sorted = [...reqOne].sort(
+            (a, b) => (byId.get(a)?.level ?? 0) - (byId.get(b)?.level ?? 0),
+          );
+          const choice = sorted[0];
+          if (choice && !researched.has(choice)) {
+            path.add(choice);
+            dfs(choice);
+          }
+        }
+      };
+      dfs(targetId);
+      return path;
+    };
+
+    const alloc: Record<string, number> = {};
+    if (priorityId && !priorityInSet) {
+      // Priority target not available: allocate half to the frontier of its missing prereqs
+      const pathSet = buildMissingPrereqPath(priorityId);
+      const frontier = available.filter((n) => pathSet.has(n.id));
+      if (frontier.length > 0) {
+        const half = 0.5 * xTotal;
+        const shareFrontier = half / frontier.length;
+        for (const n of frontier)
+          alloc[n.id] = (alloc[n.id] ?? 0) + shareFrontier;
+        const others = available.filter((n) => !pathSet.has(n.id));
+        const remaining = xTotal - half;
+        const shareOthers = others.length > 0 ? remaining / others.length : 0;
+        for (const n of others) alloc[n.id] = (alloc[n.id] ?? 0) + shareOthers;
+      } else {
+        // Fallback: even split if no frontier identified
+        const share = xTotal / available.length;
+        for (const n of available) alloc[n.id] = share;
+      }
+    } else if (priorityInSet && available.length > 1) {
+      const half = 0.5 * xTotal;
+      alloc[priorityId!] = (alloc[priorityId!] ?? 0) + half;
+      const others = available.filter((n) => n.id !== priorityId);
+      const share = others.length > 0 ? half / others.length : 0;
+      for (const n of others) alloc[n.id] = (alloc[n.id] ?? 0) + share;
+    } else {
+      const share = xTotal / available.length;
+      for (const n of available) alloc[n.id] = share;
+    }
+
+    // Accumulate allocated intensity for each available tech
+    for (const n of available) {
+      const x = alloc[n.id] ?? 0;
+      if (x <= 0) continue;
+      const prev = this._researchAccum.get(n.id) ?? 0;
+      this._researchAccum.set(n.id, prev + x);
+    }
+
+    // Only calculate innovation probability on the configured cadence
+    const interval = this.config.researchIntervalTicks();
+    if (interval > 0 && this.mg.ticks() % interval === 0) {
+      const isHuman = this.player.type() === PlayerType.Human;
+      const logEntries: Array<{ techId: string; X: number; p: number }> = [];
+      for (const [techId, X] of this._researchAccum.entries()) {
+        if (!Number.isFinite(X) || X <= 0) continue;
+        const p = 1 - Math.exp(-k * X);
+        if (isHuman) logEntries.push({ techId, X, p });
+        const roll = this.random.next();
+        if (roll < p) {
+          // Success: award uniform beakers between [bMin, bMax] inclusive
+          const beakers = this.random.nextInt(bMin, bMax + 1);
+          const cost = byId.get(techId)?.cost ?? 0;
+          const result = (this.player as any).addResearchBeakers?.(
+            techId,
+            beakers,
+            cost,
+          );
+          if (result?.completed) {
+            // completed via addResearchBeakers -> addResearchedTech side-effects
+          }
+        }
+      }
+      if (isHuman && logEntries.length > 0) {
+        // Compact, readable logging for human player's innovation probabilities
+        try {
+          const tick = this.mg.ticks();
+          const summary = logEntries
+            .map((e) => `${e.techId}: p=${e.p.toFixed(4)} X=${Math.round(e.X)}`)
+            .join(", ");
+          console.log(
+            `[Research] tick=${tick} player=${this.player.displayName()} probs -> ${summary}`,
+          );
+        } catch {
+          // best-effort logging only
+        }
+      }
+      // Reset accumulators after processing the cadence boundary
+      this._researchAccum.clear();
     }
   }
 

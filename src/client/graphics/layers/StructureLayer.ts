@@ -16,7 +16,6 @@ import { GameView, UnitView } from "../../../core/game/GameView";
 import { MouseUpEvent } from "../../InputHandler";
 import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
-import { UnitInfoModal } from "./UnitInfoModal";
 class StructureRenderInfo {
   public isOnScreen: boolean = false;
   constructor(
@@ -90,13 +89,7 @@ export class StructureLayer implements Layer {
     private game: GameView,
     private eventBus: EventBus,
     private transformHandler: TransformHandler,
-    private unitInfoModal: UnitInfoModal | null,
   ) {
-    if (!unitInfoModal) {
-      throw new Error(
-        "UnitInfoModal instance must be provided to StructureLayer.",
-      );
-    }
     this.theme = game.config().theme();
     this.structures.forEach((u, unitType) => this.loadIcon(u, unitType));
   }
@@ -267,7 +260,7 @@ export class StructureLayer implements Layer {
       ctx.fillStyle = UNDER_CONSTRUCTION_FILL;
       borderColor = UNDER_CONSTRUCTION_BORDER;
     } else {
-      ctx.fillStyle = "#FFFFFF"; // semi-transparent white applied via globalAlpha
+      ctx.fillStyle = "#c9dbff"; // semi-transparent white applied via globalAlpha
       const border = this.theme.borderColor(unit.owner());
       borderColor = border.darken(0.17).toRgbString();
     }
@@ -486,22 +479,11 @@ export class StructureLayer implements Layer {
       const wasSelected = this.previouslySelected === clickedUnit;
       if (wasSelected) {
         this.selectedStructureUnit = null;
-        this.unitInfoModal?.onCloseStructureModal();
       } else {
         this.selectedStructureUnit = clickedUnit;
-        const screenPos = this.transformHandler.worldToScreenCoordinates(cell);
-        const unitTile = clickedUnit.tile();
-        this.unitInfoModal?.onOpenStructureModal({
-          unit: clickedUnit,
-          x: screenPos.x,
-          y: screenPos.y,
-          tileX: this.game.x(unitTile),
-          tileY: this.game.y(unitTile),
-        });
       }
     } else {
       this.selectedStructureUnit = null;
-      this.unitInfoModal?.onCloseStructureModal();
     }
   }
 

@@ -297,6 +297,14 @@ export class GameImpl implements Game {
       request: request.toUpdate(),
       accepted: true,
     });
+
+    // If either side was at war with the other, end war immediately when alliance is formed
+    if (requestor.isAtWarWith(recipient)) {
+      requestor.setNeutralWith(recipient);
+    }
+    if (recipient.isAtWarWith(requestor)) {
+      recipient.setNeutralWith(requestor);
+    }
   }
 
   rejectAllianceRequest(request: AllianceRequestImpl) {
@@ -388,23 +396,7 @@ export class GameImpl implements Game {
       });
     }
 
-    // Debug: every ~10 ticks (~1s at 100ms/tick), log human players' road network length
-    if (this._ticks % 10 === 0) {
-      for (const p of this._players.values()) {
-        if (p.type() === PlayerType.Human) {
-          try {
-            const len = this.roadManager.getRoadLengthForPlayer(p.id());
-            // Print concise identifier for the player
-
-            console.log(
-              `[Roads] t=${this._ticks} player=${p.displayName()} (#${p.smallID()}) length=${len}`,
-            );
-          } catch (_) {
-            // no-op: method may not exist during hot-reload
-          }
-        }
-      }
-    }
+    // Removed noisy debug logging of road network length
 
     this._ticks++;
     return this.updates;
