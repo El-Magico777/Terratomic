@@ -32,6 +32,9 @@ import { OButton } from "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import { isLoggedIn } from "./jwt";
 import "./styles.css";
+import { initializeUiScaleFromStorage } from "./uiScale";
+
+initializeUiScaleFromStorage();
 
 declare global {
   interface Window {
