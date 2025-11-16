@@ -18,6 +18,7 @@ import { GameView, UnitView } from "../../../core/game/GameView";
 import { ToggleUpgradeModeEvent } from "../../events/ToggleUpgradeModeEvent";
 import { UnitCooldownEndedEvent } from "../../events/UnitCooldownEndedEvent";
 import { MouseMoveEvent, MouseUpEvent } from "../../InputHandler";
+import { computeCustomTerritoryColor } from "../../theme/ThemeColorOverride";
 import { SendUpgradeStructureIntentEvent } from "../../Transport";
 import { renderNumber } from "../../Utils";
 import { TransformHandler } from "../TransformHandler";
@@ -592,7 +593,19 @@ export class StructureLayer implements Layer {
       borderColor = UNDER_CONSTRUCTION_BORDER;
     } else {
       ctx.fillStyle = "#c9dbff"; // semi-transparent white applied via globalAlpha
-      const border = this.theme.borderColor(unit.owner());
+      // Apply custom territory color override for current player (alliance themes)
+      const my = this.game.myPlayer();
+      const owner = unit.owner();
+      const customColor =
+        my && owner === my ? computeCustomTerritoryColor(owner) : null;
+      const baseColor = customColor ?? this.theme.territoryColor(owner);
+      // Derive border color from territory color (matching the pattern in PastelTheme.borderColor)
+      const tc = baseColor.rgba;
+      const border = colord({
+        r: Math.max(tc.r - 40, 0),
+        g: Math.max(tc.g - 40, 0),
+        b: Math.max(tc.b - 40, 0),
+      });
       borderColor = border.darken(0.17).toRgbString();
     }
 

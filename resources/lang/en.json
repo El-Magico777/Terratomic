@@ -192,6 +192,10 @@
     "teams_Quads": "Quads (teams of 4)",
     "teams": "{num} teams"
   },
+  "public_lobby_waiting": {
+    "title": "Waiting Room",
+    "message": "Game will start automatically when ready. Select your alliance theme while you wait!"
+  },
   "username": {
     "enter_username": "Enter your username",
     "not_string": "Username must be a string.",
@@ -625,5 +629,103 @@
     "international_trade_destination": "A cargo truck from {originName} arrived. You received {goldAmount} gold.",
     "insurance_refund": "Insurance refund {amount} gold.",
     "insurance_refund_conquest": "Insurance refund {amount} gold for conquered structure."
+  },
+  "theme_selector": {
+    "title": "Alliance Theme",
+    "locked": "Theme locked for this match"
+  },
+  "theme": {
+    "neutral": {
+      "name": "Neutral",
+      "name_desc": "Standard naming",
+      "structure": {
+        "city": "City",
+        "port": "Port",
+        "airfield": "Airfield",
+        "hospital": "Hospital",
+        "research_lab": "Research Lab",
+        "academy": "Academy",
+        "missile_silo": "Missile Silo",
+        "sam_launcher": "SAM Launcher",
+        "defense_post": "Defense Post"
+      },
+      "unit": {
+        "fighter_jet": "Fighter Jet",
+        "warship": "Warship",
+        "submarine": "Submarine",
+        "atom_bomb": "Atom Bomb",
+        "hydrogen_bomb": "Hydrogen Bomb",
+        "mirv": "MIRV"
+      }
+    },
+    "nato": {
+      "name": "NATO",
+      "name_desc": "North Atlantic Treaty Organization",
+      "structure": {
+        "city": "Metropolis",
+        "port": "Naval Base",
+        "airfield": "Airbase",
+        "hospital": "Medical Center",
+        "research_lab": "DARPA Lab",
+        "academy": "War College",
+        "missile_silo": "ICBM Silo",
+        "sam_launcher": "SAM Battery",
+        "defense_post": "FOB"
+      },
+      "unit": {
+        "fighter_jet": "Raptor",
+        "warship": "Destroyer",
+        "submarine": "Virginia",
+        "atom_bomb": "A-Bomb",
+        "hydrogen_bomb": "H-Bomb",
+        "mirv": "Trident"
+      }
+    },
+    "russia": {
+      "name": "Russia",
+      "name_desc": "Russian Federation",
+      "structure": {
+        "city": "Gorod",
+        "port": "Morskaya",
+        "airfield": "Aviabaza",
+        "hospital": "Gospital",
+        "research_lab": "Nauchny Lab",
+        "academy": "Voennaya",
+        "missile_silo": "Raketny Silo",
+        "sam_launcher": "S-400",
+        "defense_post": "Strongpoint"
+      },
+      "unit": {
+        "fighter_jet": "Felon",
+        "warship": "Battlecruiser",
+        "submarine": "Typhoon",
+        "atom_bomb": "RDS-1",
+        "hydrogen_bomb": "Tsar Bomba",
+        "mirv": "Yars"
+      }
+    },
+    "china": {
+      "name": "China",
+      "name_desc": "People's Republic of China",
+      "structure": {
+        "city": "Chengshi",
+        "port": "Hai Jun Port",
+        "airfield": "Kongjun",
+        "hospital": "Yiyuan",
+        "research_lab": "Keji Lab",
+        "academy": "Junxiao",
+        "missile_silo": "Daodan Jidi",
+        "sam_launcher": "HQ-9",
+        "defense_post": "Bunker"
+      },
+      "unit": {
+        "fighter_jet": "J-20",
+        "warship": "Type 055",
+        "submarine": "Type 093",
+        "atom_bomb": "DF-2A",
+        "hydrogen_bomb": "Qingdan",
+        "mirv": "DF-41"
+      }
+    }
   }
 }

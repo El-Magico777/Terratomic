@@ -2,6 +2,7 @@ import { LitElement, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { translateText } from "../client/Utils";
 import { GameMode } from "../core/game/Game";
+import { UserSettings } from "../core/game/UserSettings";
 import { GameID, GameInfo } from "../core/Schemas";
 import { generateID } from "../core/Util";
 import { JoinLobbyEvent } from "./Main";
@@ -186,11 +187,19 @@ export class PublicLobby extends LitElement {
     if (this.currLobby === null) {
       this.isLobbyHighlighted = true;
       this.currLobby = lobby;
+
+      const userSettings = new UserSettings();
+      const allianceTheme = userSettings.enableAllianceThemes()
+        ? userSettings.themeId()
+        : undefined;
+
       this.dispatchEvent(
         new CustomEvent("join-lobby", {
           detail: {
             gameID: lobby.gameID,
             clientID: generateID(),
+            isPublicLobby: true,
+            allianceTheme,
           } as JoinLobbyEvent,
           bubbles: true,
           composed: true,

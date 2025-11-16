@@ -1,0 +1,104 @@
+{
+  "theme_selector": {
+    "title": "Alliance Theme",
+    "locked": "Theme locked for this match"
+  },
+  "theme": {
+    "neutral": {
+      "name": "Neutral",
+      "name_desc": "Standard naming",
+      "structure": {
+        "city": "City",
+        "port": "Port",
+        "airfield": "Airfield",
+        "hospital": "Hospital",
+        "research_lab": "Research Lab",
+        "academy": "Academy",
+        "missile_silo": "Missile Silo",
+        "sam_launcher": "SAM Launcher",
+        "defense_post": "Defense Post"
+      },
+      "unit": {
+        "fighter_jet": "Fighter Jet",
+        "warship": "Warship",
+        "submarine": "Submarine",
+        "atom_bomb": "Atom Bomb",
+        "hydrogen_bomb": "Hydrogen Bomb",
+        "mirv": "MIRV",
+        "mirv_warhead": "MIRV Warhead"
+      }
+    },
+    "nato": {
+      "name": "NATO",
+      "name_desc": "North Atlantic Treaty Organization",
+      "structure": {
+        "city": "Metropolitan Zone",
+        "port": "NATO Naval Command",
+        "airfield": "NATO Air Base",
+        "hospital": "Field Medical Center",
+        "research_lab": "Advanced Defense Research Facility",
+        "academy": "Allied War College",
+        "missile_silo": "Strategic Deterrence Site",
+        "sam_launcher": "Patriot Air Defense Battery",
+        "defense_post": "Forward Operating Site"
+      },
+      "unit": {
+        "fighter_jet": "F-22 Raptor",
+        "warship": "Aegis Destroyer",
+        "submarine": "Virginia-Class Sub",
+        "atom_bomb": "Little Boy Device",
+        "hydrogen_bomb": "Castle Bravo Device",
+        "mirv": "Trident II MIRV",
+        "mirv_warhead": "Trident II Warhead"
+      }
+    },
+    "russia": {
+      "name": "Russia",
+      "name_desc": "Russian Federation",
+      "structure": {
+        "city": "Federal District Hub",
+        "port": "Northern Fleet Port",
+        "airfield": "Air Force Regiment",
+        "hospital": "Field Medical Unit",
+        "research_lab": "State Research Institute",
+        "academy": "Cadet Officer Academy",
+        "missile_silo": "Strategic Rocket Division Silo",
+        "sam_launcher": "S-400 Triumf Battery",
+        "defense_post": "Reinforced Defense Position"
+      },
+      "unit": {
+        "fighter_jet": "Su-57 Felon",
+        "warship": "Kirov-Class Battlecruiser",
+        "submarine": "Yasen-Class Sub",
+        "atom_bomb": "RDS-1 Device",
+        "hydrogen_bomb": "Tsar Bomba Device",
+        "mirv": "RS-24 Yars MIRV",
+        "mirv_warhead": "RS-24 Yars Warhead"
+      }
+    },
+    "china": {
+      "name": "China",
+      "name_desc": "People's Republic of China",
+      "structure": {
+        "city": "Municipal Zone",
+        "port": "PLA Naval Command Base",
+        "airfield": "PLA Air Force",
+        "hospital": "PLA Medical Command Center",
+        "research_lab": "State Defense Science Institute",
+        "academy": "PLA National Defense University",
+        "missile_silo": "DF-Series Missile Brigade Base",
+        "sam_launcher": "HQ-9 Air Defense Battery",
+        "defense_post": "Strategic Defense Position"
+      },
+      "unit": {
+        "fighter_jet": "J-20 Mighty Dragon",
+        "warship": "Type 055 Destroyer",
+        "submarine": "Type 093 Sub",
+        "atom_bomb": "596 Device",
+        "hydrogen_bomb": "Test No. 6 Device",
+        "mirv": "DF-41 MIRV",
+        "mirv_warhead": "DF-41 Warhead"
+      }
+    }
+  }
+}

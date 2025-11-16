@@ -30,6 +30,7 @@ import "./components/baseComponents/Modal";
 import "./components/Difficulties";
 import { DifficultyDescription } from "./components/Difficulties";
 import "./components/Maps";
+import "./components/ThemeSelector";
 import { JoinLobbyEvent } from "./Main";
 import { renderUnitTypeOptions } from "./utilities/RenderUnitTypeOptions";
 

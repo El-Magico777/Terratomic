@@ -19,6 +19,7 @@ import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
 
 import { GameUpdateType } from "../../../core/game/GameUpdates";
+import { computeCustomTerritoryColor } from "../../theme/ThemeColorOverride";
 import {
   getColoredSprite,
   isSpriteReady,
@@ -772,10 +773,15 @@ export class UnitLayer implements Layer {
       }
     }
 
+    const overrideColor =
+      unit.owner() === this.game.myPlayer()
+        ? computeCustomTerritoryColor(unit.owner())
+        : null;
+
     const sprite = getColoredSprite(
       unit,
       this.theme,
-      alternateViewColor ?? customTerritoryColor,
+      alternateViewColor ?? overrideColor ?? customTerritoryColor,
       alternateViewColor ?? undefined,
     );
 

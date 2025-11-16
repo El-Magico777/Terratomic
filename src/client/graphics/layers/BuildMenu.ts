@@ -20,8 +20,13 @@ import { translateText } from "../../../client/Utils";
 import { EventBus } from "../../../core/EventBus";
 import { Gold, UnitType, UpgradeType } from "../../../core/game/Game";
 import { GameView } from "../../../core/game/GameView";
+import { UserSettings } from "../../../core/game/UserSettings";
 import { ToggleUpgradeModeEvent } from "../../events/ToggleUpgradeModeEvent";
 import { CloseViewEvent } from "../../InputHandler";
+import {
+  resolveStructureName,
+  resolveUnitName,
+} from "../../theme/ThemeResolver";
 import { displayKey, renderNumber } from "../../Utils";
 import { UIState } from "../UIState";
 
@@ -168,6 +173,8 @@ export class BuildMenu extends LitElement {
 
   @state()
   private _lastSubmarineUpgradeState: boolean = false;
+
+  private userSettings = new UserSettings();
 
   // Per-unit icon scale for build menu thumbnails
   private static readonly ICON_SCALE: Partial<Record<UnitType, number>> = {
@@ -527,9 +534,9 @@ export class BuildMenu extends LitElement {
           (row) => html`
             <div class="build-row">
               ${row.map((item) => {
-                const name = item.key
-                  ? translateText(item.key)
-                  : String(item.unitType);
+                const name = this.isStructure(item.unitType)
+                  ? resolveStructureName(item.unitType, this.userSettings)
+                  : resolveUnitName(item.unitType, this.userSettings);
                 const price =
                   this.game && this.game.myPlayer() ? this.cost(item) : 0;
 
@@ -587,5 +594,22 @@ export class BuildMenu extends LitElement {
 
   private getBuildableUnits(): BuildItemDisplay[][] {
     return buildTable;
+  }
+
+  private isStructure(u: UnitType): boolean {
+    switch (u) {
+      case UnitType.City:
+      case UnitType.Port:
+      case UnitType.Airfield:
+      case UnitType.Hospital:
+      case UnitType.ResearchLab:
+      case UnitType.Academy:
+      case UnitType.MissileSilo:
+      case UnitType.SAMLauncher:
+      case UnitType.DefensePost:
+        return true;
+      default:
+        return false;
+    }
   }
 }

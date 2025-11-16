@@ -12,6 +12,7 @@ import {
   DragEvent,
   MouseOverEvent,
 } from "../../InputHandler";
+import { computeCustomTerritoryColor } from "../../theme/ThemeColorOverride";
 import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
 
@@ -511,10 +512,13 @@ export class TerritoryLayer implements Layer {
         );
       }
 
+      const my = this.game.myPlayer();
+      const customColor =
+        my && owner === my ? computeCustomTerritoryColor(owner) : null;
       this.paintTile(
         this.imageData,
         tile,
-        this.theme.territoryColor(owner),
+        customColor ?? this.theme.territoryColor(owner),
         150,
       );
     }

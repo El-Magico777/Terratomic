@@ -24,6 +24,7 @@ import "./components/baseComponents/Modal";
 import "./components/Difficulties";
 import { DifficultyDescription } from "./components/Difficulties";
 import "./components/Maps";
+import "./components/ThemeSelector";
 import { FlagInput } from "./FlagInput";
 import { JoinLobbyEvent } from "./Main";
 import { UsernameInput } from "./UsernameInput";
@@ -205,6 +206,9 @@ export class SinglePlayerModal extends LitElement {
                   </div>
                 </div>
               `}
+
+          <!-- Alliance Theme Selection -->
+          <theme-selector></theme-selector>
 
           <!-- Game Options -->
           <div class="options-section">

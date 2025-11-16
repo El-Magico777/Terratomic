@@ -1,4 +1,13 @@
 export class UserSettings {
+  getString(key: string, defaultValue: string): string {
+    const v = localStorage.getItem(key);
+    return v ?? defaultValue;
+  }
+
+  setString(key: string, value: string) {
+    localStorage.setItem(key, value);
+  }
+
   get(key: string, defaultValue: boolean): boolean {
     const value = localStorage.getItem(key);
     if (!value) return defaultValue;
@@ -105,5 +114,28 @@ export class UserSettings {
         detail: { muted: next },
       }),
     );
+  }
+
+  // Alliance Themes feature flag (defaults to enabled)
+  enableAllianceThemes() {
+    return this.get("settings.enableAllianceThemes", true);
+  }
+
+  themeId() {
+    return this.getString("settings.themeId", "neutral");
+  }
+
+  setThemeId(id: string) {
+    this.setString("settings.themeId", id);
+  }
+
+  private _themeLocked: boolean = false;
+
+  lockTheme() {
+    this._themeLocked = true;
+  }
+
+  isThemeLocked(): boolean {
+    return this._themeLocked;
   }
 }

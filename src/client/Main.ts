@@ -3,6 +3,7 @@ import { GameRecord, GameStartInfo, ID } from "../core/Schemas";
 import { getServerConfigFromClient } from "../core/configuration/ConfigLoader";
 import { GameType } from "../core/game/Game";
 import { UserSettings } from "../core/game/UserSettings";
+import "./AllianceThemeSelector";
 import { joinLobby } from "./ClientGameRunner";
 import "./DarkModeButton";
 import { DarkModeButton } from "./DarkModeButton";
@@ -72,6 +73,10 @@ export interface JoinLobbyEvent {
   gameStartInfo?: GameStartInfo;
   // GameRecord exists when replaying an archived game.
   gameRecord?: GameRecord;
+  // Flag to indicate this is a public lobby join
+  isPublicLobby?: boolean;
+  // Alliance theme selected for public lobby games
+  allianceTheme?: string;
 }
 
 class Client {

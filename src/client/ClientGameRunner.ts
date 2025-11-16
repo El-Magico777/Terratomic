@@ -194,6 +194,9 @@ export class ClientGameRunner {
 
   private selectedUnit: UnitView | null = null;
 
+  private wasInSpawnPhase = true;
+  private userSettings = new UserSettings();
+
   constructor(
     private lobby: LobbyConfig,
     private eventBus: EventBus,
@@ -286,6 +289,16 @@ export class ClientGameRunner {
         this.eventBus.emit(new SendHashEvent(hu.tick, hu.hash));
       });
       this.gameView.update(gu);
+
+      // Lock theme when spawn phase ends
+      if (this.wasInSpawnPhase && !this.gameView.inSpawnPhase()) {
+        if (!this.userSettings.isThemeLocked()) {
+          this.userSettings.lockTheme();
+          console.log("Theme locked - spawn phase ended");
+        }
+        this.wasInSpawnPhase = false;
+      }
+
       this.renderer.tick();
 
       if (gu.updates[GameUpdateType.Win].length > 0) {
