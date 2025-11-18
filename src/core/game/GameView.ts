@@ -5,6 +5,7 @@ import { Config } from "../configuration/Config";
 import { EventBus } from "../EventBus";
 import { ClientID, GameID } from "../Schemas";
 import { computeResearchLevel } from "../tech/ResearchTree";
+import { ThemeId } from "../theme/AllianceThemes";
 import { createRandomName } from "../Util";
 import { WorkerClient } from "../worker/WorkerClient";
 import {
@@ -164,6 +165,11 @@ export class UnitView {
   // Structure upgrade level (>=1). Defaults to 1 when undefined in updates.
   level(): number {
     return (this.data as any).level ?? 1;
+  }
+
+  // Theme ID for structure icons (NATO/Russia/China/Neutral)
+  iconThemeId(): ThemeId | undefined {
+    return (this.data as any).iconThemeId;
   }
 }
 

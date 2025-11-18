@@ -21,6 +21,7 @@ import {
   Alliance,
   AllianceRequest,
   AllPlayers,
+  AllUnitParams,
   Attack,
   BuildableUnit,
   ColoredTeams,
@@ -29,6 +30,7 @@ import {
   GameMode,
   GameType,
   Gold,
+  isStructureType,
   MessageType,
   MutableAlliance,
   Player,
@@ -1169,13 +1171,22 @@ export class PlayerImpl implements Player {
     }
 
     const cost = this.mg.unitInfo(type).cost(this);
+
+    // Determine icon theme for structures
+    let enhancedParams: AllUnitParams = params;
+    if (isStructureType(type) && !("iconThemeId" in params)) {
+      // Get themeId from player info, default to 'neutral' for bots or if not set
+      const themeId = this.playerInfo.themeId ?? "neutral";
+      enhancedParams = { ...params, iconThemeId: themeId };
+    }
+
     const b = new UnitImpl(
       type,
       this.mg,
       spawnTile,
       this.mg.nextUnitID(),
       this,
-      params,
+      enhancedParams,
     );
     this._units.push(b);
     this.recordUnitConstructed(type);

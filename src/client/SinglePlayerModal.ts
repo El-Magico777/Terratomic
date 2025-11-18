@@ -13,6 +13,7 @@ import {
   UnitType,
   mapCategories,
 } from "../core/game/Game";
+import { UserSettings } from "../core/game/UserSettings";
 import {
   PeaceTimerDuration,
   StartingGoldValues,
@@ -506,6 +507,13 @@ export class SinglePlayerModal extends LitElement {
     if (!flagInput) {
       console.warn("Flag input element not found");
     }
+
+    // Get alliance theme from UserSettings
+    const userSettings = new UserSettings();
+    const allianceTheme = userSettings.enableAllianceThemes()
+      ? userSettings.themeId()
+      : undefined;
+
     this.dispatchEvent(
       new CustomEvent("join-lobby", {
         detail: {
@@ -521,6 +529,7 @@ export class SinglePlayerModal extends LitElement {
                   flagInput.getCurrentFlag() === "xx"
                     ? ""
                     : flagInput.getCurrentFlag(),
+                allianceTheme, // Add alliance theme here
               },
             ],
             config: {

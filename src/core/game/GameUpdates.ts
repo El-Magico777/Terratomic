@@ -1,4 +1,5 @@
 import { AllPlayersStats, ClientID, Winner } from "../Schemas";
+import { ThemeId } from "../theme/AllianceThemes";
 import {
   EmojiMessage,
   GameUpdates,
@@ -139,6 +140,8 @@ export interface UnitUpdate {
   ghostExpiresAt?: Tick;
   // Structure upgrade level (>=1). Cities increase level by 1 per upgrade.
   level?: number;
+  // Theme ID for structure icons (NATO/Russia/China/Neutral)
+  iconThemeId?: ThemeId;
 }
 
 export interface AttackUpdate {

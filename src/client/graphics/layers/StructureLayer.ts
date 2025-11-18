@@ -1,20 +1,59 @@
 import { colord } from "colord";
 import * as PIXI from "pixi.js";
-import researchLabIcon from "../../../../proprietary/images/researchlab.png";
-import anchorIcon from "../../../../resources/images/AnchorIcon.png";
-import academyIcon from "../../../../resources/images/buildings/academy_icon.png";
-import airfieldIcon from "../../../../resources/images/buildings/airfield.png";
-import hospitalIcon from "../../../../resources/images/buildings/hospital.png";
-import cityIcon from "../../../../resources/images/CityIcon.png";
-import missileSiloIcon from "../../../../resources/images/MissileSiloUnit.png";
-import SAMMissileIcon from "../../../../resources/images/SamLauncherUnit.png";
 // Use the standard shield icon from resources/images
-import shieldIcon from "../../../../resources/images/ShieldIcon.png";
+
+// Themed structure icons
+import cityChina from "../../../../proprietary/images/structures-themed/city-china.png";
+import cityNato from "../../../../proprietary/images/structures-themed/city-nato.png";
+import cityNeutral from "../../../../proprietary/images/structures-themed/city-neutral.png";
+import cityRussia from "../../../../proprietary/images/structures-themed/city-russia.png";
+
+import portChina from "../../../../proprietary/images/structures-themed/port-china.png";
+import portNato from "../../../../proprietary/images/structures-themed/port-nato.png";
+import portNeutral from "../../../../proprietary/images/structures-themed/port-neutral.png";
+import portRussia from "../../../../proprietary/images/structures-themed/port-russia.png";
+
+import airfieldChina from "../../../../proprietary/images/structures-themed/airfield-china.png";
+import airfieldNato from "../../../../proprietary/images/structures-themed/airfield-nato.png";
+import airfieldNeutral from "../../../../proprietary/images/structures-themed/airfield-neutral.png";
+import airfieldRussia from "../../../../proprietary/images/structures-themed/airfield-russia.png";
+
+import hospitalChina from "../../../../proprietary/images/structures-themed/hospital-china.png";
+import hospitalNato from "../../../../proprietary/images/structures-themed/hospital-nato.png";
+import hospitalNeutral from "../../../../proprietary/images/structures-themed/hospital-neutral.png";
+import hospitalRussia from "../../../../proprietary/images/structures-themed/hospital-russia.png";
+
+import academyChina from "../../../../proprietary/images/structures-themed/academy-china.png";
+import academyNato from "../../../../proprietary/images/structures-themed/academy-nato.png";
+import academyNeutral from "../../../../proprietary/images/structures-themed/academy-neutral.png";
+import academyRussia from "../../../../proprietary/images/structures-themed/academy-russia.png";
+
+import researchlabChina from "../../../../proprietary/images/structures-themed/researchlab-china.png";
+import researchlabNato from "../../../../proprietary/images/structures-themed/researchlab-nato.png";
+import researchlabNeutral from "../../../../proprietary/images/structures-themed/researchlab-neutral.png";
+import researchlabRussia from "../../../../proprietary/images/structures-themed/researchlab-russia.png";
+
+import defensepostChina from "../../../../proprietary/images/structures-themed/defensepost-china.png";
+import defensepostNato from "../../../../proprietary/images/structures-themed/defensepost-nato.png";
+import defensepostNeutral from "../../../../proprietary/images/structures-themed/defensepost-neutral.png";
+import defensepostRussia from "../../../../proprietary/images/structures-themed/defensepost-russia.png";
+
+import missilesiloChina from "../../../../proprietary/images/structures-themed/missilesilo-china.png";
+import missilesiloNato from "../../../../proprietary/images/structures-themed/missilesilo-nato.png";
+import missilesiloNeutral from "../../../../proprietary/images/structures-themed/missilesilo-neutral.png";
+import missilesiloRussia from "../../../../proprietary/images/structures-themed/missilesilo-russia.png";
+
+import samChina from "../../../../proprietary/images/structures-themed/sam-china.png";
+import samNato from "../../../../proprietary/images/structures-themed/sam-nato.png";
+import samNeutral from "../../../../proprietary/images/structures-themed/sam-neutral.png";
+import samRussia from "../../../../proprietary/images/structures-themed/sam-russia.png";
+
 import { Theme } from "../../../core/configuration/Config";
 import { EventBus } from "../../../core/EventBus";
 import { Cell, PlayerID, UnitType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { GameView, UnitView } from "../../../core/game/GameView";
+import { ThemeId } from "../../../core/theme/AllianceThemes";
 import { ToggleUpgradeModeEvent } from "../../events/ToggleUpgradeModeEvent";
 import { UnitCooldownEndedEvent } from "../../events/UnitCooldownEndedEvent";
 import { MouseMoveEvent, MouseUpEvent } from "../../InputHandler";
@@ -97,21 +136,11 @@ export class StructureLayer implements Layer {
     { primary: number; secondary: number }
   >();
 
-  // Icons registry
+  // Icons registry - now supports themed icons
   private structures: Map<
     UnitType,
-    { iconPath: string; image: HTMLImageElement | null }
-  > = new Map([
-    [UnitType.City, { iconPath: cityIcon, image: null }],
-    [UnitType.Airfield, { iconPath: airfieldIcon, image: null }],
-    [UnitType.Hospital, { iconPath: hospitalIcon, image: null }],
-    [UnitType.ResearchLab, { iconPath: researchLabIcon, image: null }],
-    [UnitType.Academy, { iconPath: academyIcon, image: null }],
-    [UnitType.DefensePost, { iconPath: shieldIcon, image: null }],
-    [UnitType.Port, { iconPath: anchorIcon, image: null }],
-    [UnitType.MissileSilo, { iconPath: missileSiloIcon, image: null }],
-    [UnitType.SAMLauncher, { iconPath: SAMMissileIcon, image: null }],
-  ]);
+    Map<ThemeId, { iconPath: string; image: HTMLImageElement | null }>
+  > = new Map();
 
   // Per-structure icon scale factor (1 = default size)
   private static readonly ICON_DRAW_SCALE: Partial<Record<UnitType, number>> = {
@@ -132,16 +161,91 @@ export class StructureLayer implements Layer {
     private transformHandler: TransformHandler,
   ) {
     this.theme = game.config().theme();
-    this.structures.forEach((u, unitType) => this.loadIcon(u, unitType));
+    this.initializeThemedIcons();
   }
 
-  private loadIcon(
-    unitInfo: {
-      iconPath: string;
-      image: HTMLImageElement | null;
-    },
+  private initializeThemedIcons(): void {
+    // Define themed icon paths for each structure type
+    const themedIconPaths: Partial<Record<UnitType, Record<ThemeId, string>>> =
+      {
+        [UnitType.City]: {
+          nato: cityNato,
+          russia: cityRussia,
+          china: cityChina,
+          neutral: cityNeutral,
+        },
+        [UnitType.Port]: {
+          nato: portNato,
+          russia: portRussia,
+          china: portChina,
+          neutral: portNeutral,
+        },
+        [UnitType.Airfield]: {
+          nato: airfieldNato,
+          russia: airfieldRussia,
+          china: airfieldChina,
+          neutral: airfieldNeutral,
+        },
+        [UnitType.Hospital]: {
+          nato: hospitalNato,
+          russia: hospitalRussia,
+          china: hospitalChina,
+          neutral: hospitalNeutral,
+        },
+        [UnitType.Academy]: {
+          nato: academyNato,
+          russia: academyRussia,
+          china: academyChina,
+          neutral: academyNeutral,
+        },
+        [UnitType.ResearchLab]: {
+          nato: researchlabNato,
+          russia: researchlabRussia,
+          china: researchlabChina,
+          neutral: researchlabNeutral,
+        },
+        [UnitType.DefensePost]: {
+          nato: defensepostNato,
+          russia: defensepostRussia,
+          china: defensepostChina,
+          neutral: defensepostNeutral,
+        },
+        [UnitType.MissileSilo]: {
+          nato: missilesiloNato,
+          russia: missilesiloRussia,
+          china: missilesiloChina,
+          neutral: missilesiloNeutral,
+        },
+        [UnitType.SAMLauncher]: {
+          nato: samNato,
+          russia: samRussia,
+          china: samChina,
+          neutral: samNeutral,
+        },
+      };
+
+    // Initialize icon maps for each structure type
+    for (const [unitType, themePaths] of Object.entries(themedIconPaths)) {
+      const themeMap = new Map<
+        ThemeId,
+        { iconPath: string; image: HTMLImageElement | null }
+      >();
+
+      for (const [themeId, iconPath] of Object.entries(themePaths)) {
+        const iconInfo = { iconPath, image: null };
+        themeMap.set(themeId as ThemeId, iconInfo);
+        this.loadThemedIcon(iconInfo, unitType as UnitType, themeId as ThemeId);
+      }
+
+      this.structures.set(unitType as UnitType, themeMap);
+    }
+  }
+
+  private loadThemedIcon(
+    unitInfo: { iconPath: string; image: HTMLImageElement | null },
     unitType: UnitType,
-  ) {
+    themeId: ThemeId,
+  ): void {
     const image = new Image();
     image.src = unitInfo.iconPath;
     image.onload = () => {
@@ -149,7 +253,7 @@ export class StructureLayer implements Layer {
     };
     image.onerror = () => {
       console.error(
-        `Failed to load icon for ${unitType}: ${unitInfo.iconPath}`,
+        `Failed to load themed icon for ${unitType} (${themeId}): ${unitInfo.iconPath}`,
       );
     };
   }
@@ -541,9 +645,13 @@ export class StructureLayer implements Layer {
     const structureType = isConstruction
       ? (unit.constructionType() ?? unit.type())
       : unit.type();
+
+    // Get theme ID for cache key
+    const themeId = unit.iconThemeId?.() ?? "neutral";
+
     let cacheKey = isConstruction
       ? `construction-${structureType}`
-      : `${unit.owner().id()}-${structureType}`;
+      : `${unit.owner().id()}-${structureType}-${themeId}-v2`; // v2: legacy icons scaled to 70%
     if (unit.type() === UnitType.City) {
       const endsAt = unit.cooldownEndsAt?.call(unit) ?? undefined;
       const isOnCooldown =
@@ -695,9 +803,26 @@ export class StructureLayer implements Layer {
     ctx.lineWidth = 1; // logical pixel; turns into crisp 2px at 2x quality
     ctx.stroke();
 
-    const structureInfo = this.structures.get(structureType);
+    // Get themed icon based on unit's iconThemeId
+    const themeMap = this.structures.get(structureType);
+    if (!themeMap) {
+      console.warn(`No themed icons found for unit type: ${structureType}`);
+      return PIXI.Texture.from(canvas);
+    }
+
+    // Get the theme ID from the unit, default to 'neutral'
+    const iconThemeId = (unit.iconThemeId?.() ?? "neutral") as ThemeId;
+    let structureInfo = themeMap.get(iconThemeId);
+
+    // Fallback to neutral if the requested theme isn't loaded
+    if (!structureInfo?.image && iconThemeId !== "neutral") {
+      structureInfo = themeMap.get("neutral");
+    }
+
     if (!structureInfo?.image) {
-      console.warn(`Image not loaded for unit type: ${structureType}`);
+      console.warn(
+        `Image not loaded for unit type: ${structureType}, theme: ${iconThemeId}`,
+      );
       return PIXI.Texture.from(canvas);
     }
 
@@ -713,18 +838,39 @@ export class StructureLayer implements Layer {
       structureInfo.image,
       highlightEligibleIcon ? highlightTint : borderColor,
     );
+
+    // Only center-scale themed icons (250x250px), not small legacy silhouettes (~16px)
+    const iw = Math.max(1, colored.width);
+    const ih = Math.max(1, colored.height);
+    const isLargeThemedIcon = iw > 32 || ih > 32; // Threshold to detect 250px themed icons vs 16px legacy
+
     const centerScaledTypes = new Set<UnitType>([
       UnitType.Airfield,
       UnitType.Hospital,
       UnitType.Academy,
       UnitType.ResearchLab,
     ]);
-    if (centerScaledTypes.has(structureType as UnitType)) {
+
+    // Old structures that need to be scaled down by 30%
+    const legacyStructureTypes = new Set<UnitType>([
+      UnitType.City,
+      UnitType.Port,
+      UnitType.MissileSilo,
+      UnitType.SAMLauncher,
+      UnitType.DefensePost,
+    ]);
+
+    const shouldCenterScale =
+      isLargeThemedIcon && centerScaledTypes.has(structureType as UnitType);
+    const isLegacyStructure = legacyStructureTypes.has(
+      structureType as UnitType,
+    );
+
+    if (shouldCenterScale) {
+      // Center-scale logic for large themed icons
       const padded = 4;
       const maxW = ICON_DIM - padded * 2;
       const maxH = ICON_DIM - padded * 2;
-      const iw = Math.max(1, colored.width);
-      const ih = Math.max(1, colored.height);
       const baseScale = Math.min(maxW / iw, maxH / ih);
       const factor =
         StructureLayer.ICON_DRAW_SCALE[structureType as UnitType] ?? 1;
@@ -740,21 +886,44 @@ export class StructureLayer implements Layer {
       const dx = Math.round((ICON_DIM - dw) / 2);
       const dy = Math.round((ICON_DIM - dh) / 2);
       ctx.drawImage(colored, dx, dy, dw, dh);
+    } else if (isLargeThemedIcon) {
+      // For large themed icons that don't need centering
+      // Apply 30% reduction for legacy structures
+      const legacyScale = isLegacyStructure ? 0.7 : 1.0;
+
+      // Special vertical offset for missile silos to move them down
+      const verticalOffset = structureType === UnitType.MissileSilo ? 3 : 0;
+
+      if (iw > ICON_DIM || ih > ICON_DIM) {
+        const scale = Math.min(ICON_DIM / iw, ICON_DIM / ih) * legacyScale;
+        const dw = Math.round(iw * scale);
+        const dh = Math.round(ih * scale);
+        const dx = Math.round((ICON_DIM - dw) / 2);
+        const dy = Math.round((ICON_DIM - dh) / 2) + verticalOffset;
+        ctx.drawImage(colored, dx, dy, dw, dh);
+      } else {
+        // Fits within bounds, center it with legacy scale
+        const scaledW = Math.round(iw * legacyScale);
+        const scaledH = Math.round(ih * legacyScale);
+        const dx = Math.round((ICON_DIM - scaledW) / 2);
+        const dy = Math.round((ICON_DIM - scaledH) / 2) + verticalOffset;
+        ctx.drawImage(colored, dx, dy, scaledW, scaledH);
+      }
     } else {
+      // Legacy small icons: use fixed offsets and scale down by 30%
+      const legacyScale = 0.7; // Make 30% smaller
       const [offX, offY] = SHAPE_OFFSETS[shape] ?? [4, 4];
       const factor =
         StructureLayer.ICON_DRAW_SCALE[structureType as UnitType] ?? 1;
-      if (factor !== 1) {
-        const iw = Math.max(1, colored.width);
-        const ih = Math.max(1, colored.height);
-        const dw = Math.min(ICON_DIM, Math.max(1, Math.round(iw * factor)));
-        const dh = Math.min(ICON_DIM, Math.max(1, Math.round(ih * factor)));
-        const dx = Math.round((ICON_DIM - dw) / 2);
-        const dy = Math.round((ICON_DIM - dh) / 2);
-        ctx.drawImage(colored, dx, dy, dw, dh);
-      } else {
-        ctx.drawImage(colored, offX, offY);
-      }
+
+      // Apply legacy scale to make icons smaller
+      const scaledWidth = Math.round(iw * legacyScale * factor);
+      const scaledHeight = Math.round(ih * legacyScale * factor);
+
+      const dw = Math.min(ICON_DIM, Math.max(1, scaledWidth));
+      const dh = Math.min(ICON_DIM, Math.max(1, scaledHeight));
+      // Keep original offset positioning
+      ctx.drawImage(colored, offX, offY, dw, dh);
     }
 
     const texture = PIXI.Texture.from(canvas);
@@ -997,7 +1166,7 @@ export class StructureLayer implements Layer {
     }
     // Ensure single leading '#'
     const raw = c.toHex().replace(/^#/, "").toLowerCase();
-    return `#${raw}`;
+    return `#${raw} `;
   }
 
   private updateLabels() {
@@ -1022,7 +1191,7 @@ export class StructureLayer implements Layer {
 
         const baseColorStr = this.relationshipColorHexStr(unit); // "#RRGGBB"
         const baseRaw = baseColorStr.replace(/^#/, "");
-        const secondaryRaw = colord(`#${baseRaw}`)
+        const secondaryRaw = colord(`#${baseRaw} `)
           .desaturate(0.2)
           .lighten(0.35)
           .toHex()

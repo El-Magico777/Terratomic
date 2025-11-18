@@ -1,6 +1,7 @@
 import { Config } from "../configuration/Config";
 import { AllPlayersStats, ClientID } from "../Schemas";
 import { Category } from "../tech/ResearchTree";
+import { ThemeId } from "../theme/AllianceThemes";
 import { GameMap, TileRef } from "./GameMap";
 import {
   GameUpdate,
@@ -305,7 +306,9 @@ export interface UnitParamsMap {
 // Type helper to get params type for a specific unit type
 export type UnitParams<T extends UnitType> = UnitParamsMap[T];
 
-export type AllUnitParams = UnitParamsMap[keyof UnitParamsMap];
+export type AllUnitParams = UnitParamsMap[keyof UnitParamsMap] & {
+  iconThemeId?: ThemeId;
+};
 
 export const nukeTypes = [
   UnitType.AtomBomb,
@@ -433,6 +436,7 @@ export class PlayerInfo {
     // TODO: make player id the small id
     public readonly id: PlayerID,
     public readonly nation?: Nation | null,
+    public readonly themeId?: ThemeId,
   ) {
     // Compute clan from name
     if (!name.startsWith("[") || !name.includes("]")) {

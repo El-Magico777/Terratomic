@@ -32,6 +32,7 @@ import {
 import { loadTerrainMap as loadGameMap } from "./game/TerrainMapLoader";
 import { PseudoRandom } from "./PseudoRandom";
 import { ClientID, GameStartInfo, Turn } from "./Schemas";
+import { ThemeId } from "./theme/AllianceThemes";
 import { sanitize, simpleHash } from "./Util";
 import { fixProfaneUsername } from "./validations/username";
 
@@ -54,6 +55,8 @@ export async function createGameRunner(
         PlayerType.Human,
         p.clientID,
         random.nextID(),
+        undefined, // nation
+        p.allianceTheme as ThemeId | undefined, // themeId
       ),
   );
 

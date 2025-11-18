@@ -534,6 +534,7 @@ export const PlayerSchema = z.object({
   clientID: ID,
   username: UsernameSchema,
   flag: FlagSchema,
+  allianceTheme: z.string().optional(),
 });
 
 export const GameStartInfoSchema = z.object({

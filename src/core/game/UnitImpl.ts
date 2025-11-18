@@ -1,5 +1,6 @@
 import { renderNumber } from "../../client/Utils";
 import { simpleHash, toInt, withinInt } from "../Util";
+import { ThemeId } from "../theme/AllianceThemes";
 import {
   AllUnitParams,
   MessageType,
@@ -42,6 +43,7 @@ export class UnitImpl implements Unit {
   private _insuredBy: Player | null = null;
   // Transport-ship specific: track intended target player for cancellation on peace
   private _boatTargetPlayerID: PlayerID | null = null;
+  private _iconThemeId: ThemeId | undefined; // Theme for structure icons
   public lastVisibleTick?: number;
   isDetectedByNavalUnit?: boolean;
   isAttacking?: boolean;
@@ -80,6 +82,13 @@ export class UnitImpl implements Unit {
       "patrolTile" in params ? (params.patrolTile ?? undefined) : undefined;
     this._targetUnit =
       "targetUnit" in params ? (params.targetUnit ?? undefined) : undefined;
+
+    // Initialize icon theme for structures
+    if (isStructureType(this._type)) {
+      this._iconThemeId =
+        "iconThemeId" in params ? params.iconThemeId : undefined;
+    }
+
     if (
       isStructureType(this._type) &&
       this._owner.hasUpgrade(UpgradeType.StructureInsurance)
@@ -154,6 +163,7 @@ export class UnitImpl implements Unit {
       lastPos: this._lastTile,
       health: this.hasHealth() ? Number(this._health) : undefined,
       level: this._level > 1 ? this._level : undefined,
+      iconThemeId: this._iconThemeId,
       constructionType: this._constructionType,
       targetUnitId: this._targetUnit?.id() ?? undefined,
       targetTile: this.targetTile() ?? undefined,
