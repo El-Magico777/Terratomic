@@ -958,13 +958,11 @@ export class StructureLayer implements Layer {
   }
 
   private iconScreenScale(): number {
-    const s = this.transformHandler.scale;
-    if (s <= ICON_GROW_ZOOM_THRESHOLD) {
-      // Original behavior: shrink with zoom-out, cap at 1x for zoom-in up to threshold
-      return Math.min(1, s) / ICON_TEXTURE_QUALITY;
-    }
-    // Beyond threshold: grow proportionally with map zoom (continuous at threshold)
-    return s / ICON_GROW_ZOOM_THRESHOLD / ICON_TEXTURE_QUALITY;
+    // Structures now scale proportionally with map zoom at all levels
+    // This keeps them at a constant world-space size relative to tiles
+    // Prevents pixelation when zoomed in and "growing" effect when zoomed out
+    // 0.5 multiplier makes structures approximately 50% smaller
+    return (this.transformHandler.scale / ICON_TEXTURE_QUALITY) * 0.5;
   }
 
   private getImageColored(
