@@ -139,6 +139,21 @@ export class TransformHandler {
     ];
   }
 
+  getVisibleWorldBounds(): {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } {
+    const [topLeft, bottomRight] = this.screenBoundingRect();
+    return {
+      minX: topLeft.x,
+      maxX: bottomRight.x,
+      minY: topLeft.y,
+      maxY: bottomRight.y,
+    };
+  }
+
   isOnScreen(cell: Cell): boolean {
     const [topLeft, bottomRight] = this.screenBoundingRect();
     return (

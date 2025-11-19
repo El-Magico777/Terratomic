@@ -24,12 +24,7 @@ import { TransformHandler } from "../TransformHandler";
 import { UIState } from "../UIState";
 import { Layer } from "./Layer";
 
-import { GameUpdateType } from "../../../core/game/GameUpdates";
-import {
-  getColoredSprite,
-  isSpriteReady,
-  loadAllSprites,
-} from "../SpriteLoader";
+import { getColoredSprite, loadAllSprites } from "../SpriteLoader";
 
 enum Relationship {
   Self,
@@ -38,35 +33,21 @@ enum Relationship {
 }
 
 export class UnitLayer implements Layer {
-  private canvas: HTMLCanvasElement;
-  private context: CanvasRenderingContext2D;
   private transportShipTrailCanvas: HTMLCanvasElement;
   private unitTrailContext: CanvasRenderingContext2D;
-  private interpolationCanvas: HTMLCanvasElement;
-  private interpolationContext: CanvasRenderingContext2D;
 
   private unitToTrail = new Map<UnitView, TileRef[]>();
-
   private unitToLastAngle = new Map<UnitView, number>();
-
   private theme: Theme;
-
   private alternateView = false;
-
   private oldShellTile = new Map<UnitView, TileRef>();
-
   private transformHandler: TransformHandler;
-
-  // Selected unit property as suggested in the review comment
   private selectedUnit: UnitView | null = null;
 
   // Configuration for unit selection
-  private readonly WARSHIP_SELECTION_RADIUS = 10; // Radius in game cells for warship selection hit zone
+  private readonly WARSHIP_SELECTION_RADIUS = 10;
   private readonly SUBMARINE_SELECTION_RADIUS = 10;
   private readonly FIGHTER_JET_SELECTION_RADIUS = 10;
-
-  // Indicates we're in the base-canvas draw pass (used to suppress double-draw)
-  private drawingBasePass = false;
 
   // Unit types that should be interpolated between ticks
   private readonly interpolatedUnitTypes: UnitType[] = [
@@ -91,11 +72,15 @@ export class UnitLayer implements Layer {
     defaultReplaySpeedMultiplier;
   private lastTickTimestamp = 0;
 
-  // Cache sprite sizes per UnitType to avoid repeated lookups when clearing
+  // Cache sprite sizes per UnitType
   private spriteSizeCache = new Map<UnitType, number>();
 
-  private renderedGhosts = new Map<number, TileRef>();
-  private renderedUnits = new Map<number, UnitView>();
+  private ghosts: Array<{
+    id: number;
+    pos: number;
+    expiresAt: number;
+    ownerID: number;
+  }> = [];
 
   constructor(
     private game: GameView,
@@ -114,7 +99,6 @@ export class UnitLayer implements Layer {
   }
 
   shouldTransform(): boolean {
-    // Render in UI pass so units appear on top of structures
     return false;
   }
 
@@ -128,12 +112,9 @@ export class UnitLayer implements Layer {
       this.baseTickIntervalMs = configuredInterval;
       this.updateTickInterval();
     }
-    const unitIds = this.game
-      .updatesSinceLastTick()
-      ?.[GameUpdateType.Unit]?.map((unit) => unit.id);
 
-    this.updateUnitsSprites(unitIds ?? []);
-    this.updateGhosts();
+    // Update ghosts data
+    this.ghosts = (this.game as any).submarineGhosts?.call(this.game) ?? [];
   }
 
   init() {
@@ -148,30 +129,19 @@ export class UnitLayer implements Layer {
     loadAllSprites();
   }
 
-  /**
-   * Find player-owned warships near the given cell within a configurable radius
-   * @param cell The cell to check
-   * @returns Array of player's warships in range, sorted by distance (closest first)
-   */
   private findWarshipsNearCell(cell: { x: number; y: number }): UnitView[] {
-    if (!this.game.isValidCoord(cell.x, cell.y)) {
-      // The cell coordinate were invalid (user probably clicked outside the map), therefore no warships can be found
-      return [];
-    }
+    if (!this.game.isValidCoord(cell.x, cell.y)) return [];
     const clickRef = this.game.ref(cell.x, cell.y);
-
-    // Only select warships owned by the player
     return this.game
       .units(UnitType.Warship)
       .filter(
         (unit) =>
           unit.isActive() &&
-          unit.owner() === this.game.myPlayer() && // Only allow selecting own warships
+          unit.owner() === this.game.myPlayer() &&
           this.game.manhattanDist(unit.tile(), clickRef) <=
             this.WARSHIP_SELECTION_RADIUS,
       )
       .sort((a, b) => {
-        // Sort by distance (closest first)
         const distA = this.game.manhattanDist(a.tile(), clickRef);
         const distB = this.game.manhattanDist(b.tile(), clickRef);
         return distA - distB;
@@ -179,19 +149,16 @@ export class UnitLayer implements Layer {
   }
 
   private findSubmarinesNearCell(cell: { x: number; y: number }): UnitView[] {
-    if (!this.game.isValidCoord(cell.x, cell.y)) {
-      return [];
-    }
+    if (!this.game.isValidCoord(cell.x, cell.y)) return [];
     const clickRef = this.game.ref(cell.x, cell.y);
-
     return this.game
-      .units(UnitType.Submarine) // <-- Change this line
+      .units(UnitType.Submarine)
       .filter(
         (unit) =>
           unit.isActive() &&
           unit.owner() === this.game.myPlayer() &&
           this.game.manhattanDist(unit.tile(), clickRef) <=
-            this.SUBMARINE_SELECTION_RADIUS, // <-- Change this line
+            this.SUBMARINE_SELECTION_RADIUS,
       )
       .sort((a, b) => {
         const distA = this.game.manhattanDist(a.tile(), clickRef);
@@ -201,11 +168,8 @@ export class UnitLayer implements Layer {
   }
 
   private findFighterJetsNearCell(cell: { x: number; y: number }): UnitView[] {
-    if (!this.game.isValidCoord(cell.x, cell.y)) {
-      return [];
-    }
+    if (!this.game.isValidCoord(cell.x, cell.y)) return [];
     const clickRef = this.game.ref(cell.x, cell.y);
-
     return this.game
       .units(UnitType.FighterJet)
       .filter(
@@ -223,18 +187,13 @@ export class UnitLayer implements Layer {
   }
 
   private onMouseUp(event: MouseUpEvent) {
-    // Convert screen coordinates to world coordinates
     const cell = this.transformHandler.screenToWorldCoordinates(
       event.x,
       event.y,
     );
-
-    // Find warships near this cell, sorted by distance
     const nearbyWarships = this.findWarshipsNearCell(cell);
     const nearbySubmarines = this.findSubmarinesNearCell(cell);
     const nearbyFighterJets = this.findFighterJetsNearCell(cell);
-
-    // unit upgrade mode removed: proceed with selection/move logic only
 
     if (this.selectedUnit) {
       const clickRef = this.game.ref(cell.x, cell.y);
@@ -257,28 +216,18 @@ export class UnitLayer implements Layer {
           new MoveSubmarineIntentEvent(this.selectedUnit.id(), clickRef),
         );
       }
-      // Mark click as consumed whenever a unit was selected, so other handlers don't also treat it as an attack
       event.consumed = true;
-      // Deselect
       this.eventBus.emit(new UnitSelectionEvent(this.selectedUnit, false));
       return;
     } else if (nearbyWarships.length > 0) {
-      // Toggle selection of the closest warship
-      const clickedUnit = nearbyWarships[0];
-      this.eventBus.emit(new UnitSelectionEvent(clickedUnit, true));
+      this.eventBus.emit(new UnitSelectionEvent(nearbyWarships[0], true));
     } else if (nearbySubmarines.length > 0) {
-      // Toggle selection of the closest submarine
-      const clickedUnit = nearbySubmarines[0];
-      this.eventBus.emit(new UnitSelectionEvent(clickedUnit, true));
+      this.eventBus.emit(new UnitSelectionEvent(nearbySubmarines[0], true));
     } else if (nearbyFighterJets.length > 0) {
-      const clickedUnit = nearbyFighterJets[0];
-      this.eventBus.emit(new UnitSelectionEvent(clickedUnit, true));
+      this.eventBus.emit(new UnitSelectionEvent(nearbyFighterJets[0], true));
     }
   }
 
-  /**
-   * Handle unit selection changes
-   */
   private onUnitSelectionChange(event: UnitSelectionEvent) {
     if (event.isSelected) {
       this.selectedUnit = event.unit;
@@ -287,40 +236,346 @@ export class UnitLayer implements Layer {
     }
   }
 
-  /**
-   * Handle unit deactivation or destruction
-   * If the selected unit is removed from the game, deselect it
-   */
   private handleUnitDeactivation(unit: UnitView) {
     if (this.selectedUnit === unit && !unit.isActive()) {
       this.eventBus.emit(new UnitSelectionEvent(unit, false));
     }
     this.unitToLastAngle.delete(unit);
+    this.clearTrail(unit);
   }
 
   renderLayer(context: CanvasRenderingContext2D) {
-    this.updateInterpolatedUnits();
-    // For UI pass: apply transform then draw map-sized canvases
     context.save();
     this.transformHandler.handleTransform(context);
-    context.drawImage(
-      this.transportShipTrailCanvas,
-      -this.game.width() / 2,
-      -this.game.height() / 2,
-    );
-    context.drawImage(
-      this.canvas,
-      -this.game.width() / 2,
-      -this.game.height() / 2,
-    );
-    if (this.interpolationCanvas) {
-      context.drawImage(
-        this.interpolationCanvas,
-        -this.game.width() / 2,
-        -this.game.height() / 2,
-      );
+    // Fix: Translate context to align absolute coordinates (0..width) with centered view
+    context.translate(-this.game.width() / 2, -this.game.height() / 2);
+    context.imageSmoothingEnabled = false;
+
+    // Draw trails (offscreen canvas)
+    context.drawImage(this.transportShipTrailCanvas, 0, 0);
+
+    const bounds = this.transformHandler.getVisibleWorldBounds();
+    const padding = 100;
+    const visibleMinX = bounds.minX - padding;
+    const visibleMaxX = bounds.maxX + padding;
+    const visibleMinY = bounds.minY - padding;
+    const visibleMaxY = bounds.maxY + padding;
+
+    const scale = this.transformHandler.scale;
+    const useLOD = scale < 0.4;
+
+    const alpha = this.computeTickAlpha();
+    const units = this.game.units();
+
+    for (const unit of units) {
+      if (!unit.isActive()) {
+        this.handleUnitDeactivation(unit);
+        continue;
+      }
+
+      if (
+        unit.type() === UnitType.Submarine &&
+        unit.owner() !== this.game.myPlayer()
+      ) {
+        // Server handles visibility
+      }
+
+      const startTile = unit.lastTile();
+      const startX = this.game.x(startTile);
+      const startY = this.game.y(startTile);
+
+      // Simple culling check
+      if (
+        startX < visibleMinX ||
+        startX > visibleMaxX ||
+        startY < visibleMinY ||
+        startY > visibleMaxY
+      ) {
+        continue;
+      }
+
+      let position = { x: startX, y: startY };
+      if (this.interpolatedUnitTypes.includes(unit.type())) {
+        position = this.interpolatePosition(unit, alpha);
+      }
+
+      if (useLOD) {
+        this.renderUnitLOD(context, unit, position);
+      } else {
+        this.renderUnitDirect(context, unit, position);
+      }
     }
+
+    // Render ghosts
+    for (const ghost of this.ghosts) {
+      const x = this.game.x(ghost.pos);
+      const y = this.game.y(ghost.pos);
+      if (
+        x >= visibleMinX &&
+        x <= visibleMaxX &&
+        y >= visibleMinY &&
+        y <= visibleMaxY
+      ) {
+        this.drawGhostDirect(context, ghost);
+      }
+    }
+
+    // Cleanup trails for destroyed/inactive units
+    this.cleanupTrails();
+
     context.restore();
+  }
+
+  private cleanupTrails() {
+    for (const unit of this.unitToTrail.keys()) {
+      if (!unit.isActive() || !this.game.unit(unit.id())) {
+        this.handleUnitDeactivation(unit);
+      }
+    }
+  }
+
+  private renderUnitLOD(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    const color = this.theme.territoryColor(unit.owner());
+    context.fillStyle = color.toRgbString();
+    // Draw a simple square dot
+    const size = 4; // LOD size
+    context.fillRect(position.x - size / 2, position.y - size / 2, size, size);
+  }
+
+  private renderUnitDirect(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    // START: Custom rendering for owner's submarine visibility
+    if (
+      unit.type() === UnitType.Submarine &&
+      unit.owner() === this.game.myPlayer()
+    ) {
+      const isAttacking = unit.isAttacking();
+      const isDetected = unit.isDetectedByNavalUnit();
+      const isOnCooldown = unit.isCooldown();
+      const isVisibleToEnemies = isAttacking || isDetected || isOnCooldown;
+      if (!isVisibleToEnemies) {
+        this.drawSpriteAtPosition(context, unit, position, undefined, 0.75);
+        return;
+      }
+    }
+    // END: Custom rendering
+
+    switch (unit.type()) {
+      case UnitType.TransportShip:
+      case UnitType.Paratrooper:
+        this.handleBoatEvent(context, unit, position);
+        break;
+      case UnitType.Submarine:
+      case UnitType.Warship:
+        this.handleWarShipEvent(context, unit, position);
+        break;
+      case UnitType.Shell:
+        this.handleShellEvent(context, unit, position);
+        break;
+      case UnitType.SAMMissile:
+        this.handleMissileEvent(context, unit, position);
+        break;
+      case UnitType.TradeShip:
+        this.handleTradeShipEvent(context, unit, position);
+        break;
+      case UnitType.CargoPlane:
+        this.handleCargoPlaneEvent(context, unit, position);
+        break;
+      case UnitType.MIRVWarhead:
+        this.handleMIRVWarhead(context, unit, position);
+        break;
+      case UnitType.Bomber:
+        this.handleBomberEvent(context, unit, position);
+        break;
+      case UnitType.FighterJet:
+        this.handleFighterJetEvent(context, unit, position);
+        break;
+      case UnitType.AtomBomb:
+      case UnitType.HydrogenBomb:
+      case UnitType.MIRV:
+        this.handleNuke(context, unit, position);
+        break;
+    }
+  }
+
+  private handleWarShipEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    if (unit.targetUnitId()) {
+      this.drawSpriteAtPosition(
+        context,
+        unit,
+        position,
+        colord({ r: 200, b: 0, g: 0 }),
+      );
+    } else {
+      this.drawSpriteAtPosition(context, unit, position);
+    }
+  }
+
+  private handleShellEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    const rel = this.relationship(unit);
+    const color = this.theme.borderColor(unit.owner());
+
+    // Draw interpolated shell (squares + segment)
+    this.drawInterpolatedSquare(context, position, rel, color, 1, 1);
+    this.drawInterpolatedSquare(context, position, rel, color, 2, 0.4);
+
+    const last = {
+      x: this.game.x(unit.lastTile()),
+      y: this.game.y(unit.lastTile()),
+    };
+    if (last.x !== position.x || last.y !== position.y) {
+      this.drawInterpolatedSegment(context, last, position, rel, color, 0.7);
+    }
+  }
+
+  private handleMissileEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    this.drawSpriteAtPosition(context, unit, position);
+  }
+
+  private handleNuke(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    const rel = this.relationship(unit);
+
+    if (!this.unitToTrail.has(unit)) {
+      this.unitToTrail.set(unit, []);
+    }
+
+    let newTrailSize = 1;
+    const trail = this.unitToTrail.get(unit) ?? [];
+    if (trail.length >= 1) {
+      const cur = {
+        x: this.game.x(unit.lastTile()),
+        y: this.game.y(unit.lastTile()),
+      };
+      const prev = {
+        x: this.game.x(trail[trail.length - 1]),
+        y: this.game.y(trail[trail.length - 1]),
+      };
+      const line = new BezenhamLine(prev, cur);
+      let point = line.increment();
+      while (point !== true) {
+        trail.push(this.game.ref(point.x, point.y));
+        point = line.increment();
+      }
+      newTrailSize = line.size();
+    } else {
+      trail.push(unit.lastTile());
+    }
+
+    this.drawTrail(
+      trail.slice(-newTrailSize),
+      this.theme.territoryColor(unit.owner()),
+      rel,
+    );
+    this.drawSpriteAtPosition(context, unit, position);
+  }
+
+  private handleMIRVWarhead(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    const rel = this.relationship(unit);
+    const color = this.theme.borderColor(unit.owner());
+    this.drawInterpolatedSquare(context, position, rel, color, 1, 1);
+    this.drawInterpolatedSquare(context, position, rel, color, 2, 0.35);
+
+    const last = {
+      x: this.game.x(unit.lastTile()),
+      y: this.game.y(unit.lastTile()),
+    };
+    if (last.x !== position.x || last.y !== position.y) {
+      this.drawInterpolatedSegment(context, last, position, rel, color, 0.5);
+    }
+  }
+
+  private handleTradeShipEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    this.drawSpriteAtPosition(context, unit, position);
+  }
+
+  private handleCargoPlaneEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    this.drawSpriteAtPosition(context, unit, position);
+  }
+
+  private handleBomberEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    this.drawSpriteAtPosition(context, unit, position);
+  }
+
+  private handleFighterJetEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    if (unit.targetUnitId()) {
+      this.drawSpriteAtPosition(
+        context,
+        unit,
+        position,
+        colord({ r: 200, b: 0, g: 0 }),
+      );
+    } else {
+      this.drawSpriteAtPosition(context, unit, position);
+    }
+  }
+
+  private handleBoatEvent(
+    context: CanvasRenderingContext2D,
+    unit: UnitView,
+    position: { x: number; y: number },
+  ) {
+    const rel = this.relationship(unit);
+
+    if (!this.unitToTrail.has(unit)) {
+      this.unitToTrail.set(unit, []);
+    }
+    const trail = this.unitToTrail.get(unit) ?? [];
+    const lastTile = unit.lastTile();
+
+    // Only push if the tile is different from the last one in the trail
+    if (trail.length === 0 || trail[trail.length - 1] !== lastTile) {
+      trail.push(lastTile);
+    }
+
+    this.drawTrail(
+      trail.slice(-1),
+      this.theme.territoryColor(unit.owner()),
+      rel,
+    );
+    this.drawSpriteAtPosition(context, unit, position);
   }
 
   onAlternativeViewEvent(event: AlternateViewEvent) {
@@ -329,44 +584,13 @@ export class UnitLayer implements Layer {
   }
 
   redraw() {
-    this.canvas = document.createElement("canvas");
-    const context = this.canvas.getContext("2d");
-    if (context === null) throw new Error("2d context not supported");
-    this.context = context;
     this.transportShipTrailCanvas = document.createElement("canvas");
     const trailContext = this.transportShipTrailCanvas.getContext("2d");
     if (trailContext === null) throw new Error("2d context not supported");
     this.unitTrailContext = trailContext;
-    this.interpolationCanvas = document.createElement("canvas");
-    const interpolationContext = this.interpolationCanvas.getContext("2d");
-    if (interpolationContext === null)
-      throw new Error("2d context not supported");
-    this.interpolationContext = interpolationContext;
 
-    this.canvas.width = this.game.width();
-    this.canvas.height = this.game.height();
     this.transportShipTrailCanvas.width = this.game.width();
     this.transportShipTrailCanvas.height = this.game.height();
-    this.interpolationCanvas.width = this.game.width();
-    this.interpolationCanvas.height = this.game.height();
-
-    this.renderedUnits.clear();
-    const units = this.game.units();
-    units.forEach((u) => this.renderedUnits.set(u.id(), u));
-    this.updateUnitsSprites(units.map((unit) => unit.id()));
-
-    // After redrawing units, render submarine ghosts (last known positions)
-    this.renderedGhosts.clear();
-    const ghosts = (this.game as any).submarineGhosts?.call(this.game) ?? [];
-    for (const ghost of ghosts as Array<{
-      id: number;
-      pos: number;
-      expiresAt: number;
-      ownerID: number;
-    }>) {
-      this.drawGhost(ghost);
-      this.renderedGhosts.set(ghost.id, ghost.pos);
-    }
 
     this.unitToTrail.forEach((trail, unit) => {
       for (const t of trail) {
@@ -380,111 +604,6 @@ export class UnitLayer implements Layer {
         );
       }
     });
-  }
-
-  private updateUnitsSprites(unitIds: number[]) {
-    const unitsToUpdate: UnitView[] = [];
-    const unitsToRemove: UnitView[] = [];
-
-    if (unitIds) {
-      for (const id of unitIds) {
-        const unit = this.game.unit(id);
-        if (unit) {
-          unitsToUpdate.push(unit);
-          this.renderedUnits.set(id, unit);
-        } else {
-          const removed = this.renderedUnits.get(id);
-          if (removed) {
-            unitsToRemove.push(removed);
-            this.renderedUnits.delete(id);
-          }
-        }
-      }
-    }
-
-    const allUnitsToClear = [...unitsToUpdate, ...unitsToRemove];
-
-    if (allUnitsToClear.length > 0) {
-      const oldAngleByUnit = new Map<UnitView, number | null>();
-      for (const u of allUnitsToClear) {
-        oldAngleByUnit.set(u, this.unitToLastAngle.get(u) ?? null);
-      }
-
-      // Precompute angles once per unit to avoid duplicate work across passes
-      const angleByUnit = new Map<UnitView, number | null>();
-      for (const u of unitsToUpdate) {
-        // Only aircraft currently use angles; others will return null quickly
-        angleByUnit.set(u, this.getUnitAngle(u));
-      }
-
-      // the clearing and drawing of unit sprites need to be done in 2 passes
-      // otherwise the sprite of a unit can be drawn on top of another unit
-      this.clearUnitsCells(allUnitsToClear, oldAngleByUnit);
-      this.drawUnitsCells(unitsToUpdate, angleByUnit);
-
-      // Handle deactivation for removed units
-      for (const u of unitsToRemove) {
-        this.handleUnitDeactivation(u);
-      }
-    }
-  }
-
-  private clearUnitsCells(
-    unitViews: UnitView[],
-    angleByUnit: Map<UnitView, number | null>,
-  ) {
-    unitViews
-      .filter((unitView) => isSpriteReady(unitView.type()))
-      .forEach((unitView) => {
-        // Compute the same geometry used during draw to clear sprite + dot overlays
-        const spriteSize = this.getSpriteSize(unitView);
-        const sizeMult = this.effectiveSizeMultiplier(unitView);
-        const newWidth = spriteSize * sizeMult;
-        const newHeight = spriteSize * sizeMult;
-
-        // Badge overlay parameters: badge sits 1px outside top-right
-        const level = (unitView as any).level ? (unitView as any).level() : 1;
-        const badgeSize = Math.max(2, Math.min(3, Math.round(newWidth * 0.18)));
-        const offset = 1;
-        const overlayTop = badgeSize + offset; // extend upwards to cover outside badge
-        const extraRight = badgeSize + offset; // full right-side extension beyond sprite
-
-        const padding = 2; // small safety margin around computed bounds
-        const maxHalfWidth = newWidth / 2 + extraRight;
-        const lastX = this.game.x(unitView.lastTile());
-        const lastY = this.game.y(unitView.lastTile());
-        const angle = angleByUnit.get(unitView) ?? null;
-        if (angle !== null) {
-          this.context.save();
-          this.context.translate(lastX, lastY);
-          this.context.rotate(angle);
-          this.context.translate(-lastX, -lastY);
-        }
-
-        // Clear an axis-aligned box in the rotated space that covers the sprite and the dots above
-        const left = lastX - maxHalfWidth - padding;
-        const top = lastY - newHeight / 2 - overlayTop - padding;
-        const width = maxHalfWidth * 2 + padding * 2;
-        const height = newHeight + overlayTop + padding * 2;
-        this.context.clearRect(left, top, width, height);
-
-        if (angle !== null) {
-          this.context.restore();
-        }
-      });
-  }
-
-  private drawUnitsCells(
-    unitViews: UnitView[],
-    angleByUnit: Map<UnitView, number | null>,
-  ) {
-    // Suppress base-canvas sprites for units that are also drawn via interpolation overlay
-    this.drawingBasePass = true;
-    try {
-      unitViews.forEach((unitView) => this.onUnitEvent(unitView, angleByUnit));
-    } finally {
-      this.drawingBasePass = false;
-    }
   }
 
   private interpolatePosition(unit: UnitView, alpha: number) {
@@ -502,132 +621,40 @@ export class UnitLayer implements Layer {
     };
   }
 
-  private updateInterpolatedUnits() {
-    if (!this.interpolationContext || !this.interpolationCanvas) {
-      return;
-    }
-
-    this.interpolationContext.clearRect(
-      0,
-      0,
-      this.interpolationCanvas.width,
-      this.interpolationCanvas.height,
-    );
-
-    const alpha = this.computeTickAlpha();
-    const units = this.game.units(...this.interpolatedUnitTypes);
-
-    for (const unit of units) {
-      if (!unit.isActive()) {
-        continue;
-      }
-
-      // Respect submarine visibility rules from onUnitEvent
-      if (
-        unit.type() === UnitType.Submarine &&
-        unit.owner() !== this.game.myPlayer()
-      ) {
-        // Server handles visibility filtering.
-      }
-
-      const position = this.interpolatePosition(unit, alpha);
-
-      switch (unit.type()) {
-        case UnitType.Shell:
-          this.renderShell(unit, position);
-          continue;
-        case UnitType.MIRVWarhead:
-          this.renderWarhead(unit, position);
-          continue;
-        default:
-          if (!isSpriteReady(unit.type())) {
-            continue;
-          }
-          this.drawSpriteAtPosition(
-            unit,
-            position,
-            this.getInterpolatedSpriteColor(unit),
-            this.interpolationContext,
-            false,
-          );
-      }
-    }
-  }
-
-  private getInterpolatedSpriteColor(unit: UnitView): Colord | undefined {
-    if (unit.targetUnitId()) {
-      if (
-        unit.type() === UnitType.Warship ||
-        unit.type() === UnitType.FighterJet
-      ) {
-        return colord("rgb(200,0,0)");
-      }
-    }
-    return undefined;
-  }
-
-  private renderShell(unit: UnitView, position: { x: number; y: number }) {
-    const rel = this.relationship(unit);
-    const color = this.theme.borderColor(unit.owner());
-    this.drawInterpolatedSquare(position, rel, color, 1, 1);
-    this.drawInterpolatedSquare(position, rel, color, 2, 0.4);
-
-    const last = {
-      x: this.game.x(unit.lastTile()),
-      y: this.game.y(unit.lastTile()),
-    };
-    if (last.x !== position.x || last.y !== position.y) {
-      this.drawInterpolatedSegment(last, position, rel, color, 0.7);
-    }
-  }
-
-  private renderWarhead(unit: UnitView, position: { x: number; y: number }) {
-    const rel = this.relationship(unit);
-    const color = this.theme.borderColor(unit.owner());
-    this.drawInterpolatedSquare(position, rel, color, 1, 1);
-    this.drawInterpolatedSquare(position, rel, color, 2, 0.35);
-
-    const last = {
-      x: this.game.x(unit.lastTile()),
-      y: this.game.y(unit.lastTile()),
-    };
-    if (last.x !== position.x || last.y !== position.y) {
-      this.drawInterpolatedSegment(last, position, rel, color, 0.5);
-    }
-  }
-
   private drawInterpolatedSquare(
+    context: CanvasRenderingContext2D,
     position: { x: number; y: number },
     relationship: Relationship,
     color: Colord,
     size: number,
     alpha: number,
   ) {
-    if (!this.interpolationContext) {
-      return;
-    }
-    const ctx = this.interpolationContext;
-    ctx.fillStyle = this.resolveInterpolatedColor(relationship, color, alpha);
-    ctx.fillRect(position.x - size / 2, position.y - size / 2, size, size);
+    context.fillStyle = this.resolveInterpolatedColor(
+      relationship,
+      color,
+      alpha,
+    );
+    context.fillRect(position.x - size / 2, position.y - size / 2, size, size);
   }
 
   private drawInterpolatedSegment(
+    context: CanvasRenderingContext2D,
     start: { x: number; y: number },
     end: { x: number; y: number },
     relationship: Relationship,
     color: Colord,
     alpha: number,
   ) {
-    if (!this.interpolationContext) {
-      return;
-    }
-    const ctx = this.interpolationContext;
-    ctx.strokeStyle = this.resolveInterpolatedColor(relationship, color, alpha);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
-    ctx.stroke();
+    context.strokeStyle = this.resolveInterpolatedColor(
+      relationship,
+      color,
+      alpha,
+    );
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(start.x, start.y);
+    context.lineTo(end.x, end.y);
+    context.stroke();
   }
 
   private resolveInterpolatedColor(
@@ -669,128 +696,7 @@ export class UnitLayer implements Layer {
     return Relationship.Enemy;
   }
 
-  onUnitEvent(unit: UnitView, angleByUnit?: Map<UnitView, number | null>) {
-    // Check if unit was deactivated
-    if (!unit.isActive()) {
-      this.handleUnitDeactivation(unit);
-    }
-
-    if (
-      unit.type() === UnitType.Submarine &&
-      unit.owner() !== this.game.myPlayer()
-    ) {
-      // Server handles visibility filtering (including linger time).
-      // If we receive an update for an enemy sub, it should be visible.
-      // We trust the server's judgment here to avoid client-side lag when linger is active.
-    }
-
-    // START: Custom rendering for owner's submarine visibility
-    if (
-      unit.type() === UnitType.Submarine &&
-      unit.owner() === this.game.myPlayer()
-    ) {
-      const isAttacking = unit.isAttacking();
-      const isDetected = unit.isDetectedByNavalUnit();
-      const isOnCooldown = unit.isCooldown();
-      const isVisibleToEnemies = isAttacking || isDetected || isOnCooldown;
-      if (!isVisibleToEnemies) {
-        this.drawSprite(unit, undefined, 0.75);
-        return;
-      }
-    }
-    // END: Custom rendering
-
-    switch (unit.type()) {
-      case UnitType.TransportShip:
-      case UnitType.Paratrooper:
-        this.handleBoatEvent(unit);
-        break;
-      case UnitType.Submarine:
-      case UnitType.Warship:
-        this.handleWarShipEvent(unit, angleByUnit);
-        break;
-      case UnitType.Shell:
-        this.handleShellEvent(unit);
-        break;
-      case UnitType.SAMMissile:
-        this.handleMissileEvent(unit);
-        break;
-      case UnitType.TradeShip:
-        this.handleTradeShipEvent(unit, angleByUnit);
-        break;
-      case UnitType.CargoPlane:
-        this.handleCargoPlaneEvent(unit, angleByUnit);
-        break;
-      case UnitType.MIRVWarhead:
-        this.handleMIRVWarhead(unit);
-        break;
-      case UnitType.Bomber:
-        this.handleBomberEvent(unit, angleByUnit);
-        break;
-      case UnitType.FighterJet:
-        this.handleFighterJetEvent(unit, angleByUnit);
-        break;
-      case UnitType.AtomBomb:
-      case UnitType.HydrogenBomb:
-      case UnitType.MIRV:
-        this.handleNuke(unit);
-        break;
-    }
-  }
-
-  private handleWarShipEvent(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    if (unit.targetUnitId()) {
-      this.drawSprite(unit, colord({ r: 200, b: 0, g: 0 }), angleByUnit);
-    } else {
-      this.drawSprite(unit, undefined, angleByUnit);
-    }
-  }
-
-  private handleShellEvent(unit: UnitView) {
-    const rel = this.relationship(unit);
-
-    // Clear current and previous positions
-    this.clearCell(this.game.x(unit.lastTile()), this.game.y(unit.lastTile()));
-    const oldTile = this.oldShellTile.get(unit);
-    if (oldTile !== undefined) {
-      this.clearCell(this.game.x(oldTile), this.game.y(oldTile));
-    }
-
-    this.oldShellTile.set(unit, unit.lastTile());
-    if (!unit.isActive()) {
-      return;
-    }
-
-    // Paint current and previous positions
-    this.paintCell(
-      this.game.x(unit.tile()),
-      this.game.y(unit.tile()),
-      rel,
-      this.theme.borderColor(unit.owner()),
-      255,
-    );
-    this.paintCell(
-      this.game.x(unit.lastTile()),
-      this.game.y(unit.lastTile()),
-      rel,
-      this.theme.borderColor(unit.owner()),
-      255,
-    );
-  }
-
-  // interception missle from SAM
-  private handleMissileEvent(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    this.drawSprite(unit, undefined, angleByUnit);
-  }
-
   private drawTrail(trail: number[], color: Colord, rel: Relationship) {
-    // Paint new trail
     for (const t of trail) {
       this.paintCell(
         this.game.x(t),
@@ -811,7 +717,6 @@ export class UnitLayer implements Layer {
     }
     this.unitToTrail.delete(unit);
 
-    // Repaint overlapping trails
     const trailSet = new Set(trail);
     for (const [other, trail] of this.unitToTrail) {
       for (const t of trail) {
@@ -829,131 +734,13 @@ export class UnitLayer implements Layer {
     }
   }
 
-  private handleNuke(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    const rel = this.relationship(unit);
-
-    if (!this.unitToTrail.has(unit)) {
-      this.unitToTrail.set(unit, []);
-    }
-
-    let newTrailSize = 1;
-    const trail = this.unitToTrail.get(unit) ?? [];
-    // It can move faster than 1 pixel, draw a line for the trail or else it will be dotted
-    if (trail.length >= 1) {
-      const cur = {
-        x: this.game.x(unit.lastTile()),
-        y: this.game.y(unit.lastTile()),
-      };
-      const prev = {
-        x: this.game.x(trail[trail.length - 1]),
-        y: this.game.y(trail[trail.length - 1]),
-      };
-      const line = new BezenhamLine(prev, cur);
-      let point = line.increment();
-      while (point !== true) {
-        trail.push(this.game.ref(point.x, point.y));
-        point = line.increment();
-      }
-      newTrailSize = line.size();
-    } else {
-      trail.push(unit.lastTile());
-    }
-
-    this.drawTrail(
-      trail.slice(-newTrailSize),
-      this.theme.territoryColor(unit.owner()),
-      rel,
-    );
-    this.drawSprite(unit, undefined, angleByUnit);
-    if (!unit.isActive()) {
-      this.clearTrail(unit);
-    }
-  }
-
-  private handleMIRVWarhead(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    const rel = this.relationship(unit);
-
-    this.clearCell(this.game.x(unit.lastTile()), this.game.y(unit.lastTile()));
-
-    if (unit.isActive()) {
-      // Paint area
-      this.paintCell(
-        this.game.x(unit.tile()),
-        this.game.y(unit.tile()),
-        rel,
-        this.theme.borderColor(unit.owner()),
-        255,
-      );
-    }
-  }
-
-  private handleTradeShipEvent(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    this.drawSprite(unit, undefined, angleByUnit);
-  }
-
-  private handleCargoPlaneEvent(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    this.drawSprite(unit, undefined, angleByUnit);
-  }
-
-  private handleBomberEvent(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    this.drawSprite(unit, undefined, angleByUnit);
-  }
-
-  private handleFighterJetEvent(
-    unit: UnitView,
-    angleByUnit?: Map<UnitView, number | null>,
-  ) {
-    if (unit.targetUnitId()) {
-      this.drawSprite(unit, colord({ r: 200, b: 0, g: 0 }), angleByUnit);
-    } else {
-      this.drawSprite(unit, undefined, angleByUnit);
-    }
-  }
-
-  private handleBoatEvent(unit: UnitView) {
-    const rel = this.relationship(unit);
-
-    if (!this.unitToTrail.has(unit)) {
-      this.unitToTrail.set(unit, []);
-    }
-    const trail = this.unitToTrail.get(unit) ?? [];
-    trail.push(unit.lastTile());
-
-    // Paint trail
-    this.drawTrail(
-      trail.slice(-1),
-      this.theme.territoryColor(unit.owner()),
-      rel,
-    );
-    this.drawSprite(unit);
-
-    if (!unit.isActive()) {
-      this.clearTrail(unit);
-    }
-  }
-
   paintCell(
     x: number,
     y: number,
     relationship: Relationship,
     color: Colord,
     alpha: number,
-    context: CanvasRenderingContext2D = this.context,
+    context: CanvasRenderingContext2D,
   ) {
     this.clearCell(x, y, context);
     if (this.alternateView) {
@@ -974,164 +761,16 @@ export class UnitLayer implements Layer {
     context.fillRect(x, y, 1, 1);
   }
 
-  clearCell(
-    x: number,
-    y: number,
-    context: CanvasRenderingContext2D = this.context,
-  ) {
+  clearCell(x: number, y: number, context: CanvasRenderingContext2D) {
     context.clearRect(x, y, 1, 1);
   }
 
-  drawSprite(
-    unit: UnitView,
-    customTerritoryColor?: Colord,
-    sizeMultiplier?: number,
-  );
-  drawSprite(
-    unit: UnitView,
-    customTerritoryColor?: Colord,
-    angleByUnit?: Map<UnitView, number | null>,
-    sizeMultiplier?: number,
-  );
-  drawSprite(
-    unit: UnitView,
-    customTerritoryColor?: Colord,
-    angleByUnitOrSizeMultiplier?: Map<UnitView, number | null> | number,
-    sizeMultiplier: number = 1.0,
-  ) {
-    let angleByUnit: Map<UnitView, number | null> | undefined;
-    let sizeMult = sizeMultiplier;
-
-    if (typeof angleByUnitOrSizeMultiplier === "number") {
-      sizeMult = angleByUnitOrSizeMultiplier;
-    } else {
-      angleByUnit = angleByUnitOrSizeMultiplier;
-    }
-
-    // If we're in the base pass and this unit type is interpolated, skip drawing the sprite
-    // to avoid double images (the interpolation overlay will render it smoothly).
-    if (
-      this.drawingBasePass &&
-      this.interpolatedUnitTypes.includes(unit.type())
-    ) {
-      return;
-    }
-
-    const x = this.game.x(unit.tile());
-    const y = this.game.y(unit.tile());
-
-    let alternateViewColor: Colord | null = null;
-
-    if (this.alternateView) {
-      let rel = this.relationship(unit);
-      const destinationId = unit.targetUnitId();
-      if (
-        (unit.type() === UnitType.TradeShip ||
-          unit.type() === UnitType.CargoPlane) &&
-        destinationId !== undefined
-      ) {
-        const target = this.game.unit(destinationId)?.owner();
-        const myPlayer = this.game.myPlayer();
-        if (myPlayer !== null && target !== undefined) {
-          if (myPlayer === target) {
-            rel = Relationship.Self;
-          } else if (myPlayer.isFriendly(target)) {
-            rel = Relationship.Ally;
-          }
-        }
-      }
-      switch (rel) {
-        case Relationship.Self:
-          alternateViewColor = this.theme.selfColor();
-          break;
-        case Relationship.Ally:
-          alternateViewColor = this.theme.allyColor();
-          break;
-        case Relationship.Enemy:
-          alternateViewColor = this.theme.enemyColor();
-          break;
-      }
-    }
-
-    const sprite = getColoredSprite(
-      unit,
-      this.theme,
-      alternateViewColor ?? customTerritoryColor,
-      alternateViewColor ?? undefined,
-    );
-
-    if (unit.isActive()) {
-      const targetable = unit.targetable();
-      if (!targetable) {
-        this.context.save();
-        this.context.globalAlpha = 0.5;
-      }
-
-      const angle = angleByUnit?.get(unit) ?? this.getUnitAngle(unit);
-      const cx = Math.round(x);
-      const cy = Math.round(y);
-      const newWidth = sprite.width * sizeMult;
-      const newHeight = sprite.width * sizeMult; // Keep aspect ratio square
-
-      if (angle !== null) {
-        this.context.save();
-        this.context.translate(cx, cy);
-        this.context.rotate(angle);
-        this.context.translate(-cx, -cy);
-      }
-
-      this.context.drawImage(
-        sprite,
-        cx - newWidth / 2,
-        cy - newHeight / 2,
-        newWidth,
-        newHeight,
-      );
-
-      // Draw a tiny top-right corner badge offset 1px outside the sprite
-      // Only for Warships, FighterJets, and Submarines
-      const type = unit.type();
-      if (
-        type === UnitType.Warship ||
-        type === UnitType.FighterJet ||
-        type === UnitType.Submarine
-      ) {
-        const level = unit.level ? unit.level() : 1;
-        // Tier color mapping: 1→bronze, 2→silver, 3→gold, 4+→platinum
-        const tierColor =
-          level >= 4
-            ? "#E5E4E2" /* platinum */
-            : level === 3
-              ? "#FFD700" /* gold */
-              : level === 2
-                ? "#C0C0C0" /* silver */
-                : "#CD7F32"; /* bronze */
-        // Badge size: crisp 2–3 px depending on sprite size
-        const badgeSize = Math.max(2, Math.min(3, Math.round(newWidth * 0.18)));
-        // Offset 1px to the right and 1px above the sprite's top-right corner
-        const offset = 1;
-        const badgeLeft = Math.round(cx + newWidth / 2 + offset);
-        const badgeTop = Math.round(cy - newHeight / 2 - badgeSize - offset);
-        this.context.fillStyle = tierColor;
-        this.context.fillRect(badgeLeft, badgeTop, badgeSize, badgeSize);
-      }
-
-      if (angle !== null) {
-        this.context.restore();
-      }
-
-      if (!targetable) {
-        this.context.restore();
-      }
-    }
-  }
-
   private drawSpriteAtPosition(
+    context: CanvasRenderingContext2D,
     unit: UnitView,
     position: { x: number; y: number },
     customTerritoryColor?: Colord,
-    context: CanvasRenderingContext2D = this.context,
-    snapToPixel = true,
+    sizeMultiplier: number = 1.0,
   ) {
     let alternateViewColor: Colord | null = null;
 
@@ -1180,14 +819,9 @@ export class UnitLayer implements Layer {
         context.globalAlpha = 0.5;
       }
 
-      const offsetX = snapToPixel
-        ? Math.round(position.x - sprite.width / 2)
-        : position.x - sprite.width / 2;
-      const offsetY = snapToPixel
-        ? Math.round(position.y - sprite.width / 2)
-        : position.y - sprite.width / 2;
+      const offsetX = Math.round(position.x - sprite.width / 2);
+      const offsetY = Math.round(position.y - sprite.width / 2);
 
-      // Apply rotation on interpolation overlay for aircraft
       const isAircraft =
         unit.type() === UnitType.Bomber ||
         unit.type() === UnitType.FighterJet ||
@@ -1206,9 +840,11 @@ export class UnitLayer implements Layer {
         }
       }
 
-      context.drawImage(sprite, offsetX, offsetY, sprite.width, sprite.width);
+      const newWidth = sprite.width * sizeMultiplier;
+      const newHeight = sprite.width * sizeMultiplier;
 
-      // Draw the same tiny badge on interpolation overlay for select unit types
+      context.drawImage(sprite, offsetX, offsetY, newWidth, newHeight);
+
       const type = unit.type();
       if (
         type === UnitType.Warship ||
@@ -1218,12 +854,12 @@ export class UnitLayer implements Layer {
         const level = (unit as any).level ? (unit as any).level() : 1;
         const tierColor =
           level >= 4
-            ? "#E5E4E2" /* platinum */
+            ? "#E5E4E2"
             : level === 3
-              ? "#FFD700" /* gold */
+              ? "#FFD700"
               : level === 2
-                ? "#C0C0C0" /* silver */
-                : "#CD7F32"; /* bronze */
+                ? "#C0C0C0"
+                : "#CD7F32";
         const badgeSize = Math.max(
           2,
           Math.min(3, Math.round(sprite.width * 0.18)),
@@ -1245,6 +881,30 @@ export class UnitLayer implements Layer {
         context.restore();
       }
     }
+  }
+
+  private drawGhostDirect(
+    context: CanvasRenderingContext2D,
+    ghost: { id: number; pos: number; ownerID: number },
+  ) {
+    context.save();
+    context.globalAlpha = 0.3;
+    const dummyUnit = {
+      tile: () => ghost.pos,
+      type: () => UnitType.Submarine,
+      owner: () => this.game.playerBySmallID(ghost.ownerID),
+      targetable: () => true,
+      isActive: () => true,
+      lastTile: () => ghost.pos,
+    } as unknown as UnitView;
+
+    const position = {
+      x: this.game.x(ghost.pos),
+      y: this.game.y(ghost.pos),
+    };
+
+    this.drawSpriteAtPosition(context, dummyUnit as UnitView, position);
+    context.restore();
   }
 
   private getUnitAngle(unit: UnitView): number | null {
@@ -1279,19 +939,10 @@ export class UnitLayer implements Layer {
       }
 
       if (lastAngle !== undefined) {
-        // Determines how quickly the unit realigns its orientation.
-        // A smaller value results in a longer period of realignment.
         const smoothingFactor = 0.25;
         let angleDiff = angle - lastAngle;
-
-        // Normalize the angle difference to be between -PI and PI
-        while (angleDiff > Math.PI) {
-          angleDiff -= 2 * Math.PI;
-        }
-        while (angleDiff < -Math.PI) {
-          angleDiff += 2 * Math.PI;
-        }
-
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
         angle = lastAngle + angleDiff * smoothingFactor;
       }
 
@@ -1301,19 +952,16 @@ export class UnitLayer implements Layer {
     return null;
   }
 
-  // Get square sprite size for a unit type, cached
   private getSpriteSize(unit: UnitView): number {
     const t = unit.type();
     const existing = this.spriteSizeCache.get(t);
     if (existing !== undefined) return existing;
-    // Use a single colored sprite to get width; colorization does not affect size
     const canvas = getColoredSprite(unit, this.theme);
     const size = canvas.width;
     this.spriteSizeCache.set(t, size);
     return size;
   }
 
-  // Mirror draw-time size multiplier decisions for clearing
   private effectiveSizeMultiplier(unit: UnitView): number {
     if (
       unit.type() === UnitType.Submarine &&
@@ -1361,89 +1009,5 @@ export class UnitLayer implements Layer {
       return performance.now();
     }
     return Date.now();
-  }
-
-  private updateGhosts() {
-    const ghosts = (this.game as any).submarineGhosts?.call(this.game) ?? [];
-    const currentGhostIds = new Set<number>();
-
-    for (const ghost of ghosts as Array<{
-      id: number;
-      pos: number;
-      expiresAt: number;
-      ownerID: number;
-    }>) {
-      currentGhostIds.add(ghost.id);
-      if (!this.renderedGhosts.has(ghost.id)) {
-        this.drawGhost(ghost);
-        this.renderedGhosts.set(ghost.id, ghost.pos);
-      }
-    }
-
-    for (const [id, pos] of this.renderedGhosts) {
-      if (!currentGhostIds.has(id)) {
-        this.clearGhost({ pos, ownerID: 0 }); // ownerID not needed for clearing
-        this.renderedGhosts.delete(id);
-        // If a unit is currently at this position, redraw it so it doesn't disappear
-        const unitAtPos = this.game.units().find((u) => u.tile() === pos);
-        if (unitAtPos) {
-          this.drawSprite(unitAtPos);
-        }
-      }
-    }
-  }
-
-  private clearGhost(ghost: { pos: number; ownerID: number }) {
-    // Create a dummy unit to get the sprite size
-    // We need a valid owner for getColoredSprite, but for size it doesn't matter much
-    // as long as it returns a sprite.
-    const dummyUnit = {
-      tile: () => ghost.pos,
-      type: () => UnitType.Submarine,
-      owner: () =>
-        this.game.playerBySmallID(ghost.ownerID) || this.game.players()[0],
-      targetable: () => true,
-      isActive: () => true,
-      lastTile: () => ghost.pos,
-    } as unknown as UnitView;
-
-    const spriteSize = this.getSpriteSize(dummyUnit);
-    const newWidth = spriteSize; // Ghosts are drawn at 1.0 scale
-    const newHeight = spriteSize;
-
-    // Badge overlay parameters: badge sits 1px outside top-right
-    // Ghosts default to level 1 (bronze) badge
-    const badgeSize = Math.max(2, Math.min(3, Math.round(newWidth * 0.18)));
-    const offset = 1;
-    const overlayTop = badgeSize + offset; // extend upwards to cover outside badge
-    const extraRight = badgeSize + offset; // full right-side extension beyond sprite
-
-    const padding = 2; // small safety margin around computed bounds
-    const maxHalfWidth = newWidth / 2 + extraRight;
-
-    const cx = Math.round(this.game.x(ghost.pos));
-    const cy = Math.round(this.game.y(ghost.pos));
-
-    const left = cx - maxHalfWidth - padding;
-    const top = cy - newHeight / 2 - overlayTop - padding;
-    const width = maxHalfWidth * 2 + padding * 2;
-    const height = newHeight + overlayTop + padding * 2;
-
-    this.context.clearRect(left, top, width, height);
-  }
-
-  private drawGhost(ghost: { id: number; pos: number; ownerID: number }) {
-    this.context.save();
-    this.context.globalAlpha = 0.3;
-    const dummyUnit = {
-      tile: () => ghost.pos,
-      type: () => UnitType.Submarine,
-      owner: () => this.game.playerBySmallID(ghost.ownerID),
-      targetable: () => true,
-      isActive: () => true,
-      lastTile: () => ghost.pos,
-    } as unknown as UnitView;
-    this.drawSprite(dummyUnit as UnitView);
-    this.context.restore();
   }
 }
