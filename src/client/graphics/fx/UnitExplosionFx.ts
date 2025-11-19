@@ -34,14 +34,27 @@ export class UnitExplosionFx implements Fx {
   }
 
   renderTick(frameTime: number, ctx: CanvasRenderingContext2D): boolean {
+    if (this.update(frameTime)) {
+      this.draw(ctx);
+      return true;
+    }
+    return false;
+  }
+
+  update(frameTime: number): boolean {
     this.timeline.update(frameTime);
     let allDone = true;
     for (const fx of this.explosions) {
-      if (fx.renderTick(frameTime, ctx)) {
+      if (fx.update(frameTime)) {
         allDone = false;
       }
     }
-
     return !allDone || !this.timeline.isComplete();
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    for (const fx of this.explosions) {
+      fx.draw(ctx);
+    }
   }
 }

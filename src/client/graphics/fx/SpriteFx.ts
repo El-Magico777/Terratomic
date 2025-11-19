@@ -19,29 +19,6 @@ function fadeInOut(
     return 1 - f * f;
   }
 }
-/**
- * Fade in/out another FX
- */
-export class FadeFx implements Fx {
-  constructor(
-    private fxToFade: SpriteFx,
-    private fadeIn: number,
-    private fadeOut: number,
-  ) {}
-
-  renderTick(duration: number, ctx: CanvasRenderingContext2D): boolean {
-    const t = this.fxToFade.getElapsedTime() / this.fxToFade.getDuration();
-    ctx.save();
-    ctx.globalAlpha = fadeInOut(t, this.fadeIn, this.fadeOut);
-    const result = this.fxToFade.renderTick(duration, ctx);
-    ctx.restore();
-    return result;
-  }
-}
-
-/**
- * Animated sprite. Can be colored if provided an owner/theme
- */
 export class SpriteFx implements Fx {
   protected animatedSprite: AnimatedSprite | null;
   protected elapsedTime = 0;
@@ -70,6 +47,14 @@ export class SpriteFx implements Fx {
   }
 
   renderTick(frameTime: number, ctx: CanvasRenderingContext2D): boolean {
+    if (this.update(frameTime)) {
+      this.draw(ctx);
+      return true;
+    }
+    return false;
+  }
+
+  update(frameTime: number): boolean {
     if (!this.animatedSprite) return false;
 
     this.elapsedTime += frameTime;
@@ -77,10 +62,14 @@ export class SpriteFx implements Fx {
 
     if (!this.animatedSprite.isActive()) return false;
 
-    const t = this.elapsedTime / this.duration;
     this.animatedSprite.update(frameTime);
-    this.animatedSprite.draw(ctx, this.x, this.y);
     return true;
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    if (this.animatedSprite) {
+      this.animatedSprite.draw(ctx, this.x, this.y);
+    }
   }
 
   getElapsedTime(): number {
@@ -89,5 +78,33 @@ export class SpriteFx implements Fx {
 
   getDuration(): number {
     return this.duration;
+  }
+}
+
+export class FadeFx implements Fx {
+  constructor(
+    private fxToFade: SpriteFx,
+    private fadeIn: number,
+    private fadeOut: number,
+  ) {}
+
+  renderTick(duration: number, ctx: CanvasRenderingContext2D): boolean {
+    if (this.update(duration)) {
+      this.draw(ctx);
+      return true;
+    }
+    return false;
+  }
+
+  update(duration: number): boolean {
+    return this.fxToFade.update(duration);
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    const t = this.fxToFade.getElapsedTime() / this.fxToFade.getDuration();
+    ctx.save();
+    ctx.globalAlpha = fadeInOut(t, this.fadeIn, this.fadeOut);
+    this.fxToFade.draw(ctx);
+    ctx.restore();
   }
 }

@@ -16,10 +16,22 @@ export class ShockwaveFx implements Fx {
   ) {}
 
   renderTick(frameTime: number, ctx: CanvasRenderingContext2D): boolean {
+    if (this.update(frameTime)) {
+      this.draw(ctx);
+      return true;
+    }
+    return false;
+  }
+
+  update(frameTime: number): boolean {
     this.lifeTime += frameTime;
     if (this.lifeTime >= this.duration) {
       return false;
     }
+    return true;
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
     const t = this.lifeTime / this.duration;
     const radius = t * this.maxRadius;
     ctx.beginPath();
@@ -27,7 +39,6 @@ export class ShockwaveFx implements Fx {
     ctx.strokeStyle = "rgba(255, 255, 255, " + (1 - t) + ")";
     ctx.lineWidth = 0.5;
     ctx.stroke();
-    return true;
   }
 }
 

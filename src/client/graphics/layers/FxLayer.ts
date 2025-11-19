@@ -186,30 +186,28 @@ export class FxLayer implements Layer {
   renderLayer(context: CanvasRenderingContext2D) {
     const now = Date.now();
     if (this.game.config().userSettings()?.fxLayer()) {
-      if (now > this.lastRefresh + this.refreshRate) {
-        const delta = now - this.lastRefresh;
+      const delta = now - this.lastRefresh;
+      // Cap delta to avoid huge jumps if tab was inactive
+      const cappedDelta = Math.min(delta, 100);
 
-        context.save();
-        this.transformHandler.handleTransform(context);
-        // Fix: Translate context to align absolute coordinates (0..width) with centered view
-        context.translate(-this.game.width() / 2, -this.game.height() / 2);
+      context.save();
+      this.transformHandler.handleTransform(context);
+      // Fix: Translate context to align absolute coordinates (0..width) with centered view
+      context.translate(-this.game.width() / 2, -this.game.height() / 2);
 
-        // Use nearest neighbor for sharp pixels
-        context.imageSmoothingEnabled = false;
+      // Use nearest neighbor for sharp pixels
+      context.imageSmoothingEnabled = false;
 
-        this.renderAllFx(context, delta);
+      this.renderAllFx(context, cappedDelta);
 
-        context.restore();
+      context.restore();
 
-        this.lastRefresh = now;
-      }
+      this.lastRefresh = now;
     }
   }
 
   renderAllFx(context: CanvasRenderingContext2D, delta: number) {
     if (this.allFx.length > 0) {
-      const t0 = performance.now();
-
       // Get visible bounds for culling
       const bounds = this.transformHandler.getVisibleWorldBounds();
       // Add some padding to bounds to avoid popping
@@ -227,13 +225,6 @@ export class FxLayer implements Layer {
         visibleMinY,
         visibleMaxY,
       );
-
-      if (this.adaptiveRefresh) {
-        const elapsed = performance.now() - t0;
-        // If FX rendering takes longer than ~12ms, drop FX FPS a bit
-        this.refreshRate =
-          elapsed > 12 ? Math.min(33, Math.ceil(elapsed * 2)) : 16;
-      }
     }
   }
 
@@ -248,18 +239,16 @@ export class FxLayer implements Layer {
     for (let i = 0; i < this.allFx.length; ) {
       const fx = this.allFx[i];
 
-      // Simple culling check - if FX has a position, check if it's in bounds
-      // Note: Some FX might not expose x/y directly easily, but most do.
-      // For now, we'll assume if it renders, it handles its own position.
-      // Actually, Fx interface doesn't enforce x/y.
-      // But renderTick takes context.
-      // Optimization: We could add bounds check here if Fx exposed it.
-      // For now, let's just render all active FX directly.
-      // The "culling" happens because we are drawing to the transformed context,
-      // so off-screen drawing is handled by the canvas clip (which is efficient).
-      // True culling (skipping the render call) requires knowing the FX position.
-      // Most FX are SpriteFx or NukeFx which have x/y.
+      // Update state
+      if (!fx.update(duration)) {
+        // FX is done, remove it
+        const last = this.allFx.length - 1;
+        if (i !== last) this.allFx[i] = this.allFx[last];
+        this.allFx.pop();
+        continue;
+      }
 
+      // Culling: Only draw if visible
       let isVisible = true;
       if ("x" in fx && "y" in fx) {
         const x = (fx as any).x;
@@ -269,19 +258,11 @@ export class FxLayer implements Layer {
         }
       }
 
-      // Only render if visible, but ALWAYS update state (tick)
-      // Wait, renderTick does both update and render.
-      // We might need to separate them if we want to cull rendering but keep logic running.
-      // For now, we'll just call renderTick as it was before.
-      // The canvas API is smart enough to skip drawing off-screen pixels quickly.
-
-      if (!fx.renderTick(duration, context)) {
-        const last = this.allFx.length - 1;
-        if (i !== last) this.allFx[i] = this.allFx[last];
-        this.allFx.pop();
-      } else {
-        i++;
+      if (isVisible) {
+        fx.draw(context);
       }
+
+      i++;
     }
   }
 }

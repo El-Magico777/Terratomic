@@ -1,5 +1,8 @@
 export interface Fx {
-  renderTick(duration: number, ctx: CanvasRenderingContext2D): boolean;
+  update(duration: number): boolean;
+  draw(ctx: CanvasRenderingContext2D): void;
+  // Legacy support during refactor - to be removed
+  renderTick?(duration: number, ctx: CanvasRenderingContext2D): boolean;
 }
 
 export enum FxType {
