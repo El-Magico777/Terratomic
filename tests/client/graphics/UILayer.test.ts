@@ -22,6 +22,8 @@ describe("UILayer", () => {
         fighterJetLevelMaxHealth: () => 100,
         warshipLevelMaxHealth: () => 100,
         submarineLevelMaxHealth: () => 100,
+        SiloCooldown: () => 10,
+        SAMNukeCooldown: () => 10,
       }),
       x: () => 10,
       y: () => 10,
@@ -82,7 +84,7 @@ describe("UILayer", () => {
     expect((ui as any)["allHealthBars"].has(1)).toBe(false);
 
     // a dead unit doesnt have a health bar
-    unit.health = () => 5;
+    unit.health = () => 50;
     ui.drawHealthBar(unit);
     expect((ui as any)["allHealthBars"].has(1)).toBe(true);
     unit.health = () => 0;
