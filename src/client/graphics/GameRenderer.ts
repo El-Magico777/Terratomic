@@ -250,13 +250,14 @@ export function createRenderer(
     new CargoTruckLayer(game, transformHandler),
     // World-space ring overlay for Defense Posts/SAMs
     new RangeOverlayLayer(game, eventBus, transformHandler, uiState),
-    structureLayer,
-    new UnitLayer(game, eventBus, transformHandler, uiState),
-    new FxLayer(game),
     // Draw name labels in world space along with other transformed layers
     new NameLayer(game, transformHandler, eventBus),
     // UI layer comes after world-space drawing to minimize save/restore
     new UILayer(game, eventBus, transformHandler),
+    // UI pass layers - render in this order for correct z-ordering
+    structureLayer, // Structures first
+    new UnitLayer(game, eventBus, transformHandler, uiState), // Units on top
+    new FxLayer(game, transformHandler), // Effects on top
     // Pointer coordinates (screen-space, debug only)
     ...(DEBUG_SHOW_POINTER_COORDS
       ? [new PointerCoordsLayer(game, eventBus, transformHandler)]

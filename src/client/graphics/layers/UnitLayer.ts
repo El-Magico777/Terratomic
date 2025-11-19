@@ -114,7 +114,8 @@ export class UnitLayer implements Layer {
   }
 
   shouldTransform(): boolean {
-    return true;
+    // Render in UI pass so units appear on top of structures
+    return false;
   }
 
   tick() {
@@ -299,29 +300,27 @@ export class UnitLayer implements Layer {
 
   renderLayer(context: CanvasRenderingContext2D) {
     this.updateInterpolatedUnits();
+    // For UI pass: apply transform then draw map-sized canvases
+    context.save();
+    this.transformHandler.handleTransform(context);
     context.drawImage(
       this.transportShipTrailCanvas,
       -this.game.width() / 2,
       -this.game.height() / 2,
-      this.game.width(),
-      this.game.height(),
     );
     context.drawImage(
       this.canvas,
       -this.game.width() / 2,
       -this.game.height() / 2,
-      this.game.width(),
-      this.game.height(),
     );
     if (this.interpolationCanvas) {
       context.drawImage(
         this.interpolationCanvas,
         -this.game.width() / 2,
         -this.game.height() / 2,
-        this.game.width(),
-        this.game.height(),
       );
     }
+    context.restore();
   }
 
   onAlternativeViewEvent(event: AlternateViewEvent) {

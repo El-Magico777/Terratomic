@@ -7,6 +7,7 @@ import { Fx, FxType } from "../fx/Fx";
 import { doomsdayFxFactory, nukeFxFactory, ShockwaveFx } from "../fx/NukeFx";
 import { SpriteFx } from "../fx/SpriteFx";
 import { UnitExplosionFx } from "../fx/UnitExplosionFx";
+import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
 
 export class FxLayer implements Layer {
@@ -24,12 +25,15 @@ export class FxLayer implements Layer {
 
   private allFx: Fx[] = [];
 
-  constructor(private game: GameView) {
+  constructor(
+    private game: GameView,
+    private transformHandler: TransformHandler,
+  ) {
     this.theme = this.game.config().theme();
   }
 
   shouldTransform(): boolean {
-    return true;
+    return false;
   }
 
   tick() {
@@ -201,26 +205,14 @@ export class FxLayer implements Layer {
         this.renderAllFx(context, delta);
         this.lastRefresh = now;
       }
-      // If the offscreen canvas size matches the game size, use 3-arg drawImage (no scaling) for minor perf gain.
-      // Otherwise, fall back to 5-arg drawImage to scale correctly.
-      if (
-        this.canvas.width === this.game.width() &&
-        this.canvas.height === this.game.height()
-      ) {
-        context.drawImage(
-          this.canvas,
-          -this.game.width() / 2,
-          -this.game.height() / 2,
-        );
-      } else {
-        context.drawImage(
-          this.canvas,
-          -this.game.width() / 2,
-          -this.game.height() / 2,
-          this.game.width(),
-          this.game.height(),
-        );
-      }
+      context.save();
+      this.transformHandler.handleTransform(context);
+      context.drawImage(
+        this.canvas,
+        -this.game.width() / 2,
+        -this.game.height() / 2,
+      );
+      context.restore();
     }
   }
 
