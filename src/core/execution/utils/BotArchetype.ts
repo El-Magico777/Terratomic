@@ -168,8 +168,8 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     nukeAggressiveness: 0.9, // Very Aggressive (was 0.3 which was conservative)
 
     defenseInvestment: 0.2, // Lower defense (rely on offense)
-    offenseInvestment: 0.4,
-    structureInvestment: 0.4, // Higher economy to afford silos
+    offenseInvestment: 0.7, // Heavy offense to force Silo saving
+    structureInvestment: 0.1, // Minimal economy to prevent spending savings on cities
 
     researchInvestment: 0.2, // High research for nuke tech
     techPriorities: [

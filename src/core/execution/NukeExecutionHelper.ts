@@ -158,7 +158,7 @@ export class NukeExecutionHelper {
     const { x: closestSilo } = result;
     const distanceSquared = this.mg.euclideanDistSquared(tile, closestSilo);
     const distanceToClosestSilo = Math.sqrt(distanceSquared);
-    tileValue -= distanceToClosestSilo * 30;
+    tileValue -= distanceToClosestSilo * 5; // Reduced from 30 to allow long-range nukes
 
     // Don't target near recent targets
     tileValue -= this.lastNukeSent
