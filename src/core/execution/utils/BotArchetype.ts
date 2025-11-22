@@ -37,6 +37,19 @@ export interface BotArchetypeConfig {
   // Research behavior (Tech Tree)
   readonly researchInvestment: number; // % gold for research (0-1)
   readonly techPriorities: readonly string[]; // Tech IDs in priority order
+  // Structure behavior
+  readonly cityDensity: number; // Tiles per City
+  readonly portDensity: number; // Tiles per Port
+  readonly defensePostDensity: number; // Border tiles per Defense Post
+
+  readonly airfieldCap: number;
+  readonly siloCap: number;
+  readonly labCap: number;
+  readonly factoryCap: number;
+  readonly academyCap: number;
+  readonly hospitalCap: number;
+
+  readonly buildPriority: readonly string[]; // UnitType IDs in priority order
 }
 
 /**
@@ -66,6 +79,20 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
       RESEARCH_TECH_IDS.URBAN_PLANNING, // More troops
       RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION, // Basic economy
     ],
+
+    // Structure behavior - Rusher
+    cityDensity: 8000, // Low density
+    portDensity: 15000, // Low density
+    defensePostDensity: 200, // Very low density
+
+    airfieldCap: 2,
+    siloCap: 0,
+    labCap: 0,
+    factoryCap: 3,
+    academyCap: 2,
+    hospitalCap: 0,
+
+    buildPriority: ["Factory", "Air Field", "Academy", "Port", "City"],
   },
 
   [ArchetypeType.Turtle]: {
@@ -93,6 +120,20 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
       RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION, // Roads
       RESEARCH_TECH_IDS.STRUCTURE_INSURANCE, // Building protection
     ],
+
+    // Structure behavior - Turtle
+    cityDensity: 6000, // Standard
+    portDensity: 12000, // Standard
+    defensePostDensity: 60, // Very high density (Wall of Steel)
+
+    airfieldCap: 1,
+    siloCap: 1,
+    labCap: 1,
+    factoryCap: 0,
+    academyCap: 0,
+    hospitalCap: 3,
+
+    buildPriority: ["Defense Post", "SAM Launcher", "Hospital", "City", "Port"],
   },
 
   [ArchetypeType.Nuker]: {
@@ -118,6 +159,26 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
       RESEARCH_TECH_IDS.NUCLEAR_SUBMARINES, // Nuclear subs
       RESEARCH_TECH_IDS.URBAN_PLANNING, // Population for nukes
       RESEARCH_TECH_IDS.AUTOMATION, // Economic power
+    ],
+
+    // Structure behavior - Nuker
+    cityDensity: 7000, // Moderate
+    portDensity: 12000, // Standard
+    defensePostDensity: 150, // Low density
+
+    airfieldCap: 1,
+    siloCap: 3, // High cap
+    labCap: 3, // High cap
+    factoryCap: 0,
+    academyCap: 0,
+    hospitalCap: 0,
+
+    buildPriority: [
+      "Missile Silo",
+      "Research Lab",
+      "SAM Launcher",
+      "City",
+      "Port",
     ],
   },
 
@@ -146,6 +207,20 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
       RESEARCH_TECH_IDS.NUCLEAR_SUBMARINES, // Nuke from sea
       RESEARCH_TECH_IDS.POST_WAR_RECONSTRUCTION, // Trade routes
     ],
+
+    // Structure behavior - Naval
+    cityDensity: 6000, // Standard
+    portDensity: 4000, // Very high density
+    defensePostDensity: 120, // Moderate
+
+    airfieldCap: 2, // Naval air support
+    siloCap: 1,
+    labCap: 1,
+    factoryCap: 0,
+    academyCap: 0,
+    hospitalCap: 0,
+
+    buildPriority: ["Port", "Air Field", "City", "Defense Post"],
   },
 
   [ArchetypeType.Economist]: {
@@ -174,6 +249,20 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
       RESEARCH_TECH_IDS.STRUCTURE_INSURANCE, // Protect investments
       RESEARCH_TECH_IDS.NUCLEAR_SUBMARINES, // Late game power
     ],
+
+    // Structure behavior - Economist
+    cityDensity: 4000, // Very high density
+    portDensity: 8000, // High density
+    defensePostDensity: 100, // Moderate
+
+    airfieldCap: 1,
+    siloCap: 1,
+    labCap: 4, // Very high cap
+    factoryCap: 0,
+    academyCap: 0,
+    hospitalCap: 0,
+
+    buildPriority: ["City", "Port", "Research Lab", "Defense Post"],
   },
 };
 

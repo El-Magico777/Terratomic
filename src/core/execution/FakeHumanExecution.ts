@@ -192,6 +192,7 @@ export class FakeHumanExecution implements Execution {
       this.random,
       this.mg,
       this.player,
+      this.config,
     );
 
     if (this.firstMove) {

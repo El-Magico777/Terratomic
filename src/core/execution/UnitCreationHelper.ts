@@ -2,12 +2,10 @@ import { Game, Gold, Player, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { ConstructionExecution } from "./ConstructionExecution";
+import { BotArchetypeConfig } from "./utils/BotArchetype";
 
 export class UnitCreationHelper {
-  private static readonly CITY_DENSITY_PER_TILE = 1 / 6000;
-  private static readonly PORT_DENSITY_PER_TILE = 1 / 12000;
   private static readonly MIN_BUILDING_DISTANCE_SQUARED = 1600; // 40 tiles squared
-  private static readonly DEFENSE_POST_DENSITY_PER_BORDER_TILE = 1 / 110;
   private static readonly MAX_DISTANCE_FROM_BORDER_SQUARED = 400; // 20 tiles squared
   private static readonly MIN_DISTANCE_FROM_BORDER_SQUARED = 100; // 10 tiles squared
   private static readonly MIN_DISTANCE_BETWEEN_DEFENSE_POSTS_SQUARED = 900; // 30 tiles squared
@@ -21,6 +19,7 @@ export class UnitCreationHelper {
     private random: PseudoRandom,
     private mg: Game,
     private player: Player,
+    private config: BotArchetypeConfig,
   ) {}
 
   // Per-handleUnits invocation caches to avoid repeated heavy work.
@@ -43,51 +42,83 @@ export class UnitCreationHelper {
     this.shoreOwnedTilesCache = null;
     this.buildingBuckets = null;
 
-    const cityInfo = this.getDensityBasedStructureInfo(UnitType.City);
-    const portInfo = this.getDensityBasedStructureInfo(UnitType.Port);
+    // Iterate through build priority list
+    for (const typeName of this.config.buildPriority) {
+      const type = this.resolveUnitType(typeName);
+      if (!type) continue;
 
-    let chosenType: UnitType | null = null;
-    let chosenTile: TileRef | null = null;
-
-    if (cityInfo.canBuild && portInfo.canBuild) {
-      if (cityInfo.cost < portInfo.cost) {
-        chosenType = UnitType.City;
-        chosenTile = cityInfo.tile;
-      } else if (portInfo.cost < cityInfo.cost) {
-        chosenType = UnitType.Port;
-        chosenTile = portInfo.tile;
-      } else {
-        // Costs are equal, choose based on density gap
-        if (cityInfo.densityGap > portInfo.densityGap) {
-          chosenType = UnitType.City;
-          chosenTile = cityInfo.tile;
-        } else {
-          chosenType = UnitType.Port;
-          chosenTile = portInfo.tile;
-        }
+      if (this.tryBuild(type)) {
+        return true;
       }
-    } else if (cityInfo.canBuild) {
-      chosenType = UnitType.City;
-      chosenTile = cityInfo.tile;
-    } else if (portInfo.canBuild) {
-      chosenType = UnitType.Port;
-      chosenTile = portInfo.tile;
     }
 
-    if (chosenType !== null && chosenTile !== null) {
+    // Fallback to standard checks if priority list didn't result in a build
+    return this.maybeSpawnNavalUnit() || this.maybeSpawnSAMLauncher();
+  }
+
+  private resolveUnitType(name: string): UnitType | null {
+    // Map string names from config to UnitType enum
+    switch (name) {
+      case "City":
+        return UnitType.City;
+      case "Port":
+        return UnitType.Port;
+      case "Defense Post":
+        return UnitType.DefensePost;
+      case "Missile Silo":
+        return UnitType.MissileSilo;
+      case "Air Field":
+        return UnitType.Airfield;
+      case "Research Lab":
+        return UnitType.ResearchLab;
+      case "Factory":
+        return UnitType.Factory;
+      case "Academy":
+        return UnitType.Academy;
+      case "Hospital":
+        return UnitType.Hospital;
+      case "SAM Launcher":
+        return UnitType.SAMLauncher;
+      default:
+        return null;
+    }
+  }
+
+  private tryBuild(type: UnitType): boolean {
+    switch (type) {
+      case UnitType.City:
+      case UnitType.Port:
+        return this.maybeSpawnDensityStructure(type);
+      case UnitType.DefensePost:
+        return this.maybeSpawnDefensePost();
+      case UnitType.MissileSilo:
+        return this.maybeSpawnStructure(type, this.config.siloCap);
+      case UnitType.Airfield:
+        return this.maybeSpawnStructure(type, this.config.airfieldCap);
+      case UnitType.ResearchLab:
+        return this.maybeSpawnStructure(type, this.config.labCap);
+      case UnitType.Factory:
+        return this.maybeSpawnStructure(type, this.config.factoryCap);
+      case UnitType.Academy:
+        return this.maybeSpawnStructure(type, this.config.academyCap);
+      case UnitType.Hospital:
+        return this.maybeSpawnStructure(type, this.config.hospitalCap);
+      case UnitType.SAMLauncher:
+        return this.maybeSpawnSAMLauncher();
+      default:
+        return false;
+    }
+  }
+
+  private maybeSpawnDensityStructure(type: UnitType): boolean {
+    const info = this.getDensityBasedStructureInfo(type);
+    if (info.canBuild && info.tile) {
       this.mg.addExecution(
-        new ConstructionExecution(this.player, chosenType, chosenTile),
+        new ConstructionExecution(this.player, type, info.tile),
       );
       return true;
     }
-
-    return (
-      this.maybeSpawnStructure(UnitType.Airfield, 1) ||
-      this.maybeSpawnNavalUnit() ||
-      this.maybeSpawnSAMLauncher() ||
-      this.maybeSpawnStructure(UnitType.MissileSilo, 1) ||
-      this.maybeSpawnDefensePost()
-    );
+    return false;
   }
 
   private getDensityBasedStructureInfo(type: UnitType): {
@@ -103,8 +134,8 @@ export class UnitCreationHelper {
 
     const densityThreshold =
       type === UnitType.City
-        ? UnitCreationHelper.CITY_DENSITY_PER_TILE
-        : UnitCreationHelper.PORT_DENSITY_PER_TILE;
+        ? 1 / this.config.cityDensity
+        : 1 / this.config.portDensity;
 
     const currentDensity = this.player.unitsOwned(type) / tilesOwned;
     const cost: Gold = this.cost(type);
@@ -292,13 +323,10 @@ export class UnitCreationHelper {
 
     const currentDensity =
       this.player.unitsOwned(UnitType.DefensePost) / frontlineBorders.length;
+    const densityThreshold = 1 / this.config.defensePostDensity;
     const cost = this.cost(UnitType.DefensePost);
 
-    if (
-      currentDensity <
-        UnitCreationHelper.DEFENSE_POST_DENSITY_PER_BORDER_TILE &&
-      this.player.gold() >= cost
-    ) {
+    if (currentDensity < densityThreshold && this.player.gold() >= cost) {
       const tile = this.findSuitableDefensePostTile(frontlineBorders);
       if (tile && this.player.canBuild(UnitType.DefensePost, tile)) {
         this.mg.addExecution(
