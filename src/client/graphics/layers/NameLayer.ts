@@ -338,11 +338,43 @@ export class NameLayer implements Layer {
     if (span) {
       span.innerHTML = render.player.name();
     }
+
+    // Handle archetype display
+    let archetypeDiv = render.element.querySelector(
+      ".player-archetype",
+    ) as HTMLDivElement;
+    if (render.player.botArchetype()) {
+      if (!archetypeDiv) {
+        archetypeDiv = document.createElement("div");
+        archetypeDiv.className = "player-archetype";
+        archetypeDiv.style.zIndex = "3";
+        archetypeDiv.style.display = "flex";
+        archetypeDiv.style.justifyContent = "center";
+        archetypeDiv.style.alignItems = "center";
+        archetypeDiv.style.whiteSpace = "nowrap";
+        // Insert after nameDiv
+        render.element.insertBefore(archetypeDiv, nameDiv.nextSibling);
+      }
+
+      archetypeDiv.style.fontSize = `${render.fontSize * 0.8}px`;
+      archetypeDiv.style.lineHeight = `${render.fontSize * 0.8}px`;
+      archetypeDiv.style.color = render.fontColor;
+      archetypeDiv.style.marginTop = "-2%"; // Pull up closer to name, but not too much
+      archetypeDiv.textContent = `(${render.player.botArchetype()})`;
+    } else if (archetypeDiv) {
+      archetypeDiv.remove();
+    }
     if (flagDiv) {
       flagDiv.style.height = `${render.fontSize}px`;
     }
     troopsDiv.style.fontSize = `${render.fontSize}px`;
     troopsDiv.style.color = render.fontColor;
+    // If archetype is present, push troops down slightly or reset margin
+    if (render.player.botArchetype()) {
+      troopsDiv.style.marginTop = "0%";
+    } else {
+      troopsDiv.style.marginTop = "-5%";
+    }
     troopsDiv.textContent = renderTroops(render.player.troops());
 
     const density = renderNumber(

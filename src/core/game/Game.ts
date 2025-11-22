@@ -577,6 +577,7 @@ export interface Player {
   type(): PlayerType;
   isPlayer(): this is Player;
   toString(): string;
+  botArchetype(): string | null;
 
   // State & Properties
   isAlive(): boolean;
@@ -766,6 +767,7 @@ export interface Game extends GameMap {
   map(): GameMap;
   miniMap(): GameMap;
   forEachTile(fn: (tile: TileRef) => void): void;
+  gameID(): string;
 
   // Player Management
   player(id: PlayerID): Player;

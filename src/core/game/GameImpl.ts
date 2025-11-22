@@ -43,6 +43,7 @@ import { TerraNulliusImpl } from "./TerraNulliusImpl";
 import { UnitGrid, UnitPredicate } from "./UnitGrid";
 
 export function createGame(
+  gameID: string,
   humans: PlayerInfo[],
   nations: Nation[],
   gameMap: GameMap,
@@ -50,7 +51,15 @@ export function createGame(
   config: Config,
 ): Game {
   const stats = new StatsImpl();
-  return new GameImpl(humans, nations, gameMap, miniGameMap, config, stats);
+  return new GameImpl(
+    gameID,
+    humans,
+    nations,
+    gameMap,
+    miniGameMap,
+    config,
+    stats,
+  );
 }
 
 export type CellString = string;
@@ -88,6 +97,7 @@ export class GameImpl implements Game {
   private botTeam: Team = ColoredTeams.Bot;
 
   constructor(
+    private _gameID: string,
     private _humans: PlayerInfo[],
     private _nations: Nation[],
     private _map: GameMap,
@@ -402,6 +412,10 @@ export class GameImpl implements Game {
 
   ticks(): number {
     return this._ticks;
+  }
+
+  gameID(): string {
+    return this._gameID;
   }
 
   executeNextTick(): GameUpdates {

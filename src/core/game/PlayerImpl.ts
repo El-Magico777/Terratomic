@@ -1,4 +1,5 @@
 import { renderNumber, renderTroops } from "../../client/Utils";
+import { selectArchetype } from "../execution/utils/BotArchetype";
 import { PseudoRandom } from "../PseudoRandom";
 import { ClientID } from "../Schemas";
 import { Category, findTech } from "../tech/ResearchTree";
@@ -246,6 +247,7 @@ export class PlayerImpl implements Player {
           ? Object.fromEntries(this._researchBeakers)
           : undefined,
       researchPriorityTech: this._researchPriority,
+      botArchetype: this.botArchetype(),
     };
   }
 
@@ -262,6 +264,12 @@ export class PlayerImpl implements Player {
   }
   displayName(): string {
     return this._displayName;
+  }
+
+  botArchetype(): string | null {
+    if (this.type() !== PlayerType.FakeHuman) return null;
+    // Match logic in FakeHumanExecution: use player ID as seed
+    return selectArchetype(this.mg.gameID(), this.id().toString());
   }
 
   clientID(): ClientID | null {

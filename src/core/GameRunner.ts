@@ -78,6 +78,7 @@ export async function createGameRunner(
       );
 
   const game: Game = createGame(
+    gameStart.gameID,
     humans,
     nations,
     gameMap.gameMap,
