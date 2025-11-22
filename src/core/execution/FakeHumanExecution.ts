@@ -62,6 +62,7 @@ export class FakeHumanExecution implements Execution {
   // Archetype system
   private archetype: ArchetypeType;
   private config: BotArchetypeConfig;
+  private spawnRate = 40; // Fixed spawn rate for spawn phase (not affected by archetype)
 
   constructor(
     gameID: GameID,
@@ -135,7 +136,8 @@ export class FakeHumanExecution implements Execution {
 
   tick(ticks: number) {
     if (this.mg.inSpawnPhase()) {
-      if (ticks % this.attackRate === this.attackTick) {
+      // Use fixed spawn rate during spawn phase (not affected by archetype)
+      if (ticks % this.spawnRate === this.attackTick % this.spawnRate) {
         const rl = this.randomLand();
         if (rl === null) {
           console.warn(`cannot spawn ${this.nation.playerInfo.name}`);
