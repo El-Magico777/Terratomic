@@ -62,15 +62,9 @@ export class UnitCreationHelper {
       }
     }
 
-    // Fallback: try full priority list if category-filtered list didn't work
-    for (const typeName of this.config.buildPriority) {
-      const type = this.resolveUnitType(typeName);
-      if (!type) continue;
-
-      if (this.tryBuild(type)) {
-        return true;
-      }
-    }
+    // Fallback loop removed to enforce strict investment ratios.
+    // If we can't build the selected category (e.g. due to cost), we should
+    // save the money rather than spending it on a lower-priority cheap item.
 
     // Final fallback to standard checks
     return (

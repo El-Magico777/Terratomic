@@ -167,9 +167,9 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     nukeCandidateCap: 10, // Evaluate many targets (was 8)
     nukeAggressiveness: 0.3, // Nuke aggressively (was 0.4)
 
-    defenseInvestment: 0.3,
+    defenseInvestment: 0.2, // Lower defense (rely on offense)
     offenseInvestment: 0.4,
-    structureInvestment: 0.3, // Need economy for nukes
+    structureInvestment: 0.4, // Higher economy to afford silos
 
     researchInvestment: 0.2, // High research for nuke tech
     techPriorities: [
@@ -202,7 +202,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     // Upgrade behavior - Nuker
     upgradeInvestment: 0.25, // 25% - moderate upgrades
     upgradePriority: ["Missile Silo", "SAM Launcher", "City"],
-    upgradeThreshold: 300_000,
+    upgradeThreshold: 1_000_000, // High threshold to save for Silos (1M cost)
     maxUpgradeLevel: 3, // Respects silo/SAM max of 3
   },
 
