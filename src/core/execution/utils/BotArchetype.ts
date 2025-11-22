@@ -165,7 +165,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
 
     nukeCadence: 200, // Check nukes frequently (was 250)
     nukeCandidateCap: 10, // Evaluate many targets (was 8)
-    nukeAggressiveness: 0.3, // Nuke aggressively (was 0.4)
+    nukeAggressiveness: 0.9, // Very Aggressive (was 0.3 which was conservative)
 
     defenseInvestment: 0.2, // Lower defense (rely on offense)
     offenseInvestment: 0.4,

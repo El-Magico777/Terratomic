@@ -31,7 +31,8 @@ export class NukeExecutionHelper {
 
     const protectedAssets =
       silos.length + this.player.units(UnitType.Airfield).length;
-    if (sams.length < protectedAssets) return;
+    // SAM requirement removed: Nukers should be able to launch without defense
+    // if (sams.length < Math.ceil(protectedAssets / 3)) return;
     if (
       silos.length === 0 ||
       this.player.gold() < this.cost(UnitType.AtomBomb) ||
