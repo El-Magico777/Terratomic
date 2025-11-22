@@ -8,6 +8,7 @@ import {
   Relation,
   TerrainType,
   Tick,
+  UnitType,
   UpgradeType,
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
@@ -47,6 +48,7 @@ export class FakeHumanExecution implements Execution {
 
   private attackRate: number;
   private attackTick: number;
+  private nukeTick: number;
   private diplomacyTick: number;
   private triggerRatio: number;
   private reserveRatio: number;
@@ -80,6 +82,7 @@ export class FakeHumanExecution implements Execution {
     // Apply archetype configs
     this.attackRate = this.config.attackCadence;
     this.attackTick = this.random.nextInt(0, this.attackRate);
+    this.nukeTick = this.random.nextInt(0, this.config.nukeCadence);
     this.diplomacyTick = this.random.nextInt(0, 500);
     this.triggerRatio = this.config.triggerRatio;
     this.reserveRatio = this.config.reserveRatio;
@@ -186,6 +189,7 @@ export class FakeHumanExecution implements Execution {
       this.random,
       this.mg,
       this.player,
+      this.config,
     );
 
     this.unitCreationHelper ??= new UnitCreationHelper(
@@ -253,6 +257,11 @@ export class FakeHumanExecution implements Execution {
       }
     }
 
+    // Handle nukes on separate cadence (archetype-specific)
+    if (ticks % this.config.nukeCadence === this.nukeTick) {
+      this.handleNukes();
+    }
+
     if (ticks % this.attackRate === this.attackTick) {
       const attackedTN = this.handleTN();
       if (!attackedTN) {
@@ -265,11 +274,7 @@ export class FakeHumanExecution implements Execution {
   }
 
   handleEnemies() {
-    if (
-      this.player === null ||
-      this.behavior === null ||
-      this.nukeHelper === null
-    ) {
+    if (this.player === null || this.behavior === null) {
       throw new Error("not initialized");
     }
     this.behavior.forgetOldEnemies();
@@ -277,11 +282,19 @@ export class FakeHumanExecution implements Execution {
     const enemy = this.behavior.selectEnemy();
     if (!enemy) return;
     this.maybeSendEmoji(enemy);
-    this.nukeHelper.maybeSendNuke(enemy);
+    // Nukes are now handled separately via handleNukes()
     if (this.player.sharesBorderWith(enemy)) {
       this.behavior.sendAttack(enemy);
     } else {
       this.maybeSendBoatAttack(enemy);
+    }
+  }
+
+  private handleNukes() {
+    if (!this.player || !this.nukeHelper || !this.behavior) return;
+    const enemy = this.behavior.selectEnemy();
+    if (enemy) {
+      this.nukeHelper.maybeSendNuke(enemy);
     }
   }
 
@@ -310,6 +323,16 @@ export class FakeHumanExecution implements Execution {
       this.attackTick % this.config.boatSpawnCadence
     ) {
       return;
+    }
+
+    // Apply archetype-specific boat cap multiplier
+    const baseBoatCap = this.mg.config().boatMaxNumber();
+    const effectiveBoatCap = Math.floor(
+      baseBoatCap * this.config.boatCapMultiplier,
+    );
+    const currentBoats = this.player.unitCount(UnitType.TransportShip);
+    if (currentBoats >= effectiveBoatCap) {
+      return; // Already at or above archetype's boat cap
     }
 
     const closest = closestTwoTiles(

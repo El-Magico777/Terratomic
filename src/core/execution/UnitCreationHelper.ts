@@ -42,7 +42,22 @@ export class UnitCreationHelper {
     this.shoreOwnedTilesCache = null;
     this.buildingBuckets = null;
 
-    // Iterate through build priority list
+    // Apply probabilistic economic investment
+    // Select category based on investment percentages
+    const category = this.selectBuildCategory();
+    const filteredPriority = this.filterPriorityByCategory(category);
+
+    // Try to build from filtered priority list
+    for (const typeName of filteredPriority) {
+      const type = this.resolveUnitType(typeName);
+      if (!type) continue;
+
+      if (this.tryBuild(type)) {
+        return true;
+      }
+    }
+
+    // Fallback: try full priority list if category-filtered list didn't work
     for (const typeName of this.config.buildPriority) {
       const type = this.resolveUnitType(typeName);
       if (!type) continue;
@@ -52,7 +67,7 @@ export class UnitCreationHelper {
       }
     }
 
-    // Fallback to standard checks if priority list didn't result in a build
+    // Final fallback to standard checks
     return this.maybeSpawnNavalUnit() || this.maybeSpawnSAMLauncher();
   }
 
@@ -107,6 +122,72 @@ export class UnitCreationHelper {
         return this.maybeSpawnSAMLauncher();
       default:
         return false;
+    }
+  }
+
+  /**
+   * Select build category based on investment percentages (probabilistic)
+   */
+  private selectBuildCategory(): "defense" | "offense" | "economy" {
+    const roll = this.random.next();
+    const defense = this.config.defenseInvestment;
+    const offense = this.config.offenseInvestment;
+    const economy = this.config.structureInvestment;
+
+    // Normalize if total doesn't equal 1.0
+    const total = defense + offense + economy;
+    const normalizedDefense = defense / total;
+    const normalizedOffense = offense / total;
+
+    if (roll < normalizedDefense) {
+      return "defense";
+    } else if (roll < normalizedDefense + normalizedOffense) {
+      return "offense";
+    } else {
+      return "economy";
+    }
+  }
+
+  /**
+   * Filter build priority list by category
+   */
+  private filterPriorityByCategory(
+    category: "defense" | "offense" | "economy",
+  ): readonly string[] {
+    return this.config.buildPriority.filter((typeName) => {
+      const structureCategory = this.getStructureCategory(typeName);
+      return structureCategory === category;
+    });
+  }
+
+  /**
+   * Categorize structures into defense, offense, or economy
+   */
+  private getStructureCategory(
+    typeName: string,
+  ): "defense" | "offense" | "economy" {
+    switch (typeName) {
+      // Defense structures
+      case "Defense Post":
+      case "SAM Launcher":
+      case "Hospital":
+        return "defense";
+
+      // Offense structures
+      case "Factory":
+      case "Academy":
+      case "Air Field":
+      case "Missile Silo":
+        return "offense";
+
+      // Economy structures
+      case "City":
+      case "Port":
+      case "Research Lab":
+        return "economy";
+
+      default:
+        return "economy"; // Default to economy for unknown types
     }
   }
 

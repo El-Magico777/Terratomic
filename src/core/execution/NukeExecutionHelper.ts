@@ -13,6 +13,7 @@ import { PseudoRandom } from "../PseudoRandom";
 import { calculateBoundingBox } from "../Util";
 import { NukeExecution } from "./NukeExecution";
 import { closestTwoTiles } from "./Util";
+import { BotArchetypeConfig } from "./utils/BotArchetype";
 
 export class NukeExecutionHelper {
   private lastNukeSent: [Tick, TileRef][] = [];
@@ -21,6 +22,7 @@ export class NukeExecutionHelper {
     private random: PseudoRandom,
     private mg: Game,
     private player: Player,
+    private config: BotArchetypeConfig,
   ) {}
 
   maybeSendNuke(other: Player) {
@@ -53,7 +55,10 @@ export class NukeExecutionHelper {
       UnitType.DoomsdayDevice,
     );
     const structureTiles = structures.map((u) => u.tile());
-    const randomTiles: (TileRef | null)[] = new Array(10);
+    // Use archetype's nukeCandidateCap for random tile evaluation
+    const randomTiles: (TileRef | null)[] = new Array(
+      this.config.nukeCandidateCap,
+    );
     for (let i = 0; i < randomTiles.length; i++) {
       randomTiles[i] = this.randTerritoryTile(other);
     }
@@ -77,7 +82,11 @@ export class NukeExecutionHelper {
         bestValue = value;
       }
     }
-    if (bestTile !== null) {
+    // Apply nukeAggressiveness threshold
+    // Lower aggressiveness = higher threshold = fewer nukes
+    // Typical max value is ~100k-150k for a good target
+    const threshold = (1 - this.config.nukeAggressiveness) * 100_000;
+    if (bestTile !== null && bestValue >= threshold) {
       this.sendNuke(bestTile);
     }
   }
