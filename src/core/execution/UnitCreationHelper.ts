@@ -1,7 +1,12 @@
 import { Game, Gold, Player, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
+import {
+  isUpgradeableStructure,
+  maxStructureLevel,
+} from "../game/Upgradeables";
 import { PseudoRandom } from "../PseudoRandom";
 import { ConstructionExecution } from "./ConstructionExecution";
+import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
 import { BotArchetypeConfig } from "./utils/BotArchetype";
 
 export class UnitCreationHelper {
@@ -68,7 +73,11 @@ export class UnitCreationHelper {
     }
 
     // Final fallback to standard checks
-    return this.maybeSpawnNavalUnit() || this.maybeSpawnSAMLauncher();
+    return (
+      this.maybeUpgradeStructures() ||
+      this.maybeSpawnNavalUnit() ||
+      this.maybeSpawnSAMLauncher()
+    );
   }
 
   private resolveUnitType(name: string): UnitType | null {
@@ -189,6 +198,63 @@ export class UnitCreationHelper {
       default:
         return "economy"; // Default to economy for unknown types
     }
+  }
+
+  /**
+   * Maybe upgrade structures based on archetype configuration
+   */
+  private maybeUpgradeStructures(): boolean {
+    // Check if we have enough gold
+    if (this.player.gold() < this.config.upgradeThreshold) {
+      return false;
+    }
+
+    // Probabilistic check based on upgrade investment
+    if (this.random.next() > this.config.upgradeInvestment) {
+      return false;
+    }
+
+    // Try to upgrade structures in priority order
+    for (const typeName of this.config.upgradePriority) {
+      const type = this.resolveUnitType(typeName);
+      if (!type || !isUpgradeableStructure(type)) continue;
+
+      // Find upgradeable structures of this type
+      const structures = this.player.units(type).filter((u) => {
+        const currentLevel = u.level();
+        const hardCap = maxStructureLevel(type); // 3 for SAM/Silo, 99 for others
+        const archetypeCap = this.config.maxUpgradeLevel;
+        const effectiveCap = Math.min(hardCap, archetypeCap);
+
+        return currentLevel < effectiveCap;
+      });
+
+      if (structures.length === 0) continue;
+
+      // Upgrade lowest level first (spreads upgrades evenly)
+      const toUpgrade = structures.sort((a, b) => a.level() - b.level())[0];
+
+      // Calculate upgrade cost
+      const baseCost = this.cost(type);
+      const multiplier = this.mg.config().structureUpgradeCostMultiplier(type);
+      const upgradeCost = this.computeUpgradeStepCost(baseCost, multiplier);
+
+      if (this.player.gold() >= upgradeCost) {
+        this.mg.addExecution(
+          new UpgradeStructureExecution(this.player, toUpgrade),
+        );
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Compute upgrade cost (same formula as UpgradeStructureExecution)
+   */
+  private computeUpgradeStepCost(baseCost: Gold, multiplier: number): Gold {
+    return BigInt(Math.floor(Number(baseCost) * multiplier));
   }
 
   private maybeSpawnDensityStructure(type: UnitType): boolean {

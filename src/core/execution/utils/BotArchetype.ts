@@ -50,6 +50,12 @@ export interface BotArchetypeConfig {
   readonly hospitalCap: number;
 
   readonly buildPriority: readonly string[]; // UnitType IDs in priority order
+
+  // Upgrade behavior
+  readonly upgradeInvestment: number; // % gold for upgrades (0-1)
+  readonly upgradePriority: readonly string[]; // Structure types in priority order
+  readonly upgradeThreshold: number; // Min gold before considering upgrades
+  readonly maxUpgradeLevel: number; // Max level to upgrade structures to
 }
 
 /**
@@ -93,6 +99,12 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     hospitalCap: 0,
 
     buildPriority: ["Factory", "Air Field", "Academy", "Port", "City"],
+
+    // Upgrade behavior - Rusher
+    upgradeInvestment: 0.05, // 5% - minimal upgrades
+    upgradePriority: ["City", "Academy"],
+    upgradeThreshold: 500_000,
+    maxUpgradeLevel: 2,
   },
 
   [ArchetypeType.Turtle]: {
@@ -134,6 +146,12 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     hospitalCap: 3,
 
     buildPriority: ["Defense Post", "SAM Launcher", "Hospital", "City", "Port"],
+
+    // Upgrade behavior - Turtle
+    upgradeInvestment: 0.2, // 20% - heavy upgrades
+    upgradePriority: ["SAM Launcher", "Hospital", "City"],
+    upgradeThreshold: 200_000,
+    maxUpgradeLevel: 5,
   },
 
   [ArchetypeType.Nuker]: {
@@ -180,6 +198,12 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
       "City",
       "Port",
     ],
+
+    // Upgrade behavior - Nuker
+    upgradeInvestment: 0.15, // 15% - moderate upgrades
+    upgradePriority: ["Missile Silo", "SAM Launcher", "City"],
+    upgradeThreshold: 300_000,
+    maxUpgradeLevel: 3, // Respects silo/SAM max of 3
   },
 
   [ArchetypeType.Naval]: {
@@ -221,6 +245,12 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     hospitalCap: 0,
 
     buildPriority: ["Port", "Air Field", "City", "Defense Post"],
+
+    // Upgrade behavior - Naval
+    upgradeInvestment: 0.18, // 18% - high upgrades
+    upgradePriority: ["Port", "SAM Launcher", "City"],
+    upgradeThreshold: 250_000,
+    maxUpgradeLevel: 4,
   },
 
   [ArchetypeType.Economist]: {
@@ -263,6 +293,12 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     hospitalCap: 0,
 
     buildPriority: ["City", "Port", "Research Lab", "Defense Post"],
+
+    // Upgrade behavior - Economist
+    upgradeInvestment: 0.25, // 25% - HIGHEST upgrades
+    upgradePriority: ["City", "Port", "Research Lab", "Factory"],
+    upgradeThreshold: 150_000,
+    maxUpgradeLevel: 10, // Highest max level
   },
 };
 
