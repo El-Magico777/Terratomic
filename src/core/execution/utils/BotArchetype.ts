@@ -64,8 +64,8 @@ export interface BotArchetypeConfig {
 export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
   [ArchetypeType.Rusher]: {
     // Aggressive early attacks, minimal defense
-    attackCadence: 200, // Attack frequently
-    triggerRatio: 0.4, // Attack with 40% troop advantage
+    attackCadence: 300, // Attack frequently
+    triggerRatio: 0.5, // Attack with 50% troop advantage
     reserveRatio: 0.1, // Keep only 10% in reserve
 
     boatSpawnCadence: 400,
@@ -75,8 +75,8 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     nukeCandidateCap: 3, // Don't waste time on nukes
     nukeAggressiveness: 0.8, // Only nuke when very advantageous
 
-    defenseInvestment: 0.15, // Minimal defense
-    offenseInvestment: 0.65, // Heavy offense
+    defenseInvestment: 0.2, // Minimal defense
+    offenseInvestment: 0.6, // Heavy offense
     structureInvestment: 0.2, // Some economy
 
     researchInvestment: 0.1, // Low research
@@ -101,7 +101,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     buildPriority: ["Factory", "Air Field", "Academy", "Port", "City"],
 
     // Upgrade behavior - Rusher
-    upgradeInvestment: 0.05, // 5% - minimal upgrades
+    upgradeInvestment: 0.1, // 10% - minimal upgrades
     upgradePriority: ["City", "Academy"],
     upgradeThreshold: 500_000,
     maxUpgradeLevel: 2,
@@ -109,9 +109,9 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
 
   [ArchetypeType.Turtle]: {
     // Heavy defense, patient expansion
-    attackCadence: 500, // Attack infrequently
-    triggerRatio: 0.8, // Only attack with 80% advantage
-    reserveRatio: 0.4, // Keep 40% in reserve
+    attackCadence: 450, // Attack infrequently
+    triggerRatio: 0.6, // Only attack with 60% advantage
+    reserveRatio: 0.3, // Keep 30% in reserve
 
     boatSpawnCadence: 450,
     boatCapMultiplier: 1.0, // Standard boats
@@ -148,7 +148,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     buildPriority: ["Defense Post", "SAM Launcher", "Hospital", "City", "Port"],
 
     // Upgrade behavior - Turtle
-    upgradeInvestment: 0.2, // 20% - heavy upgrades
+    upgradeInvestment: 0.3, // 30% - heavy upgrades
     upgradePriority: ["SAM Launcher", "Hospital", "City"],
     upgradeThreshold: 200_000,
     maxUpgradeLevel: 5,
@@ -156,16 +156,16 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
 
   [ArchetypeType.Nuker]: {
     // Nuclear weapons focus, moderate aggression
-    attackCadence: 350,
-    triggerRatio: 0.6, // Moderate aggression
+    attackCadence: 400,
+    triggerRatio: 0.55, // Moderate aggression
     reserveRatio: 0.25,
 
     boatSpawnCadence: 400,
     boatCapMultiplier: 1.2, // More boats for nuke delivery
 
-    nukeCadence: 250, // Check nukes frequently
-    nukeCandidateCap: 8, // Evaluate many targets
-    nukeAggressiveness: 0.4, // Nuke aggressively
+    nukeCadence: 200, // Check nukes frequently (was 250)
+    nukeCandidateCap: 10, // Evaluate many targets (was 8)
+    nukeAggressiveness: 0.3, // Nuke aggressively (was 0.4)
 
     defenseInvestment: 0.3,
     offenseInvestment: 0.4,
@@ -185,7 +185,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     defensePostDensity: 150, // Low density
 
     airfieldCap: 1,
-    siloCap: 3, // High cap
+    siloCap: 6, // High cap (was 3) - "Many silos"
     labCap: 3, // High cap
     factoryCap: 0,
     academyCap: 0,
@@ -200,7 +200,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     ],
 
     // Upgrade behavior - Nuker
-    upgradeInvestment: 0.15, // 15% - moderate upgrades
+    upgradeInvestment: 0.25, // 25% - moderate upgrades
     upgradePriority: ["Missile Silo", "SAM Launcher", "City"],
     upgradeThreshold: 300_000,
     maxUpgradeLevel: 3, // Respects silo/SAM max of 3
@@ -208,7 +208,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
 
   [ArchetypeType.Naval]: {
     // Maritime dominance, boat-heavy strategy
-    attackCadence: 300,
+    attackCadence: 350,
     triggerRatio: 0.55,
     reserveRatio: 0.2,
 
@@ -247,7 +247,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     buildPriority: ["Port", "Air Field", "City", "Defense Post"],
 
     // Upgrade behavior - Naval
-    upgradeInvestment: 0.18, // 18% - high upgrades
+    upgradeInvestment: 0.25, // 25% - high upgrades
     upgradePriority: ["Port", "SAM Launcher", "City"],
     upgradeThreshold: 250_000,
     maxUpgradeLevel: 4,
@@ -255,8 +255,8 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
 
   [ArchetypeType.Economist]: {
     // Economic powerhouse, late-game strength
-    attackCadence: 450, // Attack rarely
-    triggerRatio: 0.7, // Only attack with advantage
+    attackCadence: 400, // Attack rarely
+    triggerRatio: 0.6, // Only attack with advantage
     reserveRatio: 0.3,
 
     boatSpawnCadence: 500,
@@ -295,7 +295,7 @@ export const ARCHETYPE_CONFIGS: Record<ArchetypeType, BotArchetypeConfig> = {
     buildPriority: ["City", "Port", "Research Lab", "Defense Post"],
 
     // Upgrade behavior - Economist
-    upgradeInvestment: 0.25, // 25% - HIGHEST upgrades
+    upgradeInvestment: 0.35, // 35% - HIGHEST upgrades
     upgradePriority: ["City", "Port", "Research Lab", "Factory"],
     upgradeThreshold: 150_000,
     maxUpgradeLevel: 10, // Highest max level
