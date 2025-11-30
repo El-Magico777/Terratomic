@@ -78,6 +78,15 @@ export class HelpModal extends LitElement {
       TechTree: this.t("tabs.tech_tree"),
       Strategy: this.t("tabs.strategy"),
     };
+    const tabIcons: Record<HelpTab, string> = {
+      GettingStarted: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`, // Compass
+      UIGuide: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>`, // Layout
+      Structures: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4 8 4v14"/><path d="M13 21V11"/><path d="M17 21v-8"/><path d="M9 21v-8"/></svg>`, // Building
+      Units: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>`, // Sword
+      Investment: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`, // Trending Up
+      TechTree: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><path d="M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5z"/><path d="M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5z"/></svg>`, // Atom
+      Strategy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`, // Map
+    };
 
     return html`
       <div class="help-tab-bar">
@@ -87,7 +96,10 @@ export class HelpModal extends LitElement {
               class="help-tab ${this.activeTab === tab ? "active" : ""}"
               @click=${() => this.onTabClick(tab)}
             >
-              ${unsafeHTML(tabLabels[tab])}
+              <span class="tab-icon" aria-hidden="true"
+                >${unsafeHTML(tabIcons[tab])}</span
+              >
+              <span>${tabLabels[tab]}</span>
             </button>
           `,
         )}
@@ -362,36 +374,42 @@ export class HelpModal extends LitElement {
         descKey: "ui_guide.command_center_build_desc",
         img: "/images/HelpModalScreenshots/CC-Build.png",
         altKey: "ui_guide.command_center_build_alt",
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4 8 4v14"/><path d="M13 21V11"/><path d="M17 21v-8"/><path d="M9 21v-8"/></svg>`,
       },
       {
         titleKey: "ui_guide.command_center_attack_title",
         descKey: "ui_guide.command_center_attack_desc",
         img: "/images/HelpModalScreenshots/CC-Attack.png",
         altKey: "ui_guide.command_center_attack_alt",
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>`,
       },
       {
         titleKey: "ui_guide.command_center_economy_title",
         descKey: "ui_guide.command_center_economy_desc",
         img: "/images/HelpModalScreenshots/CC-Economoy.png",
         altKey: "ui_guide.command_center_economy_alt",
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
       },
       {
         titleKey: "ui_guide.command_center_trade_title",
         descKey: "ui_guide.command_center_trade_desc",
         img: "/images/HelpModalScreenshots/CC-Trade.png",
         altKey: "ui_guide.command_center_trade_alt",
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-9-4-9 4c0 2.9.9 5.8 2.5 8"/><path d="M12 10V4"/><path d="M8 8v2"/><path d="M16 8v2"/></svg>`,
       },
       {
         titleKey: "ui_guide.command_center_diplomacy_title",
         descKey: "ui_guide.command_center_diplomacy_desc",
         img: "/images/HelpModalScreenshots/CC-Diplomacy.png",
         altKey: "ui_guide.command_center_diplomacy_alt",
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
       },
       {
         titleKey: "ui_guide.command_center_bombers_title",
         descKey: "ui_guide.command_center_bombers_desc",
         img: "/images/HelpModalScreenshots/CC-Bombers.png",
         altKey: "ui_guide.command_center_bombers_alt",
+        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2v20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m19.07 4.93-14.14 14.14"/></svg>`,
       },
     ];
 
@@ -492,6 +510,9 @@ export class HelpModal extends LitElement {
             (section) => html`
               <div class="help-subsection">
                 <div class="text-lg font-bold mb-2">
+                  <span class="tab-icon inline-icon" style="margin-right: 8px;">
+                    ${unsafeHTML(section.icon)}
+                  </span>
                   ${this.t(section.titleKey)}
                 </div>
                 <div class="help-row">
@@ -1378,7 +1399,21 @@ export class HelpModal extends LitElement {
             ${this.t("strategy.mistakes_title")}
           </div>
           <ul class="help-list no-bullets">
-            ${this.renderList(mistakesItems)}
+            ${mistakesItems.map(
+              (key) => html`
+                <li style="display: flex; align-items: flex-start; gap: 8px;">
+                  <span
+                    class="tab-icon inline-icon"
+                    style="flex-shrink: 0; color: #ef4444;"
+                  >
+                    ${unsafeHTML(
+                      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+                    )}
+                  </span>
+                  <span>${unsafeHTML(this.t(key))}</span>
+                </li>
+              `,
+            )}
           </ul>
         </div>
 
@@ -1488,7 +1523,7 @@ export class HelpModal extends LitElement {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-bottom: 0;
+            margin-bottom: 20px;
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
             padding-bottom: 0;
           }
@@ -1505,6 +1540,10 @@ export class HelpModal extends LitElement {
             font-weight: 500;
             text-align: center;
             font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
           }
           .help-tab:hover {
             background: rgba(255, 255, 255, 0.1);
@@ -1550,6 +1589,19 @@ export class HelpModal extends LitElement {
             padding: 12px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             text-align: left;
+          }
+          .tab-icon {
+            width: 22px;
+            height: 22px;
+            display: inline-block;
+          }
+          .tab-icon svg {
+            width: 100%;
+            height: 100%;
+            stroke: currentColor;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
           }
           .help-table th {
             background: rgba(255, 255, 255, 0.1);
