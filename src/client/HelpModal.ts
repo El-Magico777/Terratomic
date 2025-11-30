@@ -1488,9 +1488,9 @@ export class HelpModal extends LitElement {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-bottom: 16px;
+            margin-bottom: 0;
             border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 8px;
+            padding-bottom: 0;
           }
           .help-tab {
             flex: 1 1 auto;
@@ -1514,8 +1514,10 @@ export class HelpModal extends LitElement {
             background: rgba(59, 130, 246, 0.3);
             border-color: rgba(59, 130, 246, 0.5);
             color: white;
-            border-bottom: 2px solid rgba(59, 130, 246, 0.8);
-            margin-bottom: -2px;
+            border-bottom: none;
+            position: relative;
+            z-index: 1;
+            /* No margin-bottom so it sits flush with the line */
           }
           .help-tab-content {
             width: 80vw;
