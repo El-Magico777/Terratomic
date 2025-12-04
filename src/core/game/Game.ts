@@ -123,8 +123,6 @@ export const mapCategories: Record<string, GameMapType[]> = {
     GameMapType.Pangaea,
     GameMapType.Mars,
     GameMapType.DeglaciatedAntarctica,
-    GameMapType.Nukewars1024,
-    GameMapType.NukeWars2,
     GameMapType.NukeWars2000,
     GameMapType.NukeWarsQuad,
   ],
