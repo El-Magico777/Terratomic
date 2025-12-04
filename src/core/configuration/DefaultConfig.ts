@@ -83,6 +83,7 @@ const numPlayersConfig = {
   [GameMapType.Nukewars1024]: [25, 20, 15],
   [GameMapType.NukeWars2]: [25, 20, 15],
   [GameMapType.NukeWars2000]: [25, 20, 15],
+  [GameMapType.NukeWarsQuad]: [25, 20, 15],
 } as const satisfies Record<GameMapType, [number, number, number]>;
 
 const TERRAIN_EFFECTS = {

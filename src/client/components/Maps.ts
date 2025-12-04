@@ -34,6 +34,7 @@ export const MapDescription: Record<keyof typeof GameMapType, string> = {
   Nukewars1024: "Nukewars 1024",
   NukeWars2: "NukeWars 2",
   NukeWars2000: "NukeWars 2000",
+  NukeWarsQuad: "NukeWars Quad",
 };
 
 @customElement("map-display")

@@ -88,6 +88,7 @@ export enum GameMapType {
   Nukewars1024 = "Nukewars 1024",
   NukeWars2 = "NukeWars 2",
   NukeWars2000 = "NukeWars 2000",
+  NukeWarsQuad = "NukeWars Quad",
 }
 
 export type GameMapName = keyof typeof GameMapType;
@@ -125,6 +126,7 @@ export const mapCategories: Record<string, GameMapType[]> = {
     GameMapType.Nukewars1024,
     GameMapType.NukeWars2,
     GameMapType.NukeWars2000,
+    GameMapType.NukeWarsQuad,
   ],
 };
 

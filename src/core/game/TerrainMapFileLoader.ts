@@ -52,6 +52,7 @@ const MAP_FILE_NAMES: Record<GameMapType, string> = {
   [GameMapType.Nukewars1024]: "Nukewars1024",
   [GameMapType.NukeWars2]: "NukeWars2",
   [GameMapType.NukeWars2000]: "NukeWars2000",
+  [GameMapType.NukeWarsQuad]: "NukeWarsQuad",
 };
 
 class GameMapLoader {
