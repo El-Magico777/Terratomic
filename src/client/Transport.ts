@@ -32,6 +32,8 @@ import {
 import { replacer } from "../core/Util";
 import { LobbyConfig } from "./ClientGameRunner";
 import { LocalServer } from "./LocalServer";
+import { PerformanceMetrics } from "./utilities/PerformanceMetrics";
+
 export class PauseGameEvent implements GameEvent {
   constructor(public readonly paused: boolean) {}
 }
@@ -504,6 +506,7 @@ export class Transport {
     };
     this.socket.onmessage = (event: MessageEvent) => {
       try {
+        PerformanceMetrics.getInstance().recordBytesReceived(event.data.length);
         const parsed = JSON.parse(event.data);
         const result = ServerMessageSchema.safeParse(parsed);
         if (!result.success) {
@@ -1030,6 +1033,7 @@ export class Transport {
       return;
     }
     const str = JSON.stringify(msg, replacer);
+    PerformanceMetrics.getInstance().recordBytesSent(str.length);
     if (this.socket.readyState === WebSocket.CLOSED) {
       // Buffer message
       console.warn("socket not ready, closing and trying later");
