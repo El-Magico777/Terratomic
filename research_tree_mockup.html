@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terratomic Research Tree Mockup</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&display=swap");
+
+      body {
+        background-color: #125599; /* User requested blue */
+        color: #ecf0f1; /* Softer white text */
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+      }
+      .research-container {
+        width: 1100px;
+        max-width: 95vw;
+        background-color: #34495e; /* Lighter container */
+        border: 2px solid #465f75;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+      .categories-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+        background-color: #2c3e50; /* Grid lines */
+      }
+      @media (max-width: 900px) {
+        .categories-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .header {
+        background-color: #2c3e50; /* Darker header for contrast */
+        padding: 15px;
+        text-align: center;
+        font-size: 1.4em;
+        font-family: "Oswald", sans-serif;
+        letter-spacing: 1px;
+        font-weight: bold;
+        border-bottom: 2px solid #465f75;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #fff;
+      }
+      .investment-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .inv-label {
+        font-size: 0.6em;
+        color: #bdc3c7;
+        margin-right: 5px;
+        font-family: "Segoe UI", sans-serif;
+        text-transform: uppercase;
+      }
+      .inv-btn {
+        background: #34495e;
+        border: 1px solid #57606f;
+        color: #bdc3c7;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.7em;
+        font-family: "Oswald", sans-serif;
+        transition: all 0.2s;
+      }
+      .inv-btn:hover {
+        background: #465f75;
+        color: #fff;
+        border-color: #7f8c8d;
+      }
+      .inv-btn.active {
+        background: #27ae60;
+        border-color: #2ecc71;
+        color: #fff;
+        box-shadow: 0 0 8px rgba(39, 174, 96, 0.4);
+      }
+      .category {
+        padding: 15px;
+        background-color: #34495e; /* Lighter category bg */
+      }
+      .category-header {
+        font-family: "Oswald", sans-serif;
+        font-size: 1.1em;
+        font-weight: bold;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .tech-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        background: rgba(0, 0, 0, 0.2); /* Neutral dark overlay */
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      .tech-info {
+        width: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .tech-name {
+        font-size: 0.95em;
+        font-weight: 600;
+        color: #ecf0f1;
+      }
+      .tech-desc {
+        font-size: 0.75em;
+        color: #bdc3c7;
+        margin-top: 2px;
+      }
+      .progress-container {
+        flex-grow: 1;
+        height: 10px;
+        background-color: #2c3e50;
+        border-radius: 5px;
+        margin: 0 15px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid #2c3e50;
+      }
+      .progress-bar {
+        height: 100%;
+        transition: width 0.3s;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2) inset;
+      }
+      .progress-text {
+        position: absolute;
+        right: 5px;
+        top: -2px;
+        font-size: 9px;
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        font-family: monospace;
+      }
+      .priority-btn {
+        background: none;
+        border: 1px solid #7f8c8d;
+        color: #bdc3c7;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        transition: all 0.2s;
+      }
+      .priority-btn:hover {
+        background: #2c3e50;
+        color: #fff;
+        border-color: #ecf0f1;
+      }
+      .priority-btn.active {
+        background: #f39c12; /* Orange priority */
+        color: #fff;
+        border-color: #e67e22;
+        box-shadow: 0 0 8px rgba(243, 156, 18, 0.4);
+        font-weight: bold;
+      }
+
+      /* Category Colors - Kept Unique */
+      .cat-sea {
+        color: #3498db;
+        text-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+      }
+      .bar-sea {
+        background-color: #3498db;
+      }
+
+      .cat-land {
+        color: #2ecc71;
+        text-shadow: 0 0 10px rgba(46, 204, 113, 0.2);
+      }
+      .bar-land {
+        background-color: #27ae60;
+      }
+
+      .cat-air {
+        color: #9b59b6;
+        text-shadow: 0 0 10px rgba(155, 89, 182, 0.2);
+      }
+      .bar-air {
+        background-color: #8e44ad;
+      }
+
+      .cat-econ {
+        color: #f1c40f;
+        text-shadow: 0 0 10px rgba(241, 196, 15, 0.2);
+      }
+      .bar-econ {
+        background-color: #f39c12;
+      }
+
+      .locked {
+        opacity: 0.5;
+        filter: grayscale(0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="research-container">
+      <div class="header">
+        <span>R&D</span>
+        <div class="investment-control">
+          <span class="inv-label">Investment:</span>
+          <button class="inv-btn active">10%</button>
+          <button class="inv-btn">25%</button>
+          <button class="inv-btn">50%</button>
+        </div>
+      </div>
+
+      <div class="categories-grid">
+        <!-- SEA -->
+        <div class="category">
+          <div class="category-header cat-sea">🌊 SEA</div>
+
+          <div class="tech-row">
+            <div class="tech-info">
+              <div class="tech-name">Missile Navy</div>
+              <div class="tech-desc">Warship L2, Sub L2</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-sea" style="width: 40%"></div>
+              <span class="progress-text">40%</span>
+            </div>
+            <button class="priority-btn">☆ Prioritize</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">Advanced Fleet</div>
+              <div class="tech-desc">Warship L3, Ship AA</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-sea" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">Nuclear Subs</div>
+              <div class="tech-desc">Subs launch nukes</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-sea" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+        </div>
+
+        <!-- LAND -->
+        <div class="category">
+          <div class="category-header cat-land">🪖 LAND</div>
+
+          <div class="tech-row">
+            <div class="tech-info">
+              <div class="tech-name">Military Academy</div>
+              <div class="tech-desc">Academy building</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-land" style="width: 15%"></div>
+              <span class="progress-text">15%</span>
+            </div>
+            <button class="priority-btn">☆ Prioritize</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">SAM Systems</div>
+              <div class="tech-desc">AA Guns, SAM L2</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-land" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">Doomsday Device</div>
+              <div class="tech-desc">SAM L3, Doomsday</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-land" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+        </div>
+
+        <!-- AIR -->
+        <div class="category">
+          <div class="category-header cat-air">✈️ AIR</div>
+
+          <div class="tech-row">
+            <div class="tech-info">
+              <div class="tech-name">Paratroopers</div>
+              <div class="tech-desc">Paratroopers, Fighter L2</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-air" style="width: 25%"></div>
+              <span class="progress-text">25%</span>
+            </div>
+            <button class="priority-btn active">⭐ Prioritized</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">Advanced Jets</div>
+              <div class="tech-desc">Fighter L3, Bomber L2</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-air" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">Naval Strike</div>
+              <div class="tech-desc">Fighter L4, Bomber L3, Anti-Ship</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-air" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+        </div>
+
+        <!-- ECONOMY -->
+        <div class="category">
+          <div class="category-header cat-econ">💰 ECONOMY</div>
+
+          <div class="tech-row">
+            <div class="tech-info">
+              <div class="tech-name">Roads & Hospitals</div>
+              <div class="tech-desc">Roads, Hospitals</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-econ" style="width: 65%"></div>
+              <span class="progress-text">65%</span>
+            </div>
+            <button class="priority-btn">☆ Prioritize</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">International Trade</div>
+              <div class="tech-desc">Cross-border roads</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-econ" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+          <div class="tech-row locked">
+            <div class="tech-info">
+              <div class="tech-name">Insurance</div>
+              <div class="tech-desc">Building compensation</div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar bar-econ" style="width: 0%"></div>
+            </div>
+            <button class="priority-btn" disabled>🔒 Locked</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
