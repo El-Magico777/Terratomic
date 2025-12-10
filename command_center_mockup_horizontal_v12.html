@@ -1,0 +1,1204 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Terratomic Command Center Mockup (Horizontal V12 - Minimal Sidebar)
+    </title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&display=swap");
+
+      :root {
+        --bg-color: #125599;
+        --panel-bg: #34495e;
+        --panel-border: #465f75;
+        --text-color: #ecf0f1;
+        --text-muted: #bdc3c7;
+        --accent-blue: #3498db;
+        --accent-green: #27ae60;
+        --accent-orange: #f39c12;
+        --accent-red: #c0392b;
+        --grid-bg: #2c3e50;
+        --item-bg: #263544;
+        --item-hover: #2c3e50;
+        --item-active: #2980b9;
+        --gold-color: #f1c40f;
+
+        /* Slider Colors */
+        --ui-slider-track: #1a252f;
+        --ui-slider-troop: #1abc9c;
+        --ui-slider-attack: #8e44ad;
+        --ui-slider-thumb: #ecf0f1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        margin: 0;
+        height: 100vh;
+        align-items: flex-end;
+        padding-bottom: 50px;
+      }
+
+      .command-center {
+        width: 1100px;
+        height: 260px;
+        background-color: var(--panel-bg);
+        border: 2px solid var(--panel-border);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: row;
+      }
+
+      /* --- SIDEBAR --- */
+      .sidebar {
+        width: 240px;
+        background: var(--grid-bg);
+        border-right: 2px solid var(--panel-border);
+        display: flex;
+        flex-direction: column;
+        padding: 16px; /* Increased padding slightly for balance */
+        flex-shrink: 0;
+        gap: 20px; /* Increased gap since headers are gone */
+        justify-content: center; /* Center content vertically */
+      }
+
+      /* Compact Stats Design */
+      .compact-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--item-bg);
+        padding: 12px;
+        border-radius: 4px;
+        border: 1px solid var(--panel-border);
+      }
+
+      .compact-stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .stat-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .stat-icon {
+        font-size: 1.2em;
+      }
+
+      .stat-val-main {
+        font-family: "Oswald", sans-serif;
+        font-size: 1.2em;
+        font-weight: bold;
+        color: var(--text-color);
+      }
+
+      .stat-rate {
+        font-size: 0.85em;
+        color: var(--accent-green);
+        font-weight: 600;
+      }
+
+      .section-title {
+        font-family: "Oswald", sans-serif;
+        font-size: 0.85em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--panel-border);
+        padding-bottom: 2px;
+        white-space: nowrap;
+      }
+
+      /* Slider Styles */
+      .slider-group {
+        position: relative;
+      }
+
+      .slider-label {
+        font-size: 0.8em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+      }
+
+      .slider-container-inner {
+        position: relative;
+        height: 24px; /* Slightly taller for better touch */
+        display: flex;
+        align-items: center;
+      }
+
+      .slider-track {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 8px;
+        background-color: var(--ui-slider-track);
+        border-radius: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+
+      .slider-fill {
+        position: absolute;
+        left: 0;
+        height: 8px;
+        border-radius: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        background: transparent;
+        position: absolute;
+        z-index: 2;
+        margin: 0;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        background: var(--ui-slider-thumb);
+        cursor: pointer;
+        margin-top: -5px;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        border: 2px solid var(--panel-bg);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        background: var(--ui-slider-thumb);
+        cursor: pointer;
+        box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        border: 2px solid var(--panel-bg);
+      }
+
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        cursor: pointer;
+        background: transparent;
+        border-radius: 4px;
+      }
+
+      /* --- MAIN AREA --- */
+      .main-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .header {
+        background-color: var(--grid-bg);
+        padding: 0;
+        border-bottom: 2px solid var(--panel-border);
+        display: flex;
+        align-items: center;
+        height: 40px;
+        flex-shrink: 0;
+      }
+
+      .title-bar {
+        padding: 0 15px;
+        font-family: "Oswald", sans-serif;
+        font-size: 1.1em;
+        font-weight: bold;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.2);
+        height: 100%;
+        border-right: 1px solid var(--panel-border);
+        white-space: nowrap;
+      }
+
+      .tabs {
+        display: flex;
+        flex: 1;
+        height: 100%;
+      }
+
+      .tab-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        padding: 0 20px;
+        height: 100%;
+        color: var(--text-muted);
+        font-family: "Oswald", sans-serif;
+        font-size: 0.9em;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+        text-transform: uppercase;
+      }
+
+      .tab-btn:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        color: var(--text-color);
+      }
+
+      .tab-btn.active {
+        color: var(--text-color);
+        border-bottom-color: var(--accent-blue);
+        background-color: rgba(52, 152, 219, 0.1);
+      }
+
+      .stats-btn {
+        margin-left: auto;
+        margin-right: 10px;
+      }
+
+      .content {
+        flex: 1;
+        padding: 12px;
+        overflow: hidden;
+        display: none;
+      }
+
+      .content.active {
+        display: flex;
+        gap: 12px;
+      }
+
+      .col-left,
+      .col-right {
+        width: 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .col-center {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .col-third {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        border-right: 1px solid var(--panel-border);
+        padding-right: 12px;
+      }
+
+      .col-third:last-child {
+        border-right: none;
+        padding-right: 0;
+      }
+
+      .btn {
+        background: var(--grid-bg);
+        border: 1px solid var(--panel-border);
+        color: var(--text-color);
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "Segoe UI", sans-serif;
+        font-size: 0.85em;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .btn:hover {
+        background: var(--panel-border);
+        border-color: var(--text-muted);
+      }
+
+      .btn.active {
+        background: var(--accent-blue);
+        border-color: var(--accent-blue);
+        color: white;
+        box-shadow: 0 0 8px rgba(52, 152, 219, 0.4);
+      }
+
+      .btn.toggle-btn {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        align-content: start;
+      }
+
+      .grid-item {
+        background: var(--item-bg);
+        border: 1px solid var(--panel-border);
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: all 0.2s;
+        overflow: hidden;
+        height: 72px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .grid-item:hover {
+        border-color: var(--text-muted);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .grid-item.selected {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 1px var(--accent-blue);
+      }
+
+      .item-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+        position: relative;
+      }
+
+      .item-icon {
+        width: 20px;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        margin-bottom: 2px;
+      }
+
+      .item-label {
+        font-size: 0.65em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        font-weight: 600;
+      }
+
+      .item-price-bar {
+        background: rgba(0, 0, 0, 0.3);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 2px 0;
+        text-align: center;
+        font-size: 0.7em;
+        color: var(--gold-color);
+        font-weight: bold;
+        font-family: "Oswald", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+      }
+
+      .grid-item:hover .item-price-bar {
+        background: rgba(0, 0, 0, 0.5);
+      }
+
+      .grid-item.selected .item-price-bar {
+        background: var(--accent-blue);
+        color: white;
+        border-top-color: transparent;
+      }
+
+      .level-setter {
+        display: flex;
+        align-items: center;
+        background: var(--grid-bg);
+        border: 1px solid var(--panel-border);
+        border-radius: 4px;
+        padding: 4px;
+        margin-bottom: 8px;
+      }
+
+      .level-display {
+        flex: 1;
+        text-align: center;
+        font-weight: bold;
+        font-size: 0.9em;
+      }
+
+      .level-btn {
+        width: 20px;
+        height: 20px;
+        background: var(--panel-border);
+        border: none;
+        color: white;
+        border-radius: 2px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8em;
+      }
+
+      .trade-demand {
+        background: rgba(243, 156, 18, 0.2);
+        border: 1px solid var(--accent-orange);
+        color: var(--accent-orange);
+        padding: 6px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .investment-group {
+        background: var(--item-bg);
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid var(--panel-border);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .inv-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        font-size: 0.85em;
+        font-weight: 600;
+      }
+
+      .inv-buttons {
+        display: flex;
+        gap: 4px;
+        margin-bottom: auto;
+      }
+
+      .inv-choice-btn {
+        flex: 1;
+        background: var(--grid-bg);
+        border: 1px solid var(--panel-border);
+        color: var(--text-muted);
+        padding: 4px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "Oswald", sans-serif;
+        font-size: 0.85em;
+        transition: all 0.2s;
+      }
+
+      .inv-choice-btn:hover {
+        background: var(--panel-border);
+        color: white;
+      }
+
+      .inv-choice-btn.active {
+        background: var(--accent-green);
+        border-color: var(--accent-green);
+        color: white;
+        box-shadow: 0 0 5px rgba(39, 174, 96, 0.4);
+      }
+
+      .inv-details {
+        margin-top: 6px;
+        font-size: 0.7em;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .minified-tree {
+        background: var(--grid-bg);
+        border: 1px solid var(--panel-border);
+        border-radius: 6px;
+        padding: 6px;
+        position: relative;
+        height: 100%;
+        overflow-y: auto;
+      }
+
+      .tree-node {
+        display: flex;
+        align-items: center;
+        margin-bottom: 4px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px 6px;
+        border-radius: 4px;
+      }
+
+      .node-icon {
+        width: 18px;
+        height: 18px;
+        background: var(--accent-blue);
+        border-radius: 50%;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        flex-shrink: 0;
+      }
+
+      .node-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .node-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .node-name {
+        font-size: 0.75em;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .node-eta {
+        font-size: 0.7em;
+        color: var(--text-muted);
+        margin-left: 6px;
+      }
+
+      .node-progress {
+        height: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        margin-top: 2px;
+        overflow: hidden;
+      }
+
+      .node-bar {
+        height: 100%;
+        background: var(--accent-green);
+        width: 45%;
+      }
+
+      .priority-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .priority-option {
+        background: var(--item-bg);
+        border: 1px solid var(--panel-border);
+        padding: 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8em;
+        transition: all 0.2s;
+      }
+
+      .priority-option:hover {
+        background: var(--item-hover);
+      }
+
+      .priority-option.active {
+        border-color: var(--accent-orange);
+        background: rgba(243, 156, 18, 0.1);
+        color: var(--accent-orange);
+      }
+
+      .radio-circle {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 2px solid var(--text-muted);
+        position: relative;
+      }
+
+      .priority-option.active .radio-circle {
+        border-color: var(--accent-orange);
+      }
+
+      .priority-option.active .radio-circle::after {
+        content: "";
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        width: 4px;
+        height: 4px;
+        background: var(--accent-orange);
+        border-radius: 50%;
+      }
+
+      .full-tree-btn {
+        width: 100%;
+        padding: 8px;
+        background: var(--panel-border);
+        border: none;
+        color: white;
+        font-family: "Oswald", sans-serif;
+        text-transform: uppercase;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.2s;
+        margin-top: auto;
+        font-size: 0.85em;
+      }
+
+      .full-tree-btn:hover {
+        background: var(--accent-blue);
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--panel-border);
+        border-radius: 2px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="command-center">
+      <!-- SIDEBAR (Integrated Control Panel) -->
+      <div class="sidebar">
+        <!-- Compact Stats -->
+        <div class="compact-stats">
+          <!-- Gold Row -->
+          <div class="compact-stat-row">
+            <div class="stat-left">
+              <span class="stat-icon">💰</span>
+              <span class="stat-val-main" style="color: var(--gold-color)"
+                >12,450</span
+              >
+            </div>
+            <span class="stat-rate">+120/s</span>
+          </div>
+
+          <!-- Pop Row -->
+          <div class="compact-stat-row">
+            <div class="stat-left">
+              <span class="stat-icon">👥</span>
+              <span class="stat-val-main" style="color: var(--accent-blue)"
+                >4,500</span
+              >
+            </div>
+            <span class="stat-rate">+5/s</span>
+          </div>
+        </div>
+
+        <!-- Troops/Workers Ratio Slider -->
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Troops: 60%</span>
+            <span>Workers: 40%</span>
+          </div>
+          <div class="slider-container-inner">
+            <div class="slider-track"></div>
+            <div
+              class="slider-fill"
+              style="width: 60%; background-color: var(--ui-slider-troop)"
+            ></div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="60"
+              oninput="updateSlider(this, 'troop')"
+            />
+          </div>
+        </div>
+
+        <!-- Attack Ratio Slider -->
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Attack Ratio</span>
+            <span>30%</span>
+          </div>
+          <div class="slider-container-inner">
+            <div class="slider-track"></div>
+            <div
+              class="slider-fill"
+              style="width: 30%; background-color: var(--ui-slider-attack)"
+            ></div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="30"
+              oninput="updateSlider(this, 'attack')"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Area (Header + Tabs) -->
+      <div class="main-area">
+        <div class="header">
+          <div class="title-bar">
+            <span>COMMAND CENTER</span>
+          </div>
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('build')">
+              Build
+            </button>
+            <button class="tab-btn" onclick="switchTab('attack')">
+              Attack
+            </button>
+            <button class="tab-btn" onclick="switchTab('economy')">
+              Economy
+            </button>
+            <button class="tab-btn" onclick="switchTab('rnd')">R&D</button>
+          </div>
+          <button class="btn stats-btn" style="padding: 4px 10px">
+            Stats 📊
+          </button>
+        </div>
+
+        <!-- BUILD TAB -->
+        <div id="tab-build" class="content active">
+          <!-- Left Column: Status & Settings -->
+          <div class="col-left">
+            <div class="section-title">Status</div>
+            <div class="trade-demand">
+              <span>⚠️</span>
+              <div>
+                <strong>Trade Demand</strong>
+                <div style="font-size: 0.8em; opacity: 0.8">
+                  High (Build Ports)
+                </div>
+              </div>
+            </div>
+
+            <div class="section-title" style="margin-top: 10px">Level</div>
+            <div class="level-setter">
+              <span
+                style="
+                  margin-left: 8px;
+                  font-size: 0.85em;
+                  color: var(--text-muted);
+                "
+                >Lvl:</span
+              >
+              <div class="level-display">MAX</div>
+              <div style="display: flex; gap: 2px">
+                <button class="level-btn">-</button>
+                <button class="level-btn">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center Column: The Grid -->
+          <div class="col-center">
+            <div class="section-title">Structures</div>
+            <div class="grid-container">
+              <!-- Item 1 -->
+              <div class="grid-item selected">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">City</div>
+                </div>
+                <div class="item-price-bar">1.5k</div>
+              </div>
+              <!-- Item 2 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Factory</div>
+                </div>
+                <div class="item-price-bar">2.0k</div>
+              </div>
+              <!-- Item 3 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Research</div>
+                </div>
+                <div class="item-price-bar">5.0k</div>
+              </div>
+              <!-- Item 4 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Academy</div>
+                </div>
+                <div class="item-price-bar">3.5k</div>
+              </div>
+              <!-- Item 5 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Port</div>
+                </div>
+                <div class="item-price-bar">2.5k</div>
+              </div>
+              <!-- Item 6 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Airfield</div>
+                </div>
+                <div class="item-price-bar">4.0k</div>
+              </div>
+              <!-- Item 7 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Defense</div>
+                </div>
+                <div class="item-price-bar">1.0k</div>
+              </div>
+              <!-- Item 8 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Silo</div>
+                </div>
+                <div class="item-price-bar">8.0k</div>
+              </div>
+              <!-- Item 9 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">SAM</div>
+                </div>
+                <div class="item-price-bar">2.5k</div>
+              </div>
+              <!-- Item 10 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Hospital</div>
+                </div>
+                <div class="item-price-bar">1.2k</div>
+              </div>
+              <!-- Item 11 -->
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Doomsday</div>
+                </div>
+                <div class="item-price-bar">50k</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Toggles -->
+          <div class="col-right">
+            <div class="section-title">Modes</div>
+            <button class="btn toggle-btn">
+              <span>Multi-Build</span>
+              <span style="font-size: 0.8em; opacity: 0.7">OFF</span>
+            </button>
+
+            <button class="btn toggle-btn active">
+              <span>Upgrade</span>
+              <span style="font-size: 0.8em">ON</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ATTACK TAB -->
+        <div id="tab-attack" class="content">
+          <!-- Left Column: Info -->
+          <div class="col-left">
+            <div class="section-title">Unit Info</div>
+            <div
+              style="
+                padding: 8px;
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 4px;
+                font-size: 0.8em;
+                color: var(--text-muted);
+              "
+            >
+              <div style="margin-bottom: 4px"><strong>Unit Levels</strong></div>
+              <div style="margin-bottom: 6px; font-size: 0.9em; opacity: 0.8">
+                Controlled by Research Techs.
+              </div>
+              <div>Fighter: <strong>Lvl 2</strong></div>
+              <div>Bomber: <strong>Lvl 1</strong></div>
+            </div>
+          </div>
+
+          <!-- Center Column: The Grid -->
+          <div class="col-center">
+            <div class="section-title">Military Units</div>
+            <div class="grid-container">
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Fighter</div>
+                </div>
+                <div class="item-price-bar">500</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Bomber</div>
+                </div>
+                <div class="item-price-bar">1.2k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Warship</div>
+                </div>
+                <div class="item-price-bar">3.0k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Sub</div>
+                </div>
+                <div class="item-price-bar">2.5k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">Nuke</div>
+                </div>
+                <div class="item-price-bar">15k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">MIRV</div>
+                </div>
+                <div class="item-price-bar">25k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon"></div>
+                  <div class="item-label">H-Bomb</div>
+                </div>
+                <div class="item-price-bar">50k</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Toggles -->
+          <div class="col-right">
+            <div class="section-title">Modes</div>
+            <button class="btn toggle-btn">
+              <span>Multi-Build</span>
+              <span style="font-size: 0.8em; opacity: 0.7">OFF</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ECONOMY TAB -->
+        <div id="tab-economy" class="content">
+          <div class="col-third">
+            <div class="section-title">Production</div>
+            <div class="investment-group">
+              <div class="inv-header">
+                <span>Investment</span>
+                <span style="color: var(--accent-green)">10%</span>
+              </div>
+              <div class="inv-buttons">
+                <button class="inv-choice-btn active">10%</button>
+                <button class="inv-choice-btn">25%</button>
+                <button class="inv-choice-btn">50%</button>
+              </div>
+              <div class="inv-details">
+                <span>Productivity: 85%</span>
+                <span style="color: var(--accent-green)">(+2.1%/min)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-third">
+            <div class="section-title">Research</div>
+            <div class="investment-group">
+              <div class="inv-header">
+                <span>Investment</span>
+                <span style="color: var(--accent-blue)">25%</span>
+              </div>
+              <div class="inv-buttons">
+                <button class="inv-choice-btn">10%</button>
+                <button class="inv-choice-btn active">25%</button>
+                <button class="inv-choice-btn">50%</button>
+              </div>
+              <div class="inv-details">
+                <span>Current: Advanced Metallurgy</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- R&D TAB -->
+        <div id="tab-rnd" class="content">
+          <div class="col-third" style="flex: 1.5">
+            <div class="section-title">Active Research (4/4)</div>
+            <div class="minified-tree">
+              <!-- Tech 1 -->
+              <div class="tree-node">
+                <div class="node-icon">⚙️</div>
+                <div class="node-info">
+                  <div class="node-header">
+                    <span class="node-name">Adv. Metallurgy</span>
+                    <span class="node-eta">2m 30s</span>
+                  </div>
+                  <div class="node-progress">
+                    <div class="node-bar" style="width: 45%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tech 2 -->
+              <div class="tree-node">
+                <div class="node-icon" style="background: #555">✈️</div>
+                <div class="node-info">
+                  <div class="node-header">
+                    <span class="node-name">Jet Engines</span>
+                    <span class="node-eta">5m 10s</span>
+                  </div>
+                  <div class="node-progress">
+                    <div
+                      class="node-bar"
+                      style="width: 12%; background: var(--accent-orange)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tech 3 -->
+              <div class="tree-node">
+                <div class="node-icon" style="background: #8e44ad">🛡️</div>
+                <div class="node-info">
+                  <div class="node-header">
+                    <span class="node-name">Composite Armor</span>
+                    <span class="node-eta">45s</span>
+                  </div>
+                  <div class="node-progress">
+                    <div
+                      class="node-bar"
+                      style="width: 88%; background: var(--accent-blue)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tech 4 -->
+              <div class="tree-node">
+                <div class="node-icon" style="background: #16a085">🧠</div>
+                <div class="node-info">
+                  <div class="node-header">
+                    <span class="node-name">AI Logistics</span>
+                    <span class="node-eta">12m</span>
+                  </div>
+                  <div class="node-progress">
+                    <div
+                      class="node-bar"
+                      style="width: 5%; background: var(--accent-red)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-third">
+            <div class="section-title">Auto-Priority</div>
+            <div class="priority-selector">
+              <div class="priority-option">
+                <div class="radio-circle"></div>
+                <span>Military</span>
+              </div>
+              <div class="priority-option active">
+                <div class="radio-circle"></div>
+                <span>Economy</span>
+              </div>
+              <div class="priority-option">
+                <div class="radio-circle"></div>
+                <span>Infra</span>
+              </div>
+              <div class="priority-option">
+                <div class="radio-circle"></div>
+                <span>Special</span>
+              </div>
+            </div>
+            <button class="full-tree-btn" style="margin-top: 15px">
+              Full Tree ↗
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function switchTab(tabId) {
+        // Hide all contents
+        document
+          .querySelectorAll(".content")
+          .forEach((el) => el.classList.remove("active"));
+        // Deactivate all buttons
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((el) => el.classList.remove("active"));
+
+        // Activate selected
+        document.getElementById("tab-" + tabId).classList.add("active");
+        // Find button (simple approximation for mockup)
+        const buttons = document.querySelectorAll(".tab-btn");
+        if (tabId === "build") buttons[0].classList.add("active");
+        if (tabId === "attack") buttons[1].classList.add("active");
+        if (tabId === "economy") buttons[2].classList.add("active");
+        if (tabId === "rnd") buttons[3].classList.add("active");
+      }
+
+      function updateSlider(input, type) {
+        const fill = input.previousElementSibling;
+        fill.style.width = input.value + "%";
+
+        // Update label text (mockup logic)
+        const label = input.parentElement.previousElementSibling;
+        if (type === "troop") {
+          label.children[0].textContent = "Troops: " + input.value + "%";
+          label.children[1].textContent =
+            "Workers: " + (100 - input.value) + "%";
+        } else {
+          label.children[1].textContent = input.value + "%";
+        }
+      }
+    </script>
+  </body>
+</html>
