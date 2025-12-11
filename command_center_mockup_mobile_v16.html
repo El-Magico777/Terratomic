@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Terratomic Command Center Mockup (V16 - Mobile/Tablet)</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&display=swap");
+
+      :root {
+        --bg-color: #125599;
+        --panel-bg: #34495e;
+        --panel-border: #465f75;
+        --text-color: #ecf0f1;
+        --text-muted: #bdc3c7;
+        --accent-blue: #3498db;
+        --accent-green: #27ae60;
+        --accent-orange: #f39c12;
+        --accent-red: #c0392b;
+        --grid-bg: #2c3e50;
+        --item-bg: #263544;
+        --item-hover: #2c3e50;
+        --item-active: #2980b9;
+        --gold-color: #f1c40f;
+        --ui-slider-track: #1a252f;
+        --ui-slider-troop: #1abc9c;
+        --ui-slider-attack: #8e44ad;
+        --ui-slider-thumb: #ecf0f1;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* === GAME AREA (placeholder) === */
+      .game-area {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+        color: var(--text-muted);
+        opacity: 0.5;
+      }
+
+      /* === TOP HUD BAR === */
+      .top-hud {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50px;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        gap: 12px;
+        z-index: 100;
+      }
+
+      .hud-stat {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 0.85em;
+      }
+
+      .hud-stat-icon {
+        font-size: 1em;
+      }
+
+      .hud-stat-value {
+        font-family: "Oswald", sans-serif;
+        font-weight: bold;
+      }
+
+      .hud-stat-rate {
+        font-size: 0.8em;
+        color: var(--accent-green);
+      }
+
+      /* === BOTTOM NAV BAR === */
+      .bottom-nav {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 70px;
+        background: var(--panel-bg);
+        border-top: 2px solid var(--panel-border);
+        display: flex;
+        align-items: stretch;
+        justify-content: space-around;
+        padding: 0 8px;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        z-index: 100;
+      }
+
+      .nav-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 8px 4px;
+        border-top: 3px solid transparent;
+        margin-top: -2px;
+      }
+
+      .nav-btn:active {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .nav-btn.active {
+        color: var(--accent-blue);
+        border-top-color: var(--accent-blue);
+      }
+
+      .nav-icon {
+        font-size: 1.5em;
+      }
+
+      .nav-label {
+        font-size: 0.7em;
+        font-family: "Oswald", sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* === MODAL OVERLAY === */
+      .modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 200;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+      }
+
+      .modal-overlay.active {
+        display: flex;
+      }
+
+      /* === BOTTOM SHEET MODAL === */
+      .bottom-sheet {
+        width: 100%;
+        max-height: 75vh;
+        background: var(--panel-bg);
+        border-radius: 16px 16px 0 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        animation: slideUp 0.3s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+
+      .sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--panel-border);
+        flex-shrink: 0;
+      }
+
+      .sheet-title {
+        font-family: "Oswald", sans-serif;
+        font-size: 1.2em;
+        font-weight: bold;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sheet-close {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--grid-bg);
+        border: none;
+        color: var(--text-color);
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .sheet-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+
+      /* === BUILD GRID (Mobile optimized) === */
+      .mobile-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .mobile-grid-item {
+        background: var(--item-bg);
+        border: 2px solid var(--panel-border);
+        border-radius: 8px;
+        padding: 12px 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .mobile-grid-item:active {
+        transform: scale(0.95);
+        border-color: var(--accent-blue);
+      }
+
+      .mobile-grid-item.selected {
+        border-color: var(--accent-blue);
+        background: rgba(52, 152, 219, 0.15);
+      }
+
+      .mobile-item-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+      }
+
+      .mobile-item-label {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .mobile-item-price {
+        font-family: "Oswald", sans-serif;
+        font-size: 0.85em;
+        color: var(--gold-color);
+        font-weight: bold;
+      }
+
+      /* === SLIDER (Mobile) === */
+      .mobile-slider-group {
+        background: var(--grid-bg);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+      }
+
+      .mobile-slider-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85em;
+        margin-bottom: 10px;
+        color: var(--text-muted);
+      }
+
+      .mobile-slider-track {
+        position: relative;
+        height: 32px;
+        display: flex;
+        align-items: center;
+      }
+
+      .mobile-slider-bg {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 10px;
+        background: var(--ui-slider-track);
+        border-radius: 5px;
+      }
+
+      .mobile-slider-fill {
+        position: absolute;
+        left: 0;
+        height: 10px;
+        border-radius: 5px;
+        pointer-events: none;
+      }
+
+      .mobile-slider-track input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 32px;
+        background: transparent;
+        position: relative;
+        z-index: 2;
+        margin: 0;
+      }
+
+      .mobile-slider-track input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 28px;
+        width: 28px;
+        border-radius: 50%;
+        background: var(--ui-slider-thumb);
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        border: 3px solid var(--panel-bg);
+      }
+
+      /* === TOAST NOTIFICATIONS (Mobile) === */
+      .toast-container {
+        position: absolute;
+        top: 60px;
+        left: 10px;
+        right: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 150;
+        pointer-events: none;
+      }
+
+      .toast {
+        background: var(--panel-bg);
+        border: 2px solid var(--panel-border);
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        animation: slideInDown 0.3s ease-out;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        pointer-events: auto;
+      }
+
+      @keyframes slideInDown {
+        from {
+          transform: translateY(-100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .toast-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        font-size: 0.9em;
+      }
+
+      .toast-icon {
+        font-size: 1.1em;
+      }
+
+      .toast-close {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 1.3em;
+        padding: 0;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+      }
+
+      .toast-close:active {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .toast-body {
+        font-size: 0.85em;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      .toast-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .toast-btn {
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: none;
+        background: var(--grid-bg);
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 0.9em;
+        font-weight: 600;
+      }
+
+      .toast-btn:active {
+        opacity: 0.8;
+      }
+
+      .toast-btn.success {
+        background: var(--accent-green);
+        color: white;
+      }
+
+      .toast-btn.danger {
+        background: var(--accent-red);
+        color: white;
+      }
+
+      .toast.alliance {
+        border-left: 4px solid var(--accent-blue);
+      }
+
+      .toast.attack {
+        border-left: 4px solid var(--accent-red);
+      }
+
+      .toast.research {
+        border-left: 4px solid var(--accent-green);
+      }
+
+      /* === SECTION TITLE === */
+      .section-title {
+        font-family: "Oswald", sans-serif;
+        font-size: 0.8em;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--panel-border);
+      }
+
+      /* === QUICK ACTION BUTTONS === */
+      .quick-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .quick-action-btn {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        border: 2px solid var(--panel-border);
+        background: var(--grid-bg);
+        color: var(--text-color);
+        font-family: "Oswald", sans-serif;
+        font-size: 0.85em;
+        text-transform: uppercase;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .quick-action-btn:active {
+        background: var(--panel-border);
+      }
+
+      .quick-action-btn.active {
+        background: var(--accent-blue);
+        border-color: var(--accent-blue);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Game Area Placeholder -->
+    <div class="game-area">[ Game Map ]</div>
+
+    <!-- Top HUD Bar -->
+    <div class="top-hud">
+      <div class="hud-stat">
+        <span class="hud-stat-icon">💰</span>
+        <span class="hud-stat-value" style="color: var(--gold-color)"
+          >12,450</span
+        >
+        <span class="hud-stat-rate">+120/s</span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-stat-icon">👥</span>
+        <span class="hud-stat-value" style="color: var(--accent-blue)"
+          >4,500</span
+        >
+        <span class="hud-stat-rate">+5/s</span>
+      </div>
+    </div>
+
+    <!-- Toast Notifications (Top, below HUD) -->
+    <div class="toast-container">
+      <!-- Alliance Request Toast -->
+      <div class="toast alliance">
+        <div class="toast-header">
+          <span class="toast-icon">🤝</span>
+          <span>Alliance Request</span>
+          <button
+            class="toast-close"
+            onclick="this.parentElement.parentElement.remove()"
+          >
+            ×
+          </button>
+        </div>
+        <div class="toast-body">
+          <strong>Player_42</strong> wants to form an alliance.
+        </div>
+        <div class="toast-actions">
+          <button class="toast-btn" onclick="alert('Focus')">Focus</button>
+          <button
+            class="toast-btn success"
+            onclick="this.closest('.toast').remove()"
+          >
+            Accept
+          </button>
+          <button
+            class="toast-btn danger"
+            onclick="this.closest('.toast').remove()"
+          >
+            Reject
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav">
+      <button class="nav-btn active" onclick="openSheet('build')">
+        <span class="nav-icon">🏗️</span>
+        <span class="nav-label">Build</span>
+      </button>
+      <button class="nav-btn" onclick="openSheet('attack')">
+        <span class="nav-icon">⚔️</span>
+        <span class="nav-label">Attack</span>
+      </button>
+      <button class="nav-btn" onclick="openSheet('economy')">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Economy</span>
+      </button>
+      <button class="nav-btn" onclick="openSheet('rnd')">
+        <span class="nav-icon">🔬</span>
+        <span class="nav-label">R&D</span>
+      </button>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeSheet()">
+      <!-- BUILD SHEET -->
+      <div
+        class="bottom-sheet"
+        id="sheet-build"
+        onclick="event.stopPropagation()"
+      >
+        <div class="sheet-header">
+          <span class="sheet-title">🏗️ Build</span>
+          <button class="sheet-close" onclick="closeSheet()">×</button>
+        </div>
+        <div class="sheet-content">
+          <div class="section-title">Structures</div>
+          <div class="mobile-grid">
+            <div class="mobile-grid-item selected">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">City</div>
+              <div class="mobile-item-price">1.5k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Factory</div>
+              <div class="mobile-item-price">2.0k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Research</div>
+              <div class="mobile-item-price">5.0k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Academy</div>
+              <div class="mobile-item-price">3.5k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Port</div>
+              <div class="mobile-item-price">2.5k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Airfield</div>
+              <div class="mobile-item-price">4.0k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Defense</div>
+              <div class="mobile-item-price">1.0k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Silo</div>
+              <div class="mobile-item-price">8.0k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">SAM</div>
+              <div class="mobile-item-price">2.5k</div>
+            </div>
+          </div>
+          <div class="quick-actions">
+            <button class="quick-action-btn">Multi-Build</button>
+            <button class="quick-action-btn active">Upgrade Mode</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTACK SHEET -->
+      <div
+        class="bottom-sheet"
+        id="sheet-attack"
+        style="display: none"
+        onclick="event.stopPropagation()"
+      >
+        <div class="sheet-header">
+          <span class="sheet-title">⚔️ Attack</span>
+          <button class="sheet-close" onclick="closeSheet()">×</button>
+        </div>
+        <div class="sheet-content">
+          <div class="section-title">Military Units</div>
+          <div class="mobile-grid">
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Fighter</div>
+              <div class="mobile-item-price">500</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Bomber</div>
+              <div class="mobile-item-price">1.2k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Warship</div>
+              <div class="mobile-item-price">3.0k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Sub</div>
+              <div class="mobile-item-price">2.5k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">Nuke</div>
+              <div class="mobile-item-price">15k</div>
+            </div>
+            <div class="mobile-grid-item">
+              <div class="mobile-item-icon"></div>
+              <div class="mobile-item-label">MIRV</div>
+              <div class="mobile-item-price">25k</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ECONOMY SHEET -->
+      <div
+        class="bottom-sheet"
+        id="sheet-economy"
+        style="display: none"
+        onclick="event.stopPropagation()"
+      >
+        <div class="sheet-header">
+          <span class="sheet-title">📊 Economy</span>
+          <button class="sheet-close" onclick="closeSheet()">×</button>
+        </div>
+        <div class="sheet-content">
+          <div class="section-title">Troops / Workers Ratio</div>
+          <div class="mobile-slider-group">
+            <div class="mobile-slider-label">
+              <span>Troops: 60%</span>
+              <span>Workers: 40%</span>
+            </div>
+            <div class="mobile-slider-track">
+              <div class="mobile-slider-bg"></div>
+              <div
+                class="mobile-slider-fill"
+                style="width: 60%; background: var(--ui-slider-troop)"
+              ></div>
+              <input type="range" min="0" max="100" value="60" />
+            </div>
+          </div>
+
+          <div class="section-title">Attack Ratio</div>
+          <div class="mobile-slider-group">
+            <div class="mobile-slider-label">
+              <span>Attack Ratio</span>
+              <span>30%</span>
+            </div>
+            <div class="mobile-slider-track">
+              <div class="mobile-slider-bg"></div>
+              <div
+                class="mobile-slider-fill"
+                style="width: 30%; background: var(--ui-slider-attack)"
+              ></div>
+              <input type="range" min="0" max="100" value="30" />
+            </div>
+          </div>
+
+          <div class="section-title">Investment</div>
+          <div class="quick-actions">
+            <button class="quick-action-btn active">10%</button>
+            <button class="quick-action-btn">25%</button>
+            <button class="quick-action-btn">50%</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- R&D SHEET -->
+      <div
+        class="bottom-sheet"
+        id="sheet-rnd"
+        style="display: none"
+        onclick="event.stopPropagation()"
+      >
+        <div class="sheet-header">
+          <span class="sheet-title">🔬 Research & Development</span>
+          <button class="sheet-close" onclick="closeSheet()">×</button>
+        </div>
+        <div class="sheet-content">
+          <div class="section-title">Active Research (4/4)</div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div
+              style="
+                background: var(--grid-bg);
+                padding: 12px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+              "
+            >
+              <div
+                style="
+                  width: 36px;
+                  height: 36px;
+                  background: var(--accent-blue);
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                ⚙️
+              </div>
+              <div style="flex: 1">
+                <div style="font-weight: bold; font-size: 0.9em">
+                  Adv. Metallurgy
+                </div>
+                <div
+                  style="
+                    height: 6px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                    margin-top: 6px;
+                  "
+                >
+                  <div
+                    style="
+                      height: 100%;
+                      width: 45%;
+                      background: var(--accent-green);
+                      border-radius: 3px;
+                    "
+                  ></div>
+                </div>
+              </div>
+              <div style="font-size: 0.8em; color: var(--text-muted)">
+                2m 30s
+              </div>
+            </div>
+            <div
+              style="
+                background: var(--grid-bg);
+                padding: 12px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+              "
+            >
+              <div
+                style="
+                  width: 36px;
+                  height: 36px;
+                  background: #555;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                ✈️
+              </div>
+              <div style="flex: 1">
+                <div style="font-weight: bold; font-size: 0.9em">
+                  Jet Engines
+                </div>
+                <div
+                  style="
+                    height: 6px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                    margin-top: 6px;
+                  "
+                >
+                  <div
+                    style="
+                      height: 100%;
+                      width: 12%;
+                      background: var(--accent-orange);
+                      border-radius: 3px;
+                    "
+                  ></div>
+                </div>
+              </div>
+              <div style="font-size: 0.8em; color: var(--text-muted)">
+                5m 10s
+              </div>
+            </div>
+            <div
+              style="
+                background: var(--grid-bg);
+                padding: 12px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+              "
+            >
+              <div
+                style="
+                  width: 36px;
+                  height: 36px;
+                  background: #8e44ad;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                🛡️
+              </div>
+              <div style="flex: 1">
+                <div style="font-weight: bold; font-size: 0.9em">
+                  Composite Armor
+                </div>
+                <div
+                  style="
+                    height: 6px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                    margin-top: 6px;
+                  "
+                >
+                  <div
+                    style="
+                      height: 100%;
+                      width: 88%;
+                      background: var(--accent-blue);
+                      border-radius: 3px;
+                    "
+                  ></div>
+                </div>
+              </div>
+              <div style="font-size: 0.8em; color: var(--text-muted)">45s</div>
+            </div>
+          </div>
+          <div class="quick-actions" style="margin-top: 20px">
+            <button class="quick-action-btn" style="flex: 1">
+              Full Tech Tree ↗
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentSheet = null;
+
+      function openSheet(sheetId) {
+        // Hide all sheets
+        document
+          .querySelectorAll(".bottom-sheet")
+          .forEach((s) => (s.style.display = "none"));
+        // Show selected sheet
+        document.getElementById("sheet-" + sheetId).style.display = "flex";
+        // Show overlay
+        document.getElementById("modal-overlay").classList.add("active");
+        // Update nav buttons
+        document
+          .querySelectorAll(".nav-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        event.currentTarget.classList.add("active");
+        currentSheet = sheetId;
+      }
+
+      function closeSheet() {
+        document.getElementById("modal-overlay").classList.remove("active");
+        currentSheet = null;
+      }
+    </script>
+  </body>
+</html>
