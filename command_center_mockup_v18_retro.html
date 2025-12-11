@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terratomic Command Center - Retro Analog (V18)</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+
+      :root {
+        /* Retro Phosphor Palette */
+        --bg-color: #0a0a0a;
+        --panel-bg: #000000;
+        --panel-border: #33ff00;
+
+        --text-color: #33ff00;
+        --text-dim: #1a8000;
+        --text-alert: #ff3300;
+
+        --grid-line: #1a4010;
+        --item-bg: #051005;
+        --item-hover: #0f200f;
+
+        --scanline-color: rgba(0, 20, 0, 0.5);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        /* Subtle noise texture */
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        color: var(--text-color);
+        font-family: "VT323", monospace;
+        font-size: 20px; /* VT323 needs to be larger */
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+        text-transform: uppercase;
+      }
+
+      /* CRT Screen Effects */
+      body::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background:
+          linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+          linear-gradient(
+            90deg,
+            rgba(255, 0, 0, 0.06),
+            rgba(0, 255, 0, 0.02),
+            rgba(0, 0, 255, 0.06)
+          );
+        background-size:
+          100% 2px,
+          3px 100%;
+        z-index: 998;
+        pointer-events: none;
+      }
+
+      /* Screen Flicker/Glow */
+      body::after {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: radial-gradient(
+          circle,
+          rgba(51, 255, 0, 0.05) 0%,
+          rgba(0, 0, 0, 0.4) 100%
+        );
+        z-index: 999;
+        pointer-events: none;
+        animation: flicker 0.15s infinite;
+      }
+
+      @keyframes flicker {
+        0% {
+          opacity: 0.97;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.98;
+        }
+      }
+
+      /* --- MAIN PANEL --- */
+      .command-center {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        width: 1100px;
+        height: 280px;
+        background-color: var(--panel-bg);
+        border: 4px double var(--panel-border);
+        box-shadow:
+          0 0 15px var(--text-dim),
+          inset 0 0 20px rgba(51, 255, 0, 0.1);
+        display: flex;
+        flex-direction: row;
+        z-index: 10;
+        padding: 4px;
+      }
+
+      /* --- TOAST NOTIFICATIONS --- */
+      .toast-container {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+        justify-content: flex-end;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 20;
+      }
+
+      .toast {
+        background: var(--panel-bg);
+        border: 2px solid var(--panel-border);
+        padding: 10px;
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .toast-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        border-bottom: 1px dashed var(--text-dim);
+        padding-bottom: 4px;
+      }
+
+      .toast-close {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: var(--text-color);
+        cursor: pointer;
+        font-family: "VT323", monospace;
+        font-size: 1.2em;
+      }
+      .toast-close:hover {
+        background: var(--text-color);
+        color: black;
+      }
+
+      .toast-body {
+        font-size: 0.9em;
+        line-height: 1.2;
+      }
+
+      .toast-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .toast-btn {
+        flex: 1;
+        padding: 4px;
+        background: black;
+        border: 1px solid var(--text-color);
+        color: var(--text-color);
+        cursor: pointer;
+        font-family: "VT323", monospace;
+        font-size: 1em;
+        text-transform: uppercase;
+      }
+
+      .toast-btn:hover {
+        background: var(--text-color);
+        color: black;
+      }
+
+      .toast.attack {
+        border-color: var(--text-alert);
+        color: var(--text-alert);
+      }
+      .toast.attack .toast-header {
+        border-bottom-color: var(--text-alert);
+      }
+      .toast.attack .toast-btn {
+        border-color: var(--text-alert);
+        color: var(--text-alert);
+      }
+      .toast.attack .toast-btn:hover {
+        background: var(--text-alert);
+        color: black;
+      }
+
+      /* --- SIDEBAR --- */
+      .sidebar {
+        width: 240px;
+        border-right: 2px solid var(--panel-border);
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .compact-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border: 1px solid var(--text-dim);
+        padding: 8px;
+      }
+
+      .compact-stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .stat-val-main {
+        font-size: 1.2em;
+        font-weight: bold;
+      }
+
+      /* Slider Styles - Retro ASCII style */
+      .slider-group {
+        position: relative;
+      }
+
+      .slider-label {
+        font-size: 0.9em;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .slider-container-inner {
+        position: relative;
+        height: 20px;
+        background: repeating-linear-gradient(
+          90deg,
+          var(--text-dim),
+          var(--text-dim) 2px,
+          black 2px,
+          black 4px
+        );
+        border: 1px solid var(--text-color);
+      }
+
+      .slider-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: var(--text-color);
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        background: transparent;
+        position: absolute;
+        z-index: 2;
+        margin: 0;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 20px;
+        width: 10px;
+        background: var(--text-color);
+        border: 1px solid black;
+        cursor: pointer;
+      }
+
+      /* --- MAIN AREA --- */
+      .main-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .header {
+        border-bottom: 2px solid var(--panel-border);
+        display: flex;
+        align-items: center;
+        height: 40px;
+      }
+
+      .title-bar {
+        padding: 0 15px;
+        font-weight: bold;
+        background: var(--text-color);
+        color: black;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        margin-right: 2px;
+      }
+
+      .tabs {
+        display: flex;
+        flex: 1;
+        height: 100%;
+        gap: 2px;
+      }
+
+      .tab-btn {
+        flex: 1;
+        background: black;
+        border: 1px solid var(--text-dim);
+        border-bottom: none;
+        color: var(--text-dim);
+        font-family: "VT323", monospace;
+        font-size: 1.1em;
+        cursor: pointer;
+        text-transform: uppercase;
+        margin-top: 4px; /* Tab effect */
+      }
+
+      .tab-btn:hover {
+        color: var(--text-color);
+        border-color: var(--text-color);
+      }
+
+      .tab-btn.active {
+        background: var(--text-color);
+        color: black;
+        border-color: var(--text-color);
+        margin-top: 0;
+        height: 100%;
+      }
+
+      .content {
+        flex: 1;
+        padding: 12px;
+        display: none;
+        background-image:
+          linear-gradient(var(--grid-line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+        background-size: 20px 20px;
+      }
+
+      .content.active {
+        display: flex;
+        gap: 12px;
+      }
+
+      .col-left,
+      .col-right {
+        width: 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .col-center {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .col-third {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        border-right: 1px dashed var(--text-dim);
+        padding-right: 12px;
+      }
+      .col-third:last-child {
+        border-right: none;
+      }
+
+      .section-title {
+        color: var(--text-color);
+        border-bottom: 2px solid var(--text-color);
+        margin-bottom: 8px;
+        padding-bottom: 2px;
+      }
+
+      .btn {
+        background: black;
+        border: 1px solid var(--text-color);
+        color: var(--text-color);
+        padding: 6px;
+        cursor: pointer;
+        font-family: "VT323", monospace;
+        font-size: 1em;
+        text-transform: uppercase;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .btn:hover {
+        background: var(--text-dim);
+        color: black;
+      }
+
+      .btn.active {
+        background: var(--text-color);
+        color: black;
+        box-shadow: 2px 2px 0 var(--text-dim);
+      }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+      }
+
+      .grid-item {
+        background: black;
+        border: 1px solid var(--text-dim);
+        height: 70px;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        position: relative;
+      }
+
+      .grid-item:hover {
+        border-color: var(--text-color);
+        box-shadow: 0 0 5px var(--text-color);
+      }
+
+      .grid-item.selected {
+        border: 2px solid var(--text-color);
+        background: rgba(51, 255, 0, 0.1);
+      }
+
+      /* Selection Corner Markers */
+      .grid-item.selected::after {
+        content: "OK";
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: var(--text-color);
+        color: black;
+        font-size: 0.7em;
+        padding: 0 2px;
+      }
+
+      .item-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .item-icon {
+        font-size: 1.2em;
+        margin-bottom: 2px;
+      }
+
+      .item-price-bar {
+        background: var(--text-dim);
+        color: black;
+        text-align: center;
+        font-size: 0.8em;
+      }
+
+      .grid-item.selected .item-price-bar {
+        background: var(--text-color);
+        font-weight: bold;
+      }
+
+      .level-setter {
+        display: flex;
+        border: 1px solid var(--text-dim);
+        padding: 4px;
+      }
+
+      .level-display {
+        flex: 1;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .minified-tree {
+        border: 1px solid var(--text-dim);
+        padding: 8px;
+        height: 100%;
+        overflow-y: auto;
+      }
+
+      .tree-node {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        border-bottom: 1px dotted var(--text-dim);
+        padding-bottom: 4px;
+      }
+
+      .node-progress {
+        height: 6px;
+        border: 1px solid var(--text-dim);
+        margin-top: 2px;
+        padding: 1px;
+      }
+
+      .node-bar {
+        height: 100%;
+        background: var(--text-color);
+      }
+
+      /* Blinking Cursor Effect for Text */
+      .blink {
+        animation: blinker 1s linear infinite;
+      }
+      @keyframes blinker {
+        50% {
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="command-center">
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="compact-stats">
+          <div class="compact-stat-row">
+            <span>CREDITS:</span>
+            <span class="stat-val-main">12,450</span>
+          </div>
+          <div class="compact-stat-row">
+            <span>POP:</span>
+            <span class="stat-val-main">4,500</span>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>TROOPS</span>
+            <span>WORKERS</span>
+          </div>
+          <div class="slider-container-inner">
+            <div class="slider-fill" style="width: 60%"></div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="60"
+              oninput="updateSlider(this, 'troop')"
+            />
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>ATTACK RATIO</span>
+            <span>30%</span>
+          </div>
+          <div class="slider-container-inner">
+            <div class="slider-fill" style="width: 30%"></div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="30"
+              oninput="updateSlider(this, 'attack')"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN AREA -->
+      <div class="main-area">
+        <div class="header">
+          <div class="title-bar">
+            <span>CMD_SYS_V1.0</span><span class="blink">_</span>
+          </div>
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('build')">
+              F1:BUILD
+            </button>
+            <button class="tab-btn" onclick="switchTab('attack')">
+              F2:ATTACK
+            </button>
+            <button class="tab-btn" onclick="switchTab('economy')">
+              F3:ECON
+            </button>
+            <button class="tab-btn" onclick="switchTab('rnd')">F4:R&D</button>
+          </div>
+        </div>
+
+        <!-- BUILD TAB -->
+        <div id="tab-build" class="content active">
+          <div class="col-left">
+            <div class="section-title">STATUS</div>
+            <div
+              style="
+                border: 1px solid var(--text-alert);
+                color: var(--text-alert);
+                padding: 4px;
+              "
+            >
+              WARNING: TRADE DEMAND HIGH
+            </div>
+            <div class="section-title" style="margin-top: 10px">LEVEL</div>
+            <div class="level-setter">
+              <div class="level-display">MAX</div>
+              <button class="btn" style="padding: 0 8px">-</button>
+              <button class="btn" style="padding: 0 8px">+</button>
+            </div>
+          </div>
+
+          <div class="col-center">
+            <div class="section-title">STRUCTURES</div>
+            <div class="grid-container">
+              <div class="grid-item selected">
+                <div class="item-body">
+                  <div class="item-icon">[C]</div>
+                  <div>CITY</div>
+                </div>
+                <div class="item-price-bar">1500</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">[F]</div>
+                  <div>FACT</div>
+                </div>
+                <div class="item-price-bar">2000</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">[R]</div>
+                  <div>LAB</div>
+                </div>
+                <div class="item-price-bar">5000</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">[A]</div>
+                  <div>ACAD</div>
+                </div>
+                <div class="item-price-bar">3500</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">[P]</div>
+                  <div>PORT</div>
+                </div>
+                <div class="item-price-bar">2500</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">[S]</div>
+                  <div>SILO</div>
+                </div>
+                <div class="item-price-bar">8000</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-right">
+            <div class="section-title">MODES</div>
+            <button class="btn">MULTI: OFF</button>
+            <button class="btn active">UPGRADE: ON</button>
+          </div>
+        </div>
+
+        <!-- ATTACK TAB -->
+        <div id="tab-attack" class="content">
+          <div class="col-left">
+            <div class="section-title">UNIT_DB</div>
+            <div style="font-size: 0.9em">
+              > FIGHTER: LVL 2<br />
+              > BOMBER: LVL 1<br />
+              > SUB: LVL 3
+            </div>
+          </div>
+          <div class="col-center">
+            <div class="section-title">DEPLOYMENT</div>
+            <div class="grid-container">
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">^</div>
+                  <div>JET</div>
+                </div>
+                <div class="item-price-bar">500</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">^^</div>
+                  <div>BOMB</div>
+                </div>
+                <div class="item-price-bar">1200</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">~</div>
+                  <div>SHIP</div>
+                </div>
+                <div class="item-price-bar">3000</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">*</div>
+                  <div>NUKE</div>
+                </div>
+                <div class="item-price-bar">15K</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ECONOMY TAB -->
+        <div id="tab-economy" class="content">
+          <div class="col-third">
+            <div class="section-title">PROD_ALLOC</div>
+            <div style="margin-bottom: 10px">CURRENT: 10%</div>
+            <div style="display: flex; gap: 4px">
+              <button class="btn active">10%</button>
+              <button class="btn">25%</button>
+              <button class="btn">50%</button>
+            </div>
+          </div>
+          <div class="col-third">
+            <div class="section-title">R&D_ALLOC</div>
+            <div style="margin-bottom: 10px">CURRENT: 25%</div>
+            <div style="display: flex; gap: 4px">
+              <button class="btn">10%</button>
+              <button class="btn active">25%</button>
+              <button class="btn">50%</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- R&D TAB -->
+        <div id="tab-rnd" class="content">
+          <div class="col-third" style="flex: 1.5">
+            <div class="section-title">ACTIVE_PROJECTS</div>
+            <div class="minified-tree">
+              <div class="tree-node">
+                <div style="flex: 1">
+                  <div>METALLURGY [2m 30s]</div>
+                  <div class="node-progress">
+                    <div class="node-bar" style="width: 45%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tree-node">
+                <div style="flex: 1">
+                  <div>JET_ENGINES [5m 10s]</div>
+                  <div class="node-progress">
+                    <div class="node-bar" style="width: 12%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-third">
+            <div class="section-title">PRIORITY</div>
+            <button class="btn active" style="justify-content: flex-start">
+              [X] ECONOMY
+            </button>
+            <button class="btn" style="justify-content: flex-start">
+              [ ] MILITARY
+            </button>
+            <button class="btn" style="justify-content: flex-start">
+              [ ] INFRA
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOASTS -->
+    <div class="toast-container">
+      <div class="toast">
+        <div class="toast-header">
+          <span>>> ALLIANCE_REQ</span>
+          <button class="toast-close">X</button>
+        </div>
+        <div class="toast-body">INCOMING TRANSMISSION FROM [NATO].</div>
+        <div class="toast-actions">
+          <button class="toast-btn">ACCEPT</button>
+          <button class="toast-btn">DENY</button>
+        </div>
+      </div>
+
+      <div class="toast attack">
+        <div class="toast-header">
+          <span>!! ALERT !!</span>
+          <button class="toast-close">X</button>
+        </div>
+        <div class="toast-body">SECTOR 7 UNDER FIRE.</div>
+        <div class="toast-actions">
+          <button class="toast-btn">VIEW</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function switchTab(tabId) {
+        document
+          .querySelectorAll(".content")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((el) => el.classList.remove("active"));
+        document.getElementById("tab-" + tabId).classList.add("active");
+
+        // Button mapping
+        const btns = document.querySelectorAll(".tab-btn");
+        if (tabId === "build") btns[0].classList.add("active");
+        if (tabId === "attack") btns[1].classList.add("active");
+        if (tabId === "economy") btns[2].classList.add("active");
+        if (tabId === "rnd") btns[3].classList.add("active");
+      }
+
+      function updateSlider(input, type) {
+        const fill = input.previousElementSibling;
+        fill.style.width = input.value + "%";
+      }
+    </script>
+  </body>
+</html>

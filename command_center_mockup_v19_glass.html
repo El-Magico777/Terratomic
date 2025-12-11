@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terratomic Command Center - Modern Glass (V19)</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap");
+
+      :root {
+        /* Modern Glass Palette */
+        --bg-color: #0f172a;
+        --glass-bg: rgba(15, 23, 42, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --glass-highlight: rgba(255, 255, 255, 0.05);
+
+        --text-color: #e2e8f0;
+        --text-muted: #94a3b8;
+
+        --accent-primary: #38bdf8; /* Sky Blue */
+        --accent-secondary: #f472b6; /* Pink/Rose */
+        --accent-alert: #ef4444;
+        --accent-success: #22c55e;
+
+        --item-bg: rgba(30, 41, 59, 0.5);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        /* Abstract Map Background */
+        background-image:
+          radial-gradient(
+            circle at 20% 30%,
+            rgba(56, 189, 248, 0.15) 0%,
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 80% 70%,
+            rgba(244, 114, 182, 0.1) 0%,
+            transparent 40%
+          ),
+          linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)),
+          url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23334155' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        color: var(--text-color);
+        font-family: "Rajdhani", sans-serif;
+        margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* --- MAIN PANEL --- */
+      .command-center {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%); /* Center aligned for modern look */
+        width: 1000px;
+        height: 260px;
+
+        /* Glassmorphism */
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-top: 1px solid rgba(255, 255, 255, 0.2); /* Top highlight */
+        border-radius: 16px;
+
+        box-shadow:
+          0 20px 40px -10px rgba(0, 0, 0, 0.5),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+        display: flex;
+        flex-direction: row;
+        z-index: 10;
+        overflow: hidden;
+      }
+
+      /* --- TOAST NOTIFICATIONS --- */
+      .toast-container {
+        position: absolute;
+        bottom: 24px;
+        right: 24px;
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-end;
+        z-index: 20;
+      }
+
+      .toast {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-left: 4px solid var(--accent-primary);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: transform 0.2s;
+      }
+
+      .toast:hover {
+        transform: translateY(-2px);
+      }
+
+      .toast-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 1.1em;
+        letter-spacing: 0.5px;
+      }
+
+      .toast-close {
+        margin-left: auto;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .toast-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+      }
+
+      .toast-body {
+        font-size: 0.95em;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      .toast-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .toast-btn {
+        flex: 1;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .toast-btn.primary {
+        background: var(--accent-primary);
+        color: #0f172a;
+      }
+      .toast-btn.primary:hover {
+        background: #7dd3fc;
+      }
+
+      .toast-btn.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-color);
+      }
+      .toast-btn.secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .toast.attack {
+        border-left-color: var(--accent-alert);
+      }
+      .toast.attack .toast-header {
+        color: var(--accent-alert);
+      }
+
+      /* --- SIDEBAR --- */
+      .sidebar {
+        width: 220px;
+        background: rgba(0, 0, 0, 0.2);
+        border-right: 1px solid var(--glass-border);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        gap: 24px;
+        justify-content: center;
+      }
+
+      .compact-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .compact-stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .stat-icon {
+        font-size: 1.2em;
+        margin-right: 8px;
+      }
+
+      .stat-val-main {
+        font-size: 1.5em;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+      }
+
+      .stat-rate {
+        font-size: 0.9em;
+        color: var(--accent-success);
+        font-weight: 600;
+      }
+
+      /* Modern Slider */
+      .slider-group {
+        position: relative;
+      }
+
+      .slider-label {
+        font-size: 0.85em;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .slider-container-inner {
+        position: relative;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+
+      .slider-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, var(--accent-primary), #60a5fa);
+        border-radius: 3px;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+      }
+
+      .slider-fill.attack {
+        background: linear-gradient(90deg, var(--accent-secondary), #f43f5e);
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        background: transparent;
+        position: absolute;
+        z-index: 2;
+        margin: 0;
+        height: 100%;
+        cursor: pointer;
+        top: -7px; /* Center thumb vertically */
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 18px;
+        width: 18px;
+        background: white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        margin-top: 1px;
+      }
+
+      /* --- MAIN AREA --- */
+      .main-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        height: 50px;
+        padding: 0 10px;
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      .tabs {
+        display: flex;
+        flex: 1;
+        height: 100%;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .tab-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 6px 16px;
+        border-radius: 20px;
+        transition: all 0.2s;
+      }
+
+      .tab-btn:hover {
+        color: white;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .tab-btn.active {
+        color: #0f172a;
+        background: var(--accent-primary);
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      }
+
+      .content {
+        flex: 1;
+        padding: 20px;
+        display: none;
+        gap: 20px;
+      }
+
+      .content.active {
+        display: flex;
+      }
+
+      .col-left,
+      .col-right {
+        width: 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .col-center {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .col-third {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 12px;
+        border: 1px solid var(--glass-border);
+      }
+
+      .section-title {
+        font-size: 0.8em;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 4px;
+      }
+
+      .btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--glass-border);
+        color: var(--text-color);
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        font-size: 0.95em;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .btn.active {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
+      }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+      }
+
+      .grid-item {
+        background: var(--item-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: all 0.2s;
+        overflow: hidden;
+      }
+
+      .grid-item:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .grid-item.selected {
+        background: rgba(56, 189, 248, 0.1);
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+      }
+
+      .item-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+      }
+
+      .item-icon {
+        font-size: 1.4em;
+        margin-bottom: 4px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      }
+
+      .item-label {
+        font-size: 0.8em;
+        font-weight: 600;
+        color: var(--text-muted);
+      }
+
+      .grid-item.selected .item-label {
+        color: var(--accent-primary);
+      }
+
+      .item-price-bar {
+        background: rgba(0, 0, 0, 0.3);
+        color: white;
+        text-align: center;
+        font-size: 0.75em;
+        padding: 2px 0;
+        font-weight: 600;
+      }
+
+      .grid-item.selected .item-price-bar {
+        background: var(--accent-primary);
+        color: #0f172a;
+      }
+
+      .level-setter {
+        display: flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 4px;
+        border: 1px solid var(--glass-border);
+      }
+
+      .level-display {
+        flex: 1;
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.1em;
+        color: var(--accent-primary);
+      }
+
+      .level-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+      }
+      .level-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .minified-tree {
+        height: 100%;
+        overflow-y: auto;
+      }
+
+      .tree-node {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 8px;
+        border-radius: 8px;
+      }
+
+      .node-progress {
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        margin-top: 6px;
+        overflow: hidden;
+      }
+
+      .node-bar {
+        height: 100%;
+        background: var(--accent-primary);
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="command-center">
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="compact-stats">
+          <div class="compact-stat-row">
+            <div style="display: flex; align-items: center">
+              <span class="stat-icon">💰</span>
+              <span class="stat-val-main">12.4k</span>
+            </div>
+            <span class="stat-rate">+120</span>
+          </div>
+          <div class="compact-stat-row">
+            <div style="display: flex; align-items: center">
+              <span class="stat-icon">👥</span>
+              <span class="stat-val-main">4.5k</span>
+            </div>
+            <span class="stat-rate">+5</span>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Troops</span>
+            <span>Workers</span>
+          </div>
+          <div class="slider-container-inner">
+            <div class="slider-fill" style="width: 60%"></div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="60"
+              oninput="updateSlider(this, 'troop')"
+            />
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-label">
+            <span>Attack Ratio</span>
+            <span>30%</span>
+          </div>
+          <div class="slider-container-inner">
+            <div class="slider-fill attack" style="width: 30%"></div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="30"
+              oninput="updateSlider(this, 'attack')"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN AREA -->
+      <div class="main-area">
+        <div class="header">
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('build')">
+              Build
+            </button>
+            <button class="tab-btn" onclick="switchTab('attack')">
+              Attack
+            </button>
+            <button class="tab-btn" onclick="switchTab('economy')">
+              Economy
+            </button>
+            <button class="tab-btn" onclick="switchTab('rnd')">R&D</button>
+          </div>
+        </div>
+
+        <!-- BUILD TAB -->
+        <div id="tab-build" class="content active">
+          <div class="col-left">
+            <div class="section-title">Status</div>
+            <div
+              style="
+                background: rgba(239, 68, 68, 0.1);
+                border: 1px solid rgba(239, 68, 68, 0.3);
+                color: #fca5a5;
+                padding: 10px;
+                border-radius: 8px;
+                font-size: 0.9em;
+              "
+            >
+              <strong>⚠️ High Demand</strong><br />
+              Build more ports to satisfy trade routes.
+            </div>
+            <div class="section-title" style="margin-top: 16px">Level</div>
+            <div class="level-setter">
+              <div class="level-display">MAX</div>
+              <button class="level-btn">-</button>
+              <button class="level-btn" style="margin-left: 4px">+</button>
+            </div>
+          </div>
+
+          <div class="col-center">
+            <div class="section-title">Structures</div>
+            <div class="grid-container">
+              <div class="grid-item selected">
+                <div class="item-body">
+                  <div class="item-icon">🏙️</div>
+                  <div class="item-label">City</div>
+                </div>
+                <div class="item-price-bar">1.5k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">🏭</div>
+                  <div class="item-label">Factory</div>
+                </div>
+                <div class="item-price-bar">2.0k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">🔬</div>
+                  <div class="item-label">Lab</div>
+                </div>
+                <div class="item-price-bar">5.0k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">🎓</div>
+                  <div class="item-label">Academy</div>
+                </div>
+                <div class="item-price-bar">3.5k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">⚓</div>
+                  <div class="item-label">Port</div>
+                </div>
+                <div class="item-price-bar">2.5k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">🚀</div>
+                  <div class="item-label">Silo</div>
+                </div>
+                <div class="item-price-bar">8.0k</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-right">
+            <div class="section-title">Modes</div>
+            <button class="btn">
+              <span>Multi-Build</span>
+            </button>
+            <button class="btn active">
+              <span>Upgrade Mode</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ATTACK TAB -->
+        <div id="tab-attack" class="content">
+          <div class="col-left">
+            <div class="section-title">Unit Levels</div>
+            <div style="font-size: 0.9em; color: var(--text-muted)">
+              <div
+                style="
+                  margin-bottom: 4px;
+                  display: flex;
+                  justify-content: space-between;
+                "
+              >
+                <span>Fighter</span>
+                <span style="color: white; font-weight: bold">Lvl 2</span>
+              </div>
+              <div
+                style="
+                  margin-bottom: 4px;
+                  display: flex;
+                  justify-content: space-between;
+                "
+              >
+                <span>Bomber</span>
+                <span style="color: white; font-weight: bold">Lvl 1</span>
+              </div>
+              <div style="display: flex; justify-content: space-between">
+                <span>Submarine</span>
+                <span style="color: white; font-weight: bold">Lvl 3</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-center">
+            <div class="section-title">Deployment</div>
+            <div class="grid-container">
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">🛩️</div>
+                  <div class="item-label">Fighter</div>
+                </div>
+                <div class="item-price-bar">500</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">🛫</div>
+                  <div class="item-label">Bomber</div>
+                </div>
+                <div class="item-price-bar">1.2k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">🚢</div>
+                  <div class="item-label">Warship</div>
+                </div>
+                <div class="item-price-bar">3.0k</div>
+              </div>
+              <div class="grid-item">
+                <div class="item-body">
+                  <div class="item-icon">💣</div>
+                  <div class="item-label">Nuke</div>
+                </div>
+                <div class="item-price-bar">15k</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ECONOMY TAB -->
+        <div id="tab-economy" class="content">
+          <div class="col-third">
+            <div class="section-title">Production</div>
+            <div
+              style="margin-bottom: 10px; font-size: 1.2em; font-weight: bold"
+            >
+              10%
+            </div>
+            <div style="display: flex; gap: 8px">
+              <button class="btn active" style="flex: 1">10%</button>
+              <button class="btn" style="flex: 1">25%</button>
+              <button class="btn" style="flex: 1">50%</button>
+            </div>
+          </div>
+          <div class="col-third">
+            <div class="section-title">Research</div>
+            <div
+              style="
+                margin-bottom: 10px;
+                font-size: 1.2em;
+                font-weight: bold;
+                color: var(--accent-primary);
+              "
+            >
+              25%
+            </div>
+            <div style="display: flex; gap: 8px">
+              <button class="btn" style="flex: 1">10%</button>
+              <button class="btn active" style="flex: 1">25%</button>
+              <button class="btn" style="flex: 1">50%</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- R&D TAB -->
+        <div id="tab-rnd" class="content">
+          <div class="col-third" style="flex: 1.5">
+            <div class="section-title">Active Projects</div>
+            <div class="minified-tree">
+              <div class="tree-node">
+                <div style="flex: 1">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.9em;
+                      font-weight: 600;
+                    "
+                  >
+                    <span>Adv. Metallurgy</span>
+                    <span style="color: var(--text-muted)">2m 30s</span>
+                  </div>
+                  <div class="node-progress">
+                    <div class="node-bar" style="width: 45%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tree-node">
+                <div style="flex: 1">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.9em;
+                      font-weight: 600;
+                    "
+                  >
+                    <span>Jet Engines</span>
+                    <span style="color: var(--text-muted)">5m 10s</span>
+                  </div>
+                  <div class="node-progress">
+                    <div
+                      class="node-bar"
+                      style="width: 12%; background: var(--accent-secondary)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-third">
+            <div class="section-title">Auto-Priority</div>
+            <button class="btn active" style="justify-content: flex-start">
+              <div
+                style="
+                  width: 8px;
+                  height: 8px;
+                  background: var(--accent-primary);
+                  border-radius: 50%;
+                "
+              ></div>
+              Economy
+            </button>
+            <button class="btn" style="justify-content: flex-start">
+              <div
+                style="
+                  width: 8px;
+                  height: 8px;
+                  border: 1px solid var(--text-muted);
+                  border-radius: 50%;
+                "
+              ></div>
+              Military
+            </button>
+            <button class="btn" style="justify-content: flex-start">
+              <div
+                style="
+                  width: 8px;
+                  height: 8px;
+                  border: 1px solid var(--text-muted);
+                  border-radius: 50%;
+                "
+              ></div>
+              Infrastructure
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOASTS -->
+    <div class="toast-container">
+      <div class="toast">
+        <div class="toast-header">
+          <span>🤝 Alliance Request</span>
+          <button class="toast-close">×</button>
+        </div>
+        <div class="toast-body">
+          <strong>[NATO]</strong> invites you to join their alliance.
+        </div>
+        <div class="toast-actions">
+          <button class="toast-btn primary">Accept</button>
+          <button class="toast-btn secondary">Decline</button>
+        </div>
+      </div>
+
+      <div class="toast attack">
+        <div class="toast-header">
+          <span>⚠️ Under Attack</span>
+          <button class="toast-close">×</button>
+        </div>
+        <div class="toast-body">
+          Sector 7 is under bombardment by <strong>Player_One</strong>.
+        </div>
+        <div class="toast-actions">
+          <button
+            class="toast-btn secondary"
+            style="background: rgba(239, 68, 68, 0.2); color: #fca5a5"
+          >
+            View Sector
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function switchTab(tabId) {
+        document
+          .querySelectorAll(".content")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((el) => el.classList.remove("active"));
+        document.getElementById("tab-" + tabId).classList.add("active");
+
+        // Button mapping
+        const btns = document.querySelectorAll(".tab-btn");
+        if (tabId === "build") btns[0].classList.add("active");
+        if (tabId === "attack") btns[1].classList.add("active");
+        if (tabId === "economy") btns[2].classList.add("active");
+        if (tabId === "rnd") btns[3].classList.add("active");
+      }
+
+      function updateSlider(input, type) {
+        const fill = input.previousElementSibling;
+        fill.style.width = input.value + "%";
+      }
+    </script>
+  </body>
+</html>
