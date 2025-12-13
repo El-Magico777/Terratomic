@@ -12,11 +12,6 @@ import {
 import { TileRef } from "../core/game/GameMap";
 import { PlayerView } from "../core/game/GameView";
 import {
-  isUpgradeableUnit,
-  maxStructureLevel,
-  maxUnitLevel,
-} from "../core/game/Upgradeables";
-import {
   AllPlayersStats,
   ClientHashMessage,
   ClientIntentMessage,
@@ -767,45 +762,20 @@ export class Transport {
     this._lastBuildUnit = event.unit;
     this._lastBuildAt = now;
 
-    // Compute desired starting level for upgradeable structures or units from local settings.
-    let targetLevel: number | undefined;
+    // Read stack count from localStorage (in-game communication)
+    let stackCount: number | undefined;
     let bomberLevel: number | undefined;
     try {
-      const key = String(event.unit);
-      if (isUpgradeableUnit(event.unit)) {
-        const rawUnits = localStorage.getItem("unitUpgradeSettings.levels");
-        if (rawUnits) {
-          const obj = JSON.parse(rawUnits) as Record<string, number>;
-          const val = obj?.[key];
-          if (typeof val === "number" && val > 1) {
-            // Server will clamp to player's researched max level
-            targetLevel = Math.min(maxUnitLevel(event.unit), val);
-          }
-        }
-      } else {
-        const rawStruct = localStorage.getItem("buildSettings.levels");
-        if (rawStruct) {
-          const obj = JSON.parse(rawStruct) as Record<string, number>;
-          const val = obj?.[key];
-          if (typeof val === "number" && val > 1) {
-            targetLevel = Math.min(maxStructureLevel(event.unit), val);
-          }
-        }
-      }
-      // For airfields, also get bomber upgrade level from unit upgrade settings
-      if (event.unit === UnitType.Airfield) {
-        const rawUnits = localStorage.getItem("unitUpgradeSettings.levels");
-        if (rawUnits) {
-          const obj = JSON.parse(rawUnits) as Record<string, number>;
-          const val = obj?.[String(UnitType.Bomber)];
-          if (typeof val === "number" && val > 1) {
-            bomberLevel = Math.min(maxUnitLevel(UnitType.Bomber), val);
-          }
+      const rawStack = localStorage.getItem("buildSettings.stackCount");
+      if (rawStack) {
+        const obj = JSON.parse(rawStack) as Record<string, number>;
+        const val = obj?.[String(event.unit)];
+        if (typeof val === "number" && val > 1) {
+          stackCount = Math.min(99, val);
         }
       }
     } catch {
-      // Ignore malformed local storage.
-      targetLevel = undefined;
+      stackCount = undefined;
       bomberLevel = undefined;
     }
 
@@ -814,7 +784,7 @@ export class Transport {
       clientID: this.lobbyConfig.clientID,
       unit: event.unit,
       tile: event.tile,
-      targetLevel,
+      targetLevel: stackCount, // Renamed semantically but keeping wire format for now
       bomberLevel,
     });
   }

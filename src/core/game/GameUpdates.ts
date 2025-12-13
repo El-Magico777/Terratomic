@@ -151,6 +151,10 @@ export interface UnitUpdate {
   ghostExpiresAt?: Tick;
   // Structure upgrade level (>=1). Cities increase level by 1 per upgrade.
   level?: number;
+  // Stack count (>=1). Number of stacked instances for stackable structures.
+  stackCount?: number;
+  // Missile silo specific: remaining launches before cooldown (for stacked silos)
+  launchesRemaining?: number;
   // Trade-ship specific, for precise UI without heuristics
   tradeRouteStartOwnerID?: number; // smallID of start port owner
   tradeRouteEndOwnerID?: number; // smallID of end port owner

@@ -193,6 +193,17 @@ export class UnitView {
     return (this.data as any).level ?? 1;
   }
 
+  // Stack count (>=1). Number of stacked instances for stackable structures.
+  stackCount(): number {
+    return (this.data as any).stackCount ?? 1;
+  }
+
+  // Missile silo specific: remaining launches before cooldown (for stacked silos)
+  launchesRemaining(): number | null {
+    const v = (this.data as any).launchesRemaining as number | undefined;
+    return v ?? null;
+  }
+
   // Airfield-specific: bomber upgrade level. Defaults to 1.
   bomberLevel(): number {
     return (this.data as any).bomberLevel ?? 1;

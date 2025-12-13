@@ -572,7 +572,8 @@ export interface Unit {
   isPeriodicallyVisible(): boolean;
 
   // Upgrades
-  level(): number; // Current upgrade level (>=1)
+  level(): number; // Current upgrade/tech level (>=1) - for SAM/Airfield this is the tech tier
+  stackCount(): number; // Number of stacked instances (>=1) - for all structures
   upgradeStructure(): void; // Applies structure-specific upgrade effects (currently City only)
   effectiveMaxHealth(): number; // Base max health + bonuses from upgrades
 }

@@ -153,6 +153,7 @@ export class SAMLauncherExecution implements Execution {
     private tile: TileRef | null,
     private sam: Unit | null = null,
     private desiredLevel?: number,
+    private stackCount: number = 1, // Number of stacked SAMs (fires multiple missiles)
   ) {
     if (sam !== null) {
       this.tile = sam.tile();
@@ -203,12 +204,20 @@ export class SAMLauncherExecution implements Execution {
         return;
       }
       this.sam = this.player.buildUnit(UnitType.SAMLauncher, spawnTile, {});
-      // Apply upgrades up to cap 3 if requested
+      // Apply tech level upgrades
       const level = this.computeDesiredLevel(
         UnitType.SAMLauncher,
         this.desiredLevel,
       );
       this.applyUpgrades(this.sam, level);
+      // Set stack count for multiple missiles
+      if (this.stackCount > 1) {
+        (this.sam as any).setStackCount(this.stackCount);
+        // Apply HP bonuses for stacking (one upgrade per extra stack)
+        for (let i = 1; i < this.stackCount; i++) {
+          (this.sam as any).upgradeStructure();
+        }
+      }
     }
     this.targetingSystem ??= new SAMTargetingSystem(
       this.mg,
@@ -303,15 +312,19 @@ export class SAMLauncherExecution implements Execution {
           );
       } else if (target !== null) {
         target.unit.setTargetedBySAM(true);
-        this.mg.addExecution(
-          new SAMMissileExecution(
-            this.sam.tile(),
-            this.sam.owner(),
-            this.sam,
-            target.unit,
-            target.tile,
-          ),
-        );
+        // Fire stackCount missiles (one for each stacked SAM)
+        const missileCount = this.sam.stackCount?.() ?? 1;
+        for (let i = 0; i < missileCount; i++) {
+          this.mg.addExecution(
+            new SAMMissileExecution(
+              this.sam.tile(),
+              this.sam.owner(),
+              this.sam,
+              target.unit,
+              target.tile,
+            ),
+          );
+        }
       } else {
         // No valid target to engage (should not happen when firing)
       }

@@ -5,7 +5,9 @@ interface HasUpgrade {
   hasUpgrade(type: UpgradeType): boolean;
 }
 
-export const UPGRADEABLE_STRUCTURES: ReadonlySet<UnitType> = new Set<UnitType>([
+// STACKABLE structures: can have multiple "instances" in one tile (user-controlled stack count)
+// Stacking adds HP and counts as multiple buildings.
+export const STACKABLE_STRUCTURES: ReadonlySet<UnitType> = new Set<UnitType>([
   UnitType.City,
   UnitType.Port,
   UnitType.Airfield,
@@ -17,7 +19,16 @@ export const UPGRADEABLE_STRUCTURES: ReadonlySet<UnitType> = new Set<UnitType>([
   UnitType.SAMLauncher,
 ]);
 
-// Units that can be upgraded
+// TECH-UPGRADEABLE structures: level is determined by researched techs (auto-applied)
+// SAM and Airfield have tech-based upgrade levels that affect their capabilities.
+export const TECH_UPGRADEABLE_STRUCTURES: ReadonlySet<UnitType> =
+  new Set<UnitType>([UnitType.SAMLauncher, UnitType.Airfield]);
+
+// Legacy alias for backwards compatibility
+export const UPGRADEABLE_STRUCTURES: ReadonlySet<UnitType> =
+  STACKABLE_STRUCTURES;
+
+// Units that can be upgraded via tech
 export const UPGRADEABLE_UNITS: ReadonlySet<UnitType> = new Set<UnitType>([
   UnitType.Warship,
   UnitType.FighterJet,
@@ -25,19 +36,41 @@ export const UPGRADEABLE_UNITS: ReadonlySet<UnitType> = new Set<UnitType>([
   UnitType.Bomber, // Bomber level affects airfield construction cost
 ]);
 
+export function isStackableStructure(type: UnitType): boolean {
+  return STACKABLE_STRUCTURES.has(type);
+}
+
+export function isTechUpgradeableStructure(type: UnitType): boolean {
+  return TECH_UPGRADEABLE_STRUCTURES.has(type);
+}
+
 export function isUpgradeableStructure(type: UnitType): boolean {
-  return UPGRADEABLE_STRUCTURES.has(type);
+  return STACKABLE_STRUCTURES.has(type);
 }
 
 export function isUpgradeableUnit(type: UnitType): boolean {
   return UPGRADEABLE_UNITS.has(type);
 }
 
+// Maximum TECH upgrade level for structures (SAM, Airfield)
+// This is NOT the stack count - it's the quality tier from research.
+export function maxStructureTechLevel(type: UnitType): number {
+  if (type === UnitType.SAMLauncher) return 3;
+  if (type === UnitType.Airfield) return 3; // Based on bomber level
+  return 1;
+}
+
+// Maximum stack count for stackable structures
+export function maxStackCount(type: UnitType): number {
+  return isStackableStructure(type) ? 99 : 1;
+}
+
+// Legacy function - returns max stack count for most, max tech level for SAM
 export function maxStructureLevel(type: UnitType): number {
   if (type === UnitType.MissileSilo || type === UnitType.SAMLauncher) {
     return 3;
   }
-  return isUpgradeableStructure(type) ? 99 : 1;
+  return isStackableStructure(type) ? 99 : 1;
 }
 
 // Return maximum upgrade level for upgradeable combat units.
@@ -109,24 +142,31 @@ export function playerMaxUnitLevel(player: HasUpgrade, type: UnitType): number {
   return globalMax;
 }
 
-// Return maximum upgrade level for a structure based on player's researched techs.
+// Return maximum TECH upgrade level for a structure based on player's researched techs.
 // For SAMLauncher: Surface-to-Air Missiles = level 1, Radar-Guided SAMs = level 2,
 // Strategic SAM Systems = level 3.
+// For Airfield: Returns the bomber level the player has researched.
+// This is NOT the stack count - it's the quality tier.
 export function playerMaxStructureLevel(
   player: HasUpgrade,
   type: UnitType,
 ): number {
-  const globalMax = maxStructureLevel(type);
-
   if (type === UnitType.SAMLauncher) {
-    if (player.hasUpgrade(UpgradeType.SAMLevel3)) return Math.min(3, globalMax);
-    if (player.hasUpgrade(UpgradeType.SAMLevel2)) return Math.min(2, globalMax);
+    if (player.hasUpgrade(UpgradeType.SAMLevel3)) return 3;
+    if (player.hasUpgrade(UpgradeType.SAMLevel2)) return 2;
     // SAM Level 1 is available by default at game start
-    return Math.min(1, globalMax);
+    return 1;
   }
 
-  // For other structures, return global max
-  return globalMax;
+  if (type === UnitType.Airfield) {
+    // Airfield tech level is based on bomber upgrades
+    if (player.hasUpgrade(UpgradeType.BomberLevel3)) return 3;
+    if (player.hasUpgrade(UpgradeType.BomberLevel2)) return 2;
+    return 1;
+  }
+
+  // Non-tech-upgradeable structures always have tech level 1
+  return 1;
 }
 
 // Resolve a UnitType value from a stored string value (String(UnitType.X))

@@ -55,6 +55,7 @@ import {
   canBuildTransportShip,
 } from "./TransportShipUtils";
 import { UnitImpl } from "./UnitImpl";
+import { playerMaxUnitLevel } from "./Upgradeables";
 
 interface Target {
   tick: Tick;
@@ -390,10 +391,129 @@ export class PlayerImpl implements Player {
 
   addUpgrade(upgrade: UpgradeType): void {
     this._upgrades.add(upgrade);
+    this.applyAutoUnitUpgrades(upgrade);
   }
 
   removeUpgrade(upgrade: UpgradeType): void {
     this._upgrades.delete(upgrade);
+  }
+
+  private applyAutoUnitUpgrades(upgrade: UpgradeType): void {
+    const unitTypes: UnitType[] = [];
+    switch (upgrade) {
+      case UpgradeType.FighterLevel2:
+      case UpgradeType.FighterLevel3:
+      case UpgradeType.FighterLevel4:
+        unitTypes.push(UnitType.FighterJet);
+        break;
+      case UpgradeType.BomberLevel2:
+      case UpgradeType.BomberLevel3:
+        unitTypes.push(UnitType.Bomber);
+        break;
+      case UpgradeType.WarshipLevel2:
+      case UpgradeType.WarshipLevel3:
+        unitTypes.push(UnitType.Warship);
+        break;
+      case UpgradeType.SubmarineLevel2:
+      case UpgradeType.SubmarineLevel3:
+        unitTypes.push(UnitType.Submarine);
+        break;
+      default:
+        return;
+    }
+
+    for (const type of unitTypes) {
+      if (type === UnitType.Bomber) {
+        this.upgradeBombersAndAirfields();
+      } else {
+        this.upgradeCombatUnits(type);
+      }
+    }
+  }
+
+  private upgradeCombatUnits(type: UnitType): void {
+    const targetLevel = playerMaxUnitLevel(this, type);
+    if (targetLevel <= 1) return;
+
+    const desiredMaxHealth = (() => {
+      switch (type) {
+        case UnitType.FighterJet:
+          return this.mg.config().fighterJetLevelMaxHealth(targetLevel);
+        case UnitType.Warship:
+          return this.mg.config().warshipLevelMaxHealth(targetLevel);
+        case UnitType.Submarine:
+          return this.mg.config().submarineLevelMaxHealth(targetLevel);
+        default:
+          return this.mg.unitInfo(type).maxHealth ?? 0;
+      }
+    })();
+    const baseMax = this.mg.unitInfo(type).maxHealth ?? desiredMaxHealth;
+
+    for (const unit of this.units(type)) {
+      const impl = unit as any;
+      const currentLevel = typeof impl.level === "function" ? impl.level() : 1;
+      if (currentLevel >= targetLevel) continue;
+
+      const oldMax =
+        typeof impl.effectiveMaxHealth === "function"
+          ? impl.effectiveMaxHealth()
+          : baseMax;
+      const healthRatio = oldMax > 0 ? Math.min(1, unit.health() / oldMax) : 1;
+
+      impl._level = targetLevel;
+      impl._bonusMaxHealth = Math.max(0, desiredMaxHealth - baseMax);
+      const newHealth = Math.max(0, Math.round(desiredMaxHealth * healthRatio));
+      impl._health = BigInt(
+        Math.min(desiredMaxHealth, newHealth || desiredMaxHealth),
+      );
+      this.mg.addUpdate(unit.toUpdate());
+    }
+
+    this.invalidateEffectiveUnitsCache(type);
+  }
+
+  private upgradeBombersAndAirfields(): void {
+    const targetLevel = playerMaxUnitLevel(this, UnitType.Bomber);
+    if (targetLevel <= 1) return;
+
+    // Sync airfields so new and existing bombers inherit the latest level
+    for (const airfield of this.units(UnitType.Airfield)) {
+      if (airfield.bomberLevel?.() !== undefined) {
+        const current = airfield.bomberLevel();
+        if (current < targetLevel) {
+          airfield.setBomberLevel?.(targetLevel);
+        }
+      } else {
+        airfield.setBomberLevel?.(targetLevel);
+      }
+    }
+
+    const desiredMaxHealth = this.mg.config().bomberMaxHealth(targetLevel);
+    const baseMax =
+      this.mg.unitInfo(UnitType.Bomber).maxHealth ?? desiredMaxHealth;
+
+    for (const bomber of this.units(UnitType.Bomber)) {
+      const impl = bomber as any;
+      const currentLevel = typeof impl.level === "function" ? impl.level() : 1;
+      if (currentLevel < targetLevel) {
+        impl._level = targetLevel;
+      }
+      const oldMax =
+        typeof impl.effectiveMaxHealth === "function"
+          ? impl.effectiveMaxHealth()
+          : baseMax;
+      const healthRatio =
+        oldMax > 0 ? Math.min(1, bomber.health() / oldMax) : 1;
+      impl._bonusMaxHealth = Math.max(0, desiredMaxHealth - baseMax);
+      const newHealth = Math.max(0, Math.round(desiredMaxHealth * healthRatio));
+      impl._health = BigInt(
+        Math.min(desiredMaxHealth, newHealth || desiredMaxHealth),
+      );
+      this.mg.addUpdate(bomber.toUpdate());
+    }
+
+    this.invalidateEffectiveUnitsCache(UnitType.Airfield);
+    this.invalidateEffectiveUnitsCache(UnitType.Bomber);
   }
 
   // Research tree (standalone) API

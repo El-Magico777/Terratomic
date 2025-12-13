@@ -36,6 +36,8 @@ export class UnitImpl implements Unit {
   private _returning: boolean = false;
   private _patrolTile: TileRef | undefined;
   private _level: number = 1;
+  private _stackCount: number = 1; // Number of stacked instances (for stackable structures)
+  private _launchesRemaining: number | null = null; // For stacked silos: remaining launches before cooldown
   private _bonusMaxHealth: number = 0; // Extra max health from upgrades (e.g. city upgrades)
   private _targetable: boolean = true;
   private _accumulatedRegen: number = 0;
@@ -176,6 +178,11 @@ export class UnitImpl implements Unit {
       health: this.hasHealth() ? Number(this._health) : undefined,
       maxHealth: this.hasHealth() ? this.effectiveMaxHealth() : undefined,
       level: this._level > 1 ? this._level : undefined,
+      stackCount: this._stackCount > 1 ? this._stackCount : undefined,
+      launchesRemaining:
+        this._type === UnitType.MissileSilo && this._launchesRemaining !== null
+          ? this._launchesRemaining
+          : undefined,
       constructionType: this._constructionType,
       constructionTargetLevel:
         this._type === UnitType.Construction &&
@@ -290,6 +297,15 @@ export class UnitImpl implements Unit {
 
   level(): number {
     return this._level;
+  }
+
+  stackCount(): number {
+    return this._stackCount;
+  }
+
+  setStackCount(count: number): void {
+    this._stackCount = Math.max(1, count);
+    this.mg.addUpdate(this.toUpdate());
   }
 
   // Port-specific accessor/mutator for scheduled trade ship construction (single legacy)
@@ -648,6 +664,27 @@ export class UnitImpl implements Unit {
   }
 
   launch(duration?: Tick): void {
+    // For stacked missile silos: allow multiple launches before cooldown
+    if (this.type() === UnitType.MissileSilo && this._stackCount > 1) {
+      // Initialize launches remaining on first launch
+      if (this._launchesRemaining === null) {
+        this._launchesRemaining = this._stackCount - 1; // First launch uses one
+        this.mg.addUpdate(this.toUpdate());
+        return; // Don't start cooldown yet
+      }
+      // If we have remaining launches, use one
+      if (this._launchesRemaining > 0) {
+        this._launchesRemaining--;
+        this.mg.addUpdate(this.toUpdate());
+        if (this._launchesRemaining > 0) {
+          return; // Still have more launches, don't start cooldown
+        }
+        // Fall through to start cooldown when all launches used
+      }
+      // Reset launches for next cycle
+      this._launchesRemaining = null;
+    }
+
     this._cooldownStartTick = this.mg.ticks();
     if (duration !== undefined) {
       this._cooldownDuration = duration;
