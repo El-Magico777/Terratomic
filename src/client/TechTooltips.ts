@@ -12,59 +12,59 @@ export function getDetailedTechTooltip(techId: string): string {
     case RESEARCH_TECH_IDS.SEA_MISSILE_NAVY: {
       const w2 = WARSHIP_UPGRADES[1];
       const s1 = SUBMARINE_UPGRADES[0];
-      return `Unlocks:\n• Cruisers (HP: ${w2.maxHealth}, Dmg: ${w2.damageMin}-${w2.damageMax})\n• Diesel-Electric Subs (HP: ${s1.maxHealth}, Dmg: ${s1.damageMin}-${s1.damageMax})`;
+      return `Unlocks:\n• Cruisers (+25% health to ${w2.maxHealth}, +35% min damage to ${w2.damageMin}, +21.5% max damage to ${w2.damageMax})\n• Diesel-Electric Subs (${s1.maxHealth} health, ${s1.damageMin}-${s1.damageMax} damage, stealth)`;
     }
     case RESEARCH_TECH_IDS.SEA_ADVANCED_FLEET: {
       const w3 = WARSHIP_UPGRADES[2];
       const s2 = SUBMARINE_UPGRADES[1];
-      return `Unlocks:\n• Aegis Warships (HP: ${w3.maxHealth}, Dmg: ${w3.damageMin}-${w3.damageMax})\n• Tactical Subs (HP: ${s2.maxHealth}, Dmg: ${s2.damageMin}-${s2.damageMax})`;
+      return `Unlocks:\n• Aegis Warships (+20% health to ${w3.maxHealth}, +25.9% min damage to ${w3.damageMin}, +17.7% max damage to ${w3.damageMax})\n• Tactical Subs (+25% health to ${s2.maxHealth}, +35% min damage to ${s2.damageMin}, +21.5% max damage to ${s2.damageMax})`;
     }
     case RESEARCH_TECH_IDS.SEA_NUCLEAR_SUBMARINES: {
       const s3 = SUBMARINE_UPGRADES[2];
-      return `Unlocks:\n• Attack Subs (HP: ${s3.maxHealth}, Dmg: ${s3.damageMin}-${s3.damageMax})\n• Ship Anti-Air: Defends fleet against air attacks.`;
+      return `Unlocks:\n• Attack Subs (+20% health to ${s3.maxHealth}, +25.9% min damage to ${s3.damageMin}, +17.7% max damage to ${s3.damageMax})\n• Ship Anti-Air: Warships engage and destroy aircraft within range`;
     }
     case RESEARCH_TECH_IDS.SEA_TBD_LEVEL4:
-      return `Unlocks:\n• Nuclear Subs: Ballistic missile submarines can launch nuclear weapons while submerged.`;
+      return `Unlocks:\n• Nuclear Subs: Enables submarines to launch nuclear weapons while submerged and undetected (second-strike capability)`;
 
     // --- LAND ---
     case RESEARCH_TECH_IDS.LAND_ROADS_HOSPITALS:
-      return `Unlocks:\n• Roads: Increases movement speed and generates trade income.\n• Trade Routes: International trade routes boost economy.`;
+      return `Unlocks:\n• Roads: Increases unit movement speed, generates passive trade income per connected tile\n• Trade Routes: Trade ships establish international commerce routes for continuous gold income`;
     case RESEARCH_TECH_IDS.LAND_MILITARY_ACADEMY:
-      return `Unlocks:\n• City Anti-Air: Defends city against air attacks.\n• Improved SAM: Increased range and accuracy.`;
+      return `Unlocks:\n• City Anti-Air: Cities automatically engage enemy aircraft with AA batteries\n• Improved SAM: +35% range to 94.5 pixels, improved accuracy vs bombers/fighters/missiles`;
     case RESEARCH_TECH_IDS.LAND_SAM_SYSTEMS:
-      return `Unlocks:\n• Advanced SAM: Maximum range and accuracy.\n• Hospitals: Increases population growth rate.`;
+      return `Unlocks:\n• Advanced SAM: +82.25% range to 127.6 pixels (exceeds H-bomb radius), max interception success\n• Hospitals: Increases city population growth rate (faster troop production & economy)`;
     case RESEARCH_TECH_IDS.LAND_DOOMSDAY_DEVICE:
-      return `Unlocks:\n• Military Academy: Allows training of advanced units.`;
+      return `Unlocks:\n• Military Academy: Unlocks Academy structure; each connected Academy increases enemy troop casualties you inflict in land battles (+10% with one, ~+15% with two, up to +20% cap; applies on attack and defense)`;
 
     // --- AIR ---
     case RESEARCH_TECH_IDS.AIR_PARATROOPERS: {
       const f1 = FIGHTER_UPGRADES[0];
-      return `Unlocks:\n• Gen 1 Fighters (HP: ${f1.maxHealth}, Dmg: ${f1.damageMin}-${f1.damageMax})\n• Paratroopers: Can drop infantry behind enemy lines.`;
+      return `Unlocks:\n• Gen 1 Fighters (${f1.maxHealth} health, ${f1.damageMin}-${f1.damageMax} damage, engages aircraft)\n• Paratroopers: Airborne infantry deployed behind enemy lines for rapid expansion`;
     }
     case RESEARCH_TECH_IDS.AIR_ADVANCED_JETS: {
       const f2 = FIGHTER_UPGRADES[1];
       const b2 = BOMBER_UPGRADES[1];
-      return `Unlocks:\n• Gen 2 Fighters (HP: ${f2.maxHealth}, Dmg: ${f2.damageMin}-${f2.damageMax})\n• Heavy Bombers (HP: ${b2.maxHealth}, Dmg: ${b2.damageMin}-${b2.damageMax}, Range: ${b2.targetRange})`;
+      return `Unlocks:\n• Gen 2 Fighters (+33.3% health to ${f2.maxHealth}, +50% min damage to ${f2.damageMin}, +30.8% max damage to ${f2.damageMax})\n• Heavy Bombers (+20% health to ${b2.maxHealth}, +20% damage to ${b2.damageMin}, +40% range to ${b2.targetRange}, +50% speed to 3)`;
     }
     case RESEARCH_TECH_IDS.AIR_NAVAL_STRIKE: {
       const f3 = FIGHTER_UPGRADES[2];
-      return `Unlocks:\n• Gen 3 Fighters (HP: ${f3.maxHealth}, Dmg: ${f3.damageMin}-${f3.damageMax})\n• Naval Strike: Fighters can attack naval units.`;
+      return `Unlocks:\n• Gen 3 Fighters (+25% health to ${f3.maxHealth}, +33.3% min damage to ${f3.damageMin}, +23.5% max damage to ${f3.damageMax})\n• Naval Strike: Fighters can attack warships, transport ships, and trade ships`;
     }
     case RESEARCH_TECH_IDS.AIR_TBD_LEVEL4: {
       const f4 = FIGHTER_UPGRADES[3];
       const b3 = BOMBER_UPGRADES[2];
-      return `Unlocks:\n• Gen 4 Fighters (HP: ${f4.maxHealth}, Dmg: ${f4.damageMin}-${f4.damageMax})\n• Supersonic Bombers (HP: ${b3.maxHealth}, Dmg: ${b3.damageMin}-${b3.damageMax}, Range: ${b3.targetRange})`;
+      return `Unlocks:\n• Gen 4 Fighters (+20% health to ${f4.maxHealth}, +25% min damage to ${f4.damageMin}, +19% max damage to ${f4.damageMax})\n• Supersonic Bombers (+16.7% health to ${b3.maxHealth}, +16.7% damage to ${b3.damageMin}, +28.6% range to ${b3.targetRange}, +33.3% speed to 4)`;
     }
 
     // --- NUCLEAR ---
     case RESEARCH_TECH_IDS.NUCLEAR_FISSION:
-      return `Unlocks:\n• Atom Bomb: Basic nuclear weapon.\n• Missile Silo: Launch facility for nuclear weapons.`;
+      return `Unlocks:\n• Atom Bomb: Basic fission weapon with large blast radius (inner: 12px, outer: 30px)\n• Missile Silo: Required launch facility for deploying nuclear weapons`;
     case RESEARCH_TECH_IDS.THERMONUCLEAR_STAGING:
-      return `Unlocks:\n• Hydrogen Bomb: High-yield nuclear weapon. Larger blast radius.`;
+      return `Unlocks:\n• Hydrogen Bomb: High-yield fusion weapon with massive blast radius (inner: 80px, outer: 100px) - devastates multi-tile areas`;
     case RESEARCH_TECH_IDS.MIRV_TECHNOLOGY:
-      return `Unlocks:\n• MIRV: Multiple Independent Reentry Vehicles. Harder to intercept.`;
+      return `Unlocks:\n• MIRV: Multiple Independent Reentry Vehicles - deploys multiple warheads per missile, significantly harder for SAMs to intercept (50% hit chance vs 100% for atom bombs)`;
     case RESEARCH_TECH_IDS.NUCLEAR_TBD_LEVEL4:
-      return `Unlocks:\n• Doomsday Device: Automatically launches all nukes if you are defeated.`;
+      return `Unlocks:\n• Doomsday Device: Auto-triggers when any of your tiles are hit by a nuke; consumes the device and unleashes a global fallout wave that instantly deletes bombers/fighters/warships/trade ships, damages other structures by 80% of current health, relinquishes land, and spreads fallout across the world`;
 
     default:
       return "No detailed information available.";

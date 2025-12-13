@@ -98,7 +98,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Maritime Warfare",
       shortDescription: "Cruisers, Diesel-Electric Subs",
       description:
-        "Develop naval warfare capabilities. Unlocks Cruisers, Diesel-Electric Submarines.",
+        "Develop naval warfare capabilities. Unlocks Cruisers (+25% health to 1,250, +35% minimum damage to 270, +21.5% maximum damage to 395) and Diesel-Electric Submarines (1,000 health, 200-325 damage, stealth capabilities).",
     },
     effects: {
       onComplete: (player) => {
@@ -120,7 +120,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Fleet Modernization",
       shortDescription: "Aegis, Tactical Subs",
       description:
-        "Advanced naval systems and fleet integration. Unlocks Aegis Warships and Tactical Submarines.",
+        "Advanced naval systems and fleet integration. Unlocks Aegis Warships (+20% health to 1,500, +25.9% minimum damage to 340, +17.7% maximum damage to 465) and Tactical Submarines (+25% health to 1,250, +35% minimum damage to 270, +21.5% maximum damage to 395).",
     },
     effects: {
       onComplete: (player) => {
@@ -139,7 +139,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Submarine Dominance",
       shortDescription: "Attack Subs, Ship Anti-Air",
       description:
-        "Advanced submarine technology and fleet air defense. Unlocks Attack Submarines and Ship Anti-Air Systems.",
+        "Advanced submarine technology and fleet air defense. Unlocks Attack Submarines (+20% health to 1,500, +25.9% minimum damage to 340, +17.7% maximum damage to 465) and Ship Anti-Air Systems (allows warships to engage and destroy enemy aircraft within range).",
     },
     effects: {
       onComplete: (player) => {
@@ -158,7 +158,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Strategic Deterrent",
       shortDescription: "Nuclear Sub",
       description:
-        "Ballistic missile submarine programs for strategic deterrence. Unlocks Nuclear Submarines (can launch nuclear weapons while submerged).",
+        "Ballistic missile submarine programs for strategic deterrence. Unlocks Nuclear Submarines (enables submarines to launch nuclear weapons while remaining submerged and undetected, providing second-strike capability).",
     },
     effects: {
       onComplete: (player) => {
@@ -174,7 +174,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Road Network",
       shortDescription: "Roads, Trade Routes",
       description:
-        "Infrastructure development. Unlocks Roads and Trade Routes.",
+        "Develop critical infrastructure to boost your economy and military mobility. Unlocks Roads (increases unit movement speed and generates passive trade income per connected tile) and Trade Routes (enables trade ships to establish international commerce routes, generating continuous gold income).",
     },
     effects: {
       onComplete: (player, game) => {
@@ -191,7 +191,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Ground Air Defense",
       shortDescription: "City Anti-Air, Improved SAM",
       description:
-        "Defensive infrastructure. Unlocks City Anti-Air systems and Improved SAM.",
+        "Establish comprehensive air defense capabilities to protect your cities and territories. Unlocks City Anti-Air (enables cities to automatically engage enemy aircraft with AA batteries) and Improved SAM (+35% range to 94.5 pixels, improved interception accuracy against bombers, fighters, and nuclear missiles).",
     },
     effects: {
       onComplete: (player, game) => {
@@ -212,7 +212,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Modern Air Defense",
       shortDescription: "Advanced SAM, Hospitals",
       description:
-        "Upgraded defensive and medical systems. Unlocks Advanced SAM and Hospitals.",
+        "Achieve peak defensive and medical capabilities. Unlocks Advanced SAM (+82.25% range to 127.6 pixels from base 70, maximum interception range exceeding hydrogen bomb blast radius, highest success rate against all aircraft and missiles) and Hospitals (building that increases city population growth rate, accelerating troop production and economic output).",
     },
     effects: {
       onComplete: (player) => {
@@ -229,9 +229,9 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
   [RESEARCH_TECH_IDS.LAND_DOOMSDAY_DEVICE]: {
     meta: {
       name: "Military Academy",
-      shortDescription: "Academy building",
+      shortDescription: "Academy, casualty bonus",
       description:
-        "Establish military training infrastructure. Unlocks Military Academy building.",
+        "Establish elite military training infrastructure. Unlocks the Military Academy building. Each Academy (level- and health-scaled, +road bonus when connected) increases enemy troop casualties you inflict in land battles when attacking or defending: +10% with one Academy, ~+15% with two, ~+17.5% with three, asymptotically capped at +20% global casualty output.",
     },
     effects: {
       onComplete: (player) => {
@@ -247,7 +247,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Early Air Power",
       shortDescription: "Gen 1 Fighters, Paratroopers",
       description:
-        "Airborne infantry and assault doctrine. Unlocks 1st Generation Fighters, Paratroopers.",
+        "Develop airborne warfare capabilities. Unlocks Jet Engines enabling 1st Generation Fighters (750 health, 200-325 damage, engages enemy aircraft) and Paratroopers (airborne infantry units that can be deployed behind enemy lines for rapid territorial expansion).",
     },
     effects: {
       onComplete: (player) => {
@@ -263,7 +263,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Jet Technology",
       shortDescription: "Gen 2 Fighters, Heavy Bombers",
       description:
-        "Next-generation aircraft systems. Unlocks 2nd Generation Fighters, Heavy Bombers.",
+        "Advance to next-generation aircraft systems. Unlocks 2nd Generation Fighters (+33.3% health to 1,000, +50% minimum damage to 300, +30.8% maximum damage to 425) and Heavy Bombers (+20% health to 600, +20% damage to 300, +40% range to 350, +50% speed to 3).",
     },
     effects: {
       onComplete: (player) => {
@@ -282,7 +282,7 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       name: "Anti-Ship Warfare",
       shortDescription: "Gen 3 Fighters, Anti-ship",
       description:
-        "Advanced naval attack capability for aircraft. Unlocks 3rd Generation Fighters, Naval strike weapons.",
+        "Develop advanced anti-ship capabilities for air superiority. Unlocks 3rd Generation Fighters (+25% health to 1,250, +33.3% minimum damage to 400, +23.5% maximum damage to 525) and Naval Strike Weapons (enables fighters to target and attack warships, transport ships, and trade ships).",
     },
     effects: {
       onComplete: (player) => {
@@ -300,7 +300,8 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
     meta: {
       name: "Advanced Fighters",
       shortDescription: "Gen 4 Fighters, Supersonic Bombers",
-      description: "Unlocks 4th Generation Fighters, Supersonic Bombers.",
+      description:
+        "Master cutting-edge aerospace technology. Unlocks 4th Generation Fighters (+20% health to 1,500, +25% minimum damage to 500, +19% maximum damage to 625) and Supersonic Bombers (+16.7% health to 700, +16.7% damage to 350, +28.6% range to 450, +33.3% speed to 4).",
     },
     effects: {
       onComplete: (player) => {
@@ -318,7 +319,8 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
     meta: {
       name: "Atomic Weapons",
       shortDescription: "Atom Bomb, Silo",
-      description: "Atom Bomb, Silo",
+      description:
+        "Harness nuclear fission technology. Unlocks Atom Bomb (basic nuclear weapon with large blast radius causing massive area damage) and Missile Silo (required launch facility for deploying nuclear weapons against enemy targets).",
     },
     effects: {
       onComplete: (player) => {
@@ -334,7 +336,8 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
     meta: {
       name: "Thermonuclear Weapons",
       shortDescription: "Hydrogen Bomb",
-      description: "Hydrogen Bomb",
+      description:
+        "Advance to fusion-based thermonuclear weapons. Unlocks Hydrogen Bomb (high-yield nuclear weapon with significantly larger blast radius than atom bombs, capable of devastating multi-tile areas and causing catastrophic damage to enemy infrastructure).",
     },
     effects: {
       onComplete: (player) => {
@@ -349,7 +352,8 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
     meta: {
       name: "MIRV Warheads",
       shortDescription: "MIRV",
-      description: "MIRV",
+      description:
+        "Develop Multiple Independent Reentry Vehicle technology. Unlocks MIRV (advanced nuclear missiles deploying multiple independently targetable warheads from a single missile, significantly harder for enemy SAM systems to intercept, ensuring delivery of nuclear payload).",
     },
     effects: {
       onComplete: (player) => {
@@ -364,7 +368,8 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
     meta: {
       name: "Doomsday Device",
       shortDescription: "Global deterrence",
-      description: "Unlocks Doomsday Device (auto-launches nukes on defeat).",
+      description:
+        "Construct the ultimate deterrent. Unlocks Doomsday Device. When any of your tiles are hit by a nuclear detonation, the device auto-triggers: it consumes itself, plays a global alert, and unleashes an expanding fallout wave across every land tile. The wave instantly destroys all bombers, fighters, warships, and trade ships; damages remaining structures by 80% of current health; relinquishes claimed land; and seeds widespread fallout (noise-pattern coverage) world-wide.",
     },
     effects: {
       onComplete: (player) => {
