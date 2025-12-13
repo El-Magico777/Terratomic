@@ -353,11 +353,12 @@ export class UnitImpl implements Unit {
         return;
       }
       case UnitType.MissileSilo: {
-        // Cap silo upgrades at level 3
-        if (this._level >= 3) {
-          return;
-        }
+        // No cap for silo stacking
         this._level += 1;
+        // Reset launches remaining to allow more launches
+        if (this._launchesRemaining !== null) {
+          this._launchesRemaining += 1;
+        }
         this._bonusMaxHealth += 250;
         const healed = Number(this._health) + 250;
         const capped = Math.min(healed, this.effectiveMaxHealth());
@@ -368,10 +369,6 @@ export class UnitImpl implements Unit {
         return;
       }
       case UnitType.SAMLauncher: {
-        // Cap SAM upgrades at level 3
-        if (this._level >= 3) {
-          return;
-        }
         this._level += 1;
         // Small durability boost per upgrade, aligned with MissileSilo behavior
         this._bonusMaxHealth += 250;
@@ -664,8 +661,12 @@ export class UnitImpl implements Unit {
   }
 
   launch(duration?: Tick): void {
-    // For stacked missile silos: allow multiple launches before cooldown
-    if (this.type() === UnitType.MissileSilo && this._stackCount > 1) {
+    // For stacked missile silos and SAMs: allow multiple launches before cooldown
+    if (
+      (this.type() === UnitType.MissileSilo ||
+        this.type() === UnitType.SAMLauncher) &&
+      this._stackCount > 1
+    ) {
       // Initialize launches remaining on first launch
       if (this._launchesRemaining === null) {
         this._launchesRemaining = this._stackCount - 1; // First launch uses one
@@ -691,11 +692,8 @@ export class UnitImpl implements Unit {
     } else {
       // Choose default by unit type
       if (this.type() === UnitType.MissileSilo) {
-        // Reduce cooldown by 20% per upgrade level beyond 1: L1=100%, L2=80%, L3=60%
-        const base = this.mg.config().SiloCooldown();
-        const levelsAboveOne = Math.max(0, this._level - 1);
-        const multiplier = Math.max(0, 1 - 0.2 * levelsAboveOne);
-        this._cooldownDuration = Math.floor(base * multiplier);
+        // Use base cooldown - stacking doesn't affect cooldown duration
+        this._cooldownDuration = this.mg.config().SiloCooldown();
       } else if (this.type() === UnitType.SAMLauncher) {
         this._cooldownDuration = this.mg.config().SAMNukeCooldown();
       } else if (this.type() === UnitType.City) {
@@ -721,7 +719,7 @@ export class UnitImpl implements Unit {
     ) {
       if (this.hasHealth()) {
         const healthPercentage =
-          Number(this.health()) / (this.info().maxHealth ?? 1);
+          Number(this.health()) / this.effectiveMaxHealth();
         if (healthPercentage > 0) {
           cooldownDuration /= healthPercentage;
         }

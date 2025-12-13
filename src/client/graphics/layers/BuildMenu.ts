@@ -33,7 +33,7 @@ import {
   isUpgradeableUnit,
   maxStackCount,
   maxUnitLevel,
-  playerMaxStructureLevel,
+  playerMaxStructureTechLevel,
   playerMaxUnitLevel,
 } from "../../../core/game/Upgradeables";
 import { ToggleBomberUpgradeModeEvent } from "../../events/ToggleBomberUpgradeModeEvent";
@@ -618,7 +618,7 @@ export class BuildMenu extends LitElement {
   private _structureTechLevel(type: UnitType): number {
     const player = this.game?.myPlayer();
     if (!player) return 1;
-    return playerMaxStructureLevel(player, type);
+    return playerMaxStructureTechLevel(player, type);
   }
 
   private _desiredUnitLevel(type: UnitType): number {
@@ -645,7 +645,8 @@ export class BuildMenu extends LitElement {
     if (!player) {
       return "?";
     }
-    return player.units(item.unitType).length.toString();
+    // Use unitsOwned() to get the correct count including stacked structures
+    return player.unitsOwned(item.unitType).toString();
   }
 
   private getUnitDisplayName(unitType: UnitType, baseName: string): string {
@@ -708,7 +709,7 @@ export class BuildMenu extends LitElement {
 
     // Handle tech-upgradeable structures (SAM, Airfield)
     if (isTechUpgradeableStructure(unitType)) {
-      const techLevel = playerMaxStructureLevel(player, unitType);
+      const techLevel = playerMaxStructureTechLevel(player, unitType);
       const stackCount = this._desiredStackCount(unitType);
 
       let name = baseName;

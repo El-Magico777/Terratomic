@@ -1760,24 +1760,24 @@ export class ControlPanel2 extends LitElement implements Layer {
                     class="upgrade-structures-button ${this.uiState.upgradeMode
                       ? "selected"
                       : ""}"
-                    title="Click structures to upgrade them"
+                    title="Click structures to add stacks (+1 per click)"
                     @click=${() => {
                       const enabled = !this.uiState.upgradeMode;
                       this.uiState.upgradeMode = enabled;
                       this.eventBus.emit(new ToggleUpgradeModeEvent(enabled));
-                      // Disable mass production if upgrade is enabled
+                      // Disable mass production if stacking is enabled
                       if (enabled && this._multibuildEnabled) {
                         this._multibuildEnabled = false;
                         this.uiState.multibuildEnabled = false;
                       }
-                      // Disable bomber upgrade mode if structure upgrade is enabled
+                      // Disable bomber upgrade mode if stacking is enabled
                       if (enabled && this.uiState.bomberUpgradeMode) {
                         this.uiState.bomberUpgradeMode = false;
                         this.eventBus.emit(
                           new ToggleBomberUpgradeModeEvent(false),
                         );
                       }
-                      // Clear pending build selection when upgrade is enabled
+                      // Clear pending build selection when stacking is enabled
                       if (enabled) {
                         this.uiState.pendingBuildUnitType = null;
                       }
@@ -1787,9 +1787,9 @@ export class ControlPanel2 extends LitElement implements Layer {
                     <img
                       class="upgrade-icon"
                       src=${upgradeArrowIcon}
-                      alt="Upgrade"
+                      alt="Stack"
                     />
-                    <span>Upgrade Structures</span>
+                    <span>Stack Structures</span>
                   </button>
                 </div>
                 <build-menu

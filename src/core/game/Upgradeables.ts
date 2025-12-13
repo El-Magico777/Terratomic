@@ -65,11 +65,8 @@ export function maxStackCount(type: UnitType): number {
   return isStackableStructure(type) ? 99 : 1;
 }
 
-// Legacy function - returns max stack count for most, max tech level for SAM
+// Legacy function - returns max stack count (99 for all stackable structures)
 export function maxStructureLevel(type: UnitType): number {
-  if (type === UnitType.MissileSilo || type === UnitType.SAMLauncher) {
-    return 3;
-  }
   return isStackableStructure(type) ? 99 : 1;
 }
 
@@ -142,24 +139,38 @@ export function playerMaxUnitLevel(player: HasUpgrade, type: UnitType): number {
   return globalMax;
 }
 
-// Return maximum TECH upgrade level for a structure based on player's researched techs.
-// For SAMLauncher: Surface-to-Air Missiles = level 1, Radar-Guided SAMs = level 2,
-// Strategic SAM Systems = level 3.
-// For Airfield: Returns the bomber level the player has researched.
-// This is NOT the stack count - it's the quality tier.
+// Return maximum level for a structure based on stacking capability.
+// All stackable structures (including SAM, Airfield, MissileSilo) can stack up to 99.
+// Note: SAM and Airfield have separate tech upgrades (SAMLevel1-3, BomberLevel1-3)
+// that affect the quality/stats, but stacking is independent.
 export function playerMaxStructureLevel(
+  _player: HasUpgrade,
+  type: UnitType,
+): number {
+  // All stackable structures can go up to 99 stacks
+  if (isUpgradeableStructure(type)) {
+    return 99;
+  }
+
+  // Non-stackable structures have max level 1
+  return 1;
+}
+
+// Return the maximum TECH level for a structure based on player's researched techs.
+// For SAMLauncher: 1-3 based on SAM upgrades.
+// For Airfield: 1-3 based on bomber upgrades.
+// This is for quality/stats upgrades, NOT stacking.
+export function playerMaxStructureTechLevel(
   player: HasUpgrade,
   type: UnitType,
 ): number {
   if (type === UnitType.SAMLauncher) {
     if (player.hasUpgrade(UpgradeType.SAMLevel3)) return 3;
     if (player.hasUpgrade(UpgradeType.SAMLevel2)) return 2;
-    // SAM Level 1 is available by default at game start
     return 1;
   }
 
   if (type === UnitType.Airfield) {
-    // Airfield tech level is based on bomber upgrades
     if (player.hasUpgrade(UpgradeType.BomberLevel3)) return 3;
     if (player.hasUpgrade(UpgradeType.BomberLevel2)) return 2;
     return 1;

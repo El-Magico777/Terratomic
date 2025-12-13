@@ -18,7 +18,7 @@ import {
   isStackableStructure,
   isTechUpgradeableStructure,
   isUpgradeableUnit,
-  playerMaxStructureLevel,
+  playerMaxStructureTechLevel,
   playerMaxUnitLevel,
 } from "../game/Upgradeables";
 import { constructionSpeedModifiers } from "../tech/TechEffects";
@@ -335,7 +335,7 @@ export class ConstructionExecution implements Execution {
       return playerMaxUnitLevel(this.player, type);
     }
     if (isTechUpgradeableStructure(type)) {
-      return playerMaxStructureLevel(this.player, type);
+      return playerMaxStructureTechLevel(this.player, type);
     }
     return 1;
   }

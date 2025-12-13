@@ -348,19 +348,26 @@ export class PlayerImpl implements Player {
   // Count of units owned by the player, including construction
   unitsOwned(type: UnitType): number {
     let total = 0;
+    // All stackable structure types
+    const stackableTypes = new Set([
+      UnitType.City,
+      UnitType.Port,
+      UnitType.Hospital,
+      UnitType.Academy,
+      UnitType.ResearchLab,
+      UnitType.Factory,
+      UnitType.SAMLauncher,
+      UnitType.Airfield,
+      UnitType.MissileSilo,
+    ]);
+    const isStackable = stackableTypes.has(type);
+
     for (const unit of this._units) {
       if (unit.type() === type) {
-        if (
-          type === UnitType.City ||
-          type === UnitType.Port ||
-          type === UnitType.Hospital ||
-          type === UnitType.Academy ||
-          type === UnitType.ResearchLab ||
-          type === UnitType.Factory
-        ) {
-          // Upgraded cities, ports, hospitals, and academies count toward totals
+        if (isStackable) {
+          // Stacked structures count their stackCount toward totals
           // (affects scaling like new build cost and display counts)
-          total += (unit as any).level?.() ?? 1;
+          total += unit.stackCount?.() ?? 1;
         } else {
           total++;
         }
@@ -368,15 +375,8 @@ export class PlayerImpl implements Player {
       }
       if (unit.type() !== UnitType.Construction) continue;
       if (unit.constructionType() !== type) continue;
-      // For upgradeable structures, count the target level instead of just 1
-      if (
-        type === UnitType.City ||
-        type === UnitType.Port ||
-        type === UnitType.Hospital ||
-        type === UnitType.Academy ||
-        type === UnitType.ResearchLab ||
-        type === UnitType.Factory
-      ) {
+      // For stackable structures, count the target level instead of just 1
+      if (isStackable) {
         total += unit.constructionTargetLevel();
       } else {
         total++;
