@@ -15,13 +15,13 @@ describe("Land infrastructure tech integrations", () => {
     expect(player.hasUpgrade(UpgradeType.Roads)).toBe(true);
   });
 
-  it("enables HospitalResearch after researching Roads & Hospitals", async () => {
+  it("enables HospitalResearch after researching Modern Air Defense (Land-3)", async () => {
     const info = playerInfo("health", PlayerType.Human);
     const game = (await setup("ocean_and_land", {}, [info])) as GameImpl;
     const player = game.player(info.id) as PlayerImpl;
 
     expect(player.hasUpgrade(UpgradeType.HospitalResearch)).toBe(false);
-    player.addResearchedTech(RESEARCH_TECH_IDS.LAND_ROADS_HOSPITALS);
+    player.addResearchedTech(RESEARCH_TECH_IDS.LAND_SAM_SYSTEMS);
     expect(player.hasUpgrade(UpgradeType.HospitalResearch)).toBe(true);
   });
 
