@@ -680,7 +680,7 @@ export class BuildMenu extends LitElement {
       if (unitType === UnitType.Submarine) {
         switch (level) {
           case 1:
-            return "Diesel-Electric Sub";
+            return "Diesel Sub";
           case 2:
             return "Tactical Sub";
           case 3:
