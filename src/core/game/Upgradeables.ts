@@ -193,9 +193,14 @@ export function tryParseUnitType(value: string): UnitType | null {
 export function isUnitAvailable(player: HasUpgrade, type: UnitType): boolean {
   switch (type) {
     case UnitType.Warship:
-    case UnitType.Submarine:
-      // Warship and Submarine Level 1 are available by default at game start
+      // Warship Level 1 is available by default at game start
       return true;
+    case UnitType.Submarine:
+      // Diesel Sub unlocks with Sea Level 1 (Submarine research)
+      return (
+        player.hasUpgrade(UpgradeType.SubmarineResearch) ||
+        player.hasUpgrade(UpgradeType.SubmarineLevel1)
+      );
     case UnitType.Airfield:
     case UnitType.FighterJet:
     case UnitType.Bomber:
@@ -218,7 +223,8 @@ export function isUnitAvailable(player: HasUpgrade, type: UnitType): boolean {
     case UnitType.Hospital:
       return player.hasUpgrade(UpgradeType.HospitalResearch);
     case UnitType.ResearchLab:
-      return player.hasUpgrade(UpgradeType.ResearchLabResearch);
+      // Research Lab is available without a tech gate
+      return true;
     default:
       return true;
   }
