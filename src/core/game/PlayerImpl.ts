@@ -101,8 +101,8 @@ export class PlayerImpl implements Player {
   private _researchTreeTechs: Set<string> = new Set();
   // Per-match research progress (beakers) per tech
   private _researchBeakers: Map<string, number> = new Map();
-  // Currently selected research priority tech id
-  private _researchPriority: string | null = null;
+  // Currently selected research priority tech ids (can have multiple)
+  private _researchPriorities: Set<string> = new Set();
   // Policy directive choices: directiveId -> optionId
   private _policyChoices: Map<string, string> = new Map();
   // Track unseen policy directives (based on newly unlocked techs)
@@ -254,7 +254,12 @@ export class PlayerImpl implements Player {
         this._researchBeakers.size > 0
           ? Object.fromEntries(this._researchBeakers)
           : undefined,
-      researchPriorityTech: this._researchPriority,
+      researchPriorityTech:
+        this._researchPriorities.values().next().value ?? null,
+      researchPriorities:
+        this._researchPriorities.size > 0
+          ? Array.from(this._researchPriorities)
+          : undefined,
       policyChoices:
         this._policyChoices.size > 0
           ? Object.fromEntries(this._policyChoices)
@@ -555,7 +560,6 @@ export class PlayerImpl implements Player {
     }
 
     if (toRemove.length === 0 && progressToClear.length === 0) return;
-    const priority = this._researchPriority;
     const cleared = new Set([...toRemove, ...progressToClear]);
 
     for (const techId of toRemove) {
@@ -565,8 +569,9 @@ export class PlayerImpl implements Player {
       this._researchBeakers.delete(techId);
     }
 
-    if (priority && cleared.has(priority)) {
-      this._researchPriority = null;
+    // Remove cleared techs from priorities
+    for (const techId of cleared) {
+      this._researchPriorities.delete(techId);
     }
   }
   hasResearchedTech(techId: string): boolean {
@@ -595,10 +600,20 @@ export class PlayerImpl implements Player {
     return { completed, newBeakers: total };
   }
   setResearchPriority(techId: string | null): void {
-    this._researchPriority = techId;
+    if (techId === null) {
+      this._researchPriorities.clear();
+    } else if (this._researchPriorities.has(techId)) {
+      this._researchPriorities.delete(techId);
+    } else {
+      this._researchPriorities.add(techId);
+    }
   }
   researchPriority(): string | null {
-    return this._researchPriority;
+    // Return first priority for backward compatibility
+    return this._researchPriorities.values().next().value ?? null;
+  }
+  researchPriorities(): Set<string> {
+    return this._researchPriorities;
   }
 
   // Policy Directive methods

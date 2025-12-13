@@ -119,8 +119,60 @@ export class ResearchTreeModal extends LitElement {
     const researched = this.researchedIDsFromGame();
     if (me.hasResearchedTech?.(id)) return;
 
+    // Find the clicked tech to get its level and category
+    const clickedTech = this.techs.find((t) => t.id === id);
+    if (!clickedTech) return;
+
+    const priorities = me.researchPriorities?.() ?? new Set<string>();
+
+    // If this tech is being prioritized (not toggled off)
+    const willBePrioritized = !priorities.has(id);
+
+    if (willBePrioritized) {
+      // Remove priorities from same-level techs in other categories
+      for (const tech of this.techs) {
+        if (
+          tech.level === clickedTech.level &&
+          tech.category !== clickedTech.category &&
+          priorities.has(tech.id)
+        ) {
+          this.eventBus.emit(new SendResearchTreeSelectIntentEvent(tech.id));
+        }
+      }
+    }
+
     this.eventBus.emit(new SendResearchTreeSelectIntentEvent(id));
     this.requestUpdate();
+  }
+
+  private prioritizeCategory(category: Category) {
+    if (!this.game || !this.eventBus) return;
+    const me = this.game.myPlayer();
+    if (!me) return;
+
+    // First, clear all priorities from other categories
+    const allTechs = this.techs;
+    const researched = this.researchedIDsFromGame();
+    const priorities = me.researchPriorities?.() ?? new Set<string>();
+
+    // Remove priorities from techs in other categories
+    for (const tech of allTechs) {
+      if (tech.category !== category && priorities.has(tech.id)) {
+        this.eventBus.emit(new SendResearchTreeSelectIntentEvent(tech.id));
+      }
+    }
+
+    // Now prioritize all techs in this category that aren't already prioritized
+    const categoryTechs = this.techs.filter((t) => t.category === category);
+
+    for (const tech of categoryTechs) {
+      if (!researched.has(tech.id) && !priorities.has(tech.id)) {
+        this.eventBus.emit(new SendResearchTreeSelectIntentEvent(tech.id));
+      }
+    }
+
+    // Force UI update after a short delay to show changes
+    setTimeout(() => this.requestUpdate(), 50);
   }
 
   private handleInvestmentSync = (event: Event) => {
@@ -201,7 +253,7 @@ export class ResearchTreeModal extends LitElement {
       Nuclear: "#e74c3c",
     };
     const me = this.game?.myPlayer?.();
-    const priority = me?.researchPriorityTech?.() ?? null;
+    const priorities = me?.researchPriorities?.() ?? new Set<string>();
 
     const percentByTechId = (() => {
       const map = new Map<string, number>();
@@ -482,6 +534,40 @@ export class ResearchTreeModal extends LitElement {
             opacity: 0.8;
           }
 
+          .priority-btn.locked-prioritized {
+            background: #f39c12;
+            color: #fff;
+            border-color: #e67e22;
+            opacity: 0.7;
+          }
+
+          .category-prioritize-btn {
+            background: none;
+            border: 1px solid var(--ui-border-muted);
+            color: var(--ui-text-muted);
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: auto;
+            transition: all 0.2s;
+            white-space: nowrap;
+          }
+
+          .category-prioritize-btn:hover {
+            background: var(--ui-secondary);
+            color: var(--ui-text-default);
+            border-color: var(--ui-text-light);
+          }
+
+          .category-prioritize-btn.active {
+            background: #f39c12;
+            color: #fff;
+            border-color: #e67e22;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.4);
+          }
+
           .bar-sea {
             background-color: #3498db;
           }
@@ -532,6 +618,14 @@ export class ResearchTreeModal extends LitElement {
               };
               const iconSrc = icons[cat];
 
+              // Check if all non-researched techs in category are prioritized
+              const nonResearchedTechs = techs.filter(
+                (t) => !researched.has(t.id),
+              );
+              const allPrioritized =
+                nonResearchedTechs.length > 0 &&
+                nonResearchedTechs.every((t) => priorities.has(t.id));
+
               return html`
                 <div class="category">
                   <div class="category-header ${catClass}">
@@ -542,12 +636,21 @@ export class ResearchTreeModal extends LitElement {
                         ></div>`
                       : ""}
                     ${cat.toUpperCase()}
+                    <button
+                      class="category-prioritize-btn ${allPrioritized
+                        ? "active"
+                        : ""}"
+                      @click=${() => this.prioritizeCategory(cat)}
+                      title="Prioritize all ${cat} techs"
+                    >
+                      ${allPrioritized ? "⭐ Prioritized" : "☆ Prioritize"}
+                    </button>
                   </div>
                   ${techs.map((tech) => {
                     const available = this.isAvailable(tech.id, researched);
                     const isResearched = researched.has(tech.id);
                     const pct = percentByTechId.get(tech.id) ?? 0;
-                    const isPriority = priority === tech.id;
+                    const isPriority = priorities.has(tech.id);
                     const display = getTechDisplay(tech);
                     const tooltip = getDetailedTechTooltip(tech.id);
 
@@ -560,6 +663,18 @@ export class ResearchTreeModal extends LitElement {
                       .join(" ");
 
                     const barClass = `bar-${cat.toLowerCase()}`;
+
+                    // Locked techs show as prioritized (yellow) if they're set as priority
+                    const btnClass = [
+                      "priority-btn",
+                      isPriority && available
+                        ? "active"
+                        : isPriority && !available
+                          ? "locked-prioritized"
+                          : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
 
                     return html`
                       <div
@@ -586,22 +701,24 @@ export class ResearchTreeModal extends LitElement {
                             : ""}
                         </div>
                         <button
-                          class="priority-btn ${isPriority ? "active" : ""}"
-                          ?disabled=${isResearched || !available}
+                          class="${btnClass}"
+                          ?disabled=${isResearched}
                           @click=${(e: Event) => {
                             e.stopPropagation();
-                            if (!isResearched && available) {
+                            if (!isResearched) {
                               this.onTechClick(tech.id);
                             }
                           }}
                         >
                           ${isResearched
                             ? "✓ Done"
-                            : !available
+                            : !available && isPriority
                               ? "🔒 Locked"
-                              : isPriority
-                                ? "⭐ Prioritized"
-                                : "☆ Prioritize"}
+                              : !available
+                                ? "🔒 Locked"
+                                : isPriority
+                                  ? "⭐ Prioritized"
+                                  : "☆ Prioritize"}
                         </button>
                       </div>
                     `;

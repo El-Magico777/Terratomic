@@ -344,6 +344,9 @@ export class PlayerView {
   researchPriorityTech(): string | null {
     return this.data.researchPriorityTech ?? null;
   }
+  researchPriorities(): Set<string> {
+    return new Set(this.data.researchPriorities ?? []);
+  }
 
   // Policy Directive access
   getPolicyChoice(directiveId: string): string | null {

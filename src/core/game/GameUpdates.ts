@@ -236,8 +236,10 @@ export interface PlayerUpdate {
   researchTreeTechs: string[];
   // Research progress (beakers) per tech id (optional; omitted if none)
   researchTreeBeakers?: Record<string, number>;
-  // Currently selected research priority tech id (optional)
+  // Currently selected research priority tech id (optional, legacy single priority)
   researchPriorityTech?: string | null;
+  // All selected research priority tech ids (optional; omitted if none)
+  researchPriorities?: string[];
   // Policy directive choices: directiveId -> optionId (optional; omitted if none)
   policyChoices?: Record<string, string>;
   // Whether the player has unseen policy directives to review
