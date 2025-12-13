@@ -147,7 +147,9 @@ export class ResearchTreeModal extends LitElement {
 
     return html`
       <div class="investment-control">
-        <span class="inv-label">Investment:</span>
+        <span class="inv-label"
+          >Investment: <span class="inv-percent">${percent}%</span></span
+        >
         <div class="slider-wrapper">
           <input
             type="range"

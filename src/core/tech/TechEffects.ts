@@ -92,18 +92,40 @@ export type TechDefinition = {
 
 // Unified registry containing both metadata and effects per tech
 export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
-  // Sea techs - Level 1: Missile Navy
+  // Sea techs - Level 1: Maritime Warfare
   [RESEARCH_TECH_IDS.SEA_MISSILE_NAVY]: {
     meta: {
-      name: "Missile Navy",
-      shortDescription: "Warship L2, Sub L2",
+      name: "Maritime Warfare",
+      shortDescription: "Cruisers, Diesel-Electric Subs",
       description:
-        "Develop guided missile technology for naval warfare. Unlocks Warship Level 2, Submarine Level 2.",
+        "Develop naval warfare capabilities. Unlocks Cruisers, Diesel-Electric Submarines.",
     },
     effects: {
       onComplete: (player) => {
         if (!player.hasUpgrade?.(UpgradeType.WarshipLevel2)) {
           player.addUpgrade?.(UpgradeType.WarshipLevel2);
+        }
+        if (!player.hasUpgrade?.(UpgradeType.SubmarineResearch)) {
+          player.addUpgrade?.(UpgradeType.SubmarineResearch);
+        }
+        if (!player.hasUpgrade?.(UpgradeType.SubmarineLevel1)) {
+          player.addUpgrade?.(UpgradeType.SubmarineLevel1);
+        }
+      },
+    },
+  },
+  // Sea techs - Level 2: Fleet Modernization
+  [RESEARCH_TECH_IDS.SEA_ADVANCED_FLEET]: {
+    meta: {
+      name: "Fleet Modernization",
+      shortDescription: "Aegis, Tactical Subs",
+      description:
+        "Advanced naval systems and fleet integration. Unlocks Aegis Warships and Tactical Submarines.",
+    },
+    effects: {
+      onComplete: (player) => {
+        if (!player.hasUpgrade?.(UpgradeType.WarshipLevel3)) {
+          player.addUpgrade?.(UpgradeType.WarshipLevel3);
         }
         if (!player.hasUpgrade?.(UpgradeType.SubmarineLevel2)) {
           player.addUpgrade?.(UpgradeType.SubmarineLevel2);
@@ -111,18 +133,18 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       },
     },
   },
-  // Sea techs - Level 2: Advanced Fleet
-  [RESEARCH_TECH_IDS.SEA_ADVANCED_FLEET]: {
+  // Sea techs - Level 3: Submarine Dominance
+  [RESEARCH_TECH_IDS.SEA_NUCLEAR_SUBMARINES]: {
     meta: {
-      name: "Advanced Fleet",
-      shortDescription: "Warship L3, Ship AA",
+      name: "Submarine Dominance",
+      shortDescription: "Attack Subs, Ship Anti-Air",
       description:
-        "Advanced naval systems and fleet integration. Unlocks Warship Level 3, Ship Anti-Air Systems.",
+        "Advanced submarine technology and fleet air defense. Unlocks Attack Submarines and Ship Anti-Air Systems.",
     },
     effects: {
       onComplete: (player) => {
-        if (!player.hasUpgrade?.(UpgradeType.WarshipLevel3)) {
-          player.addUpgrade?.(UpgradeType.WarshipLevel3);
+        if (!player.hasUpgrade?.(UpgradeType.SubmarineLevel3)) {
+          player.addUpgrade?.(UpgradeType.SubmarineLevel3);
         }
         if (!player.hasUpgrade?.(UpgradeType.WarshipAntiAir)) {
           player.addUpgrade?.(UpgradeType.WarshipAntiAir);
@@ -130,13 +152,13 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       },
     },
   },
-  // Sea techs - Level 3: Nuclear Submarines
-  [RESEARCH_TECH_IDS.SEA_NUCLEAR_SUBMARINES]: {
+  // Sea techs - Level 4: Strategic Deterrent
+  [RESEARCH_TECH_IDS.SEA_TBD_LEVEL4]: {
     meta: {
-      name: "Nuclear Submarines",
-      shortDescription: "Subs can launch nukes",
+      name: "Strategic Deterrent",
+      shortDescription: "Nuclear Sub",
       description:
-        "Ballistic missile submarine programs for strategic deterrence. Unlocks Submarines can launch nuclear weapons.",
+        "Ballistic missile submarine programs for strategic deterrence. Unlocks Nuclear Submarines (can launch nuclear weapons while submerged).",
     },
     effects: {
       onComplete: (player) => {
@@ -146,21 +168,13 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       },
     },
   },
-  // Sea techs - Level 4: TBD
-  [RESEARCH_TECH_IDS.SEA_TBD_LEVEL4]: {
-    meta: {
-      name: "Sea Level 4 - TBD",
-      shortDescription: "Placeholder sea tech",
-      description: "Placeholder for future sea-based technology.",
-    },
-  },
-  // Land techs - Level 1: Roads & Hospitals (moved from Economy)
+  // Land techs - Level 1: Road Network
   [RESEARCH_TECH_IDS.LAND_ROADS_HOSPITALS]: {
     meta: {
-      name: "Roads & Hospitals",
-      shortDescription: "Unlocks Roads, Hospitals",
+      name: "Road Network",
+      shortDescription: "Roads, Trade Routes",
       description:
-        "Infrastructure and medical systems. Unlocks Roads, Hospitals.",
+        "Infrastructure development. Unlocks Roads and Trade Routes.",
     },
     effects: {
       onComplete: (player, game) => {
@@ -168,99 +182,93 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
           player.addUpgrade?.(UpgradeType.Roads);
           game.markPlayerNodesForReconnection?.(player);
         }
-        if (!player.hasUpgrade?.(UpgradeType.HospitalResearch)) {
-          player.addUpgrade?.(UpgradeType.HospitalResearch);
-        }
       },
     },
   },
-  // Land techs - Level 2: Military Academy
+  // Land techs - Level 2: Ground Air Defense
   [RESEARCH_TECH_IDS.LAND_MILITARY_ACADEMY]: {
     meta: {
-      name: "Military Academy",
-      shortDescription: "Academy building, City AA",
+      name: "Ground Air Defense",
+      shortDescription: "City Anti-Air, Improved SAM",
       description:
-        "Establish military training infrastructure. Unlocks Military Academy building, City Anti-Air systems.",
+        "Defensive infrastructure. Unlocks City Anti-Air systems and Improved SAM.",
     },
     effects: {
       onComplete: (player, game) => {
-        if (!player.hasUpgrade?.(UpgradeType.MilitaryAcademy)) {
-          player.addUpgrade?.(UpgradeType.MilitaryAcademy);
-        }
         if (!player.hasUpgrade?.(UpgradeType.CityAntiAir)) {
           player.addUpgrade?.(UpgradeType.CityAntiAir);
           // Start the city AA execution to fire bullets at planes
           game.addExecution(new CityAAExecution(player));
         }
-      },
-    },
-  },
-  // Land techs - Level 3: SAM Systems
-  [RESEARCH_TECH_IDS.LAND_SAM_SYSTEMS]: {
-    meta: {
-      name: "SAM Systems",
-      shortDescription: "AA Guns, SAM L2",
-      description:
-        "Surface-to-air missile system deployment. Unlocks AA Guns, SAM Level 2.",
-    },
-    effects: {
-      onComplete: (player) => {
         if (!player.hasUpgrade?.(UpgradeType.SAMLevel2)) {
           player.addUpgrade?.(UpgradeType.SAMLevel2);
         }
       },
     },
   },
-  // Land techs - Level 4: Doomsday Device
-  [RESEARCH_TECH_IDS.LAND_DOOMSDAY_DEVICE]: {
+  // Land techs - Level 3: Modern Air Defense
+  [RESEARCH_TECH_IDS.LAND_SAM_SYSTEMS]: {
     meta: {
-      name: "Doomsday Device",
-      shortDescription: "SAM L3, Doomsday",
+      name: "Modern Air Defense",
+      shortDescription: "Advanced SAM, Hospitals",
       description:
-        "Ultimate defensive deterrent system. Unlocks SAM Level 3, Doomsday Device.",
+        "Upgraded defensive and medical systems. Unlocks Advanced SAM and Hospitals.",
     },
     effects: {
       onComplete: (player) => {
         if (!player.hasUpgrade?.(UpgradeType.SAMLevel3)) {
           player.addUpgrade?.(UpgradeType.SAMLevel3);
         }
-        if (!player.hasUpgrade?.(UpgradeType.DoomsdayDeviceResearch)) {
-          player.addUpgrade?.(UpgradeType.DoomsdayDeviceResearch);
+        if (!player.hasUpgrade?.(UpgradeType.HospitalResearch)) {
+          player.addUpgrade?.(UpgradeType.HospitalResearch);
         }
       },
     },
   },
-  // Air techs - Level 1: Paratroopers
+  // Land techs - Level 4: Military Academy
+  [RESEARCH_TECH_IDS.LAND_DOOMSDAY_DEVICE]: {
+    meta: {
+      name: "Military Academy",
+      shortDescription: "Academy building",
+      description:
+        "Establish military training infrastructure. Unlocks Military Academy building.",
+    },
+    effects: {
+      onComplete: (player) => {
+        if (!player.hasUpgrade?.(UpgradeType.MilitaryAcademy)) {
+          player.addUpgrade?.(UpgradeType.MilitaryAcademy);
+        }
+      },
+    },
+  },
+  // Air techs - Level 1: Early Air Power
   [RESEARCH_TECH_IDS.AIR_PARATROOPERS]: {
     meta: {
-      name: "Paratroopers",
-      shortDescription: "Paratroopers, Fighter L2",
+      name: "Early Air Power",
+      shortDescription: "Gen 1 Fighters, Paratroopers",
       description:
-        "Airborne infantry and assault doctrine. Unlocks Paratroopers, Fighter Level 2.",
+        "Airborne infantry and assault doctrine. Unlocks 1st Generation Fighters, Paratroopers.",
     },
     effects: {
       onComplete: (player) => {
-        if (!player.hasUpgrade?.(UpgradeType.AirUpgrade1)) {
-          player.addUpgrade?.(UpgradeType.AirUpgrade1);
-        }
-        if (!player.hasUpgrade?.(UpgradeType.FighterLevel2)) {
-          player.addUpgrade?.(UpgradeType.FighterLevel2);
+        if (!player.hasUpgrade?.(UpgradeType.JetEngines)) {
+          player.addUpgrade?.(UpgradeType.JetEngines);
         }
       },
     },
   },
-  // Air techs - Level 2: Advanced Jets
+  // Air techs - Level 2: Jet Technology
   [RESEARCH_TECH_IDS.AIR_ADVANCED_JETS]: {
     meta: {
-      name: "Advanced Jets",
-      shortDescription: "Fighter L3, Bomber L2",
+      name: "Jet Technology",
+      shortDescription: "Gen 2 Fighters, Heavy Bombers",
       description:
-        "Next-generation aircraft systems. Unlocks Fighter Level 3, Bomber Level 2.",
+        "Next-generation aircraft systems. Unlocks 2nd Generation Fighters, Heavy Bombers.",
     },
     effects: {
       onComplete: (player) => {
-        if (!player.hasUpgrade?.(UpgradeType.FighterLevel3)) {
-          player.addUpgrade?.(UpgradeType.FighterLevel3);
+        if (!player.hasUpgrade?.(UpgradeType.FighterLevel2)) {
+          player.addUpgrade?.(UpgradeType.FighterLevel2);
         }
         if (!player.hasUpgrade?.(UpgradeType.BomberLevel2)) {
           player.addUpgrade?.(UpgradeType.BomberLevel2);
@@ -268,21 +276,18 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       },
     },
   },
-  // Air techs - Level 3: Naval Strike
+  // Air techs - Level 3: Anti-Ship Warfare
   [RESEARCH_TECH_IDS.AIR_NAVAL_STRIKE]: {
     meta: {
-      name: "Naval Strike",
-      shortDescription: "Fighter L4, Bomber L3, Anti-ship",
+      name: "Anti-Ship Warfare",
+      shortDescription: "Gen 3 Fighters, Anti-ship",
       description:
-        "Advanced naval attack capability for aircraft. Unlocks Fighter Level 4, Bomber Level 3, Naval strike weapons.",
+        "Advanced naval attack capability for aircraft. Unlocks 3rd Generation Fighters, Naval strike weapons.",
     },
     effects: {
       onComplete: (player) => {
-        if (!player.hasUpgrade?.(UpgradeType.FighterLevel4)) {
-          player.addUpgrade?.(UpgradeType.FighterLevel4);
-        }
-        if (!player.hasUpgrade?.(UpgradeType.BomberLevel3)) {
-          player.addUpgrade?.(UpgradeType.BomberLevel3);
+        if (!player.hasUpgrade?.(UpgradeType.FighterLevel3)) {
+          player.addUpgrade?.(UpgradeType.FighterLevel3);
         }
         if (!player.hasUpgrade?.(UpgradeType.FighterJetNavalTargeting)) {
           player.addUpgrade?.(UpgradeType.FighterJetNavalTargeting);
@@ -293,17 +298,27 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
   // Air techs - Level 4: TBD
   [RESEARCH_TECH_IDS.AIR_TBD_LEVEL4]: {
     meta: {
-      name: "Air Level 4 - TBD",
-      shortDescription: "Placeholder air tech",
-      description: "Placeholder for future air-based technology.",
+      name: "Advanced Fighters",
+      shortDescription: "Gen 4 Fighters, Supersonic Bombers",
+      description: "Unlocks 4th Generation Fighters, Supersonic Bombers.",
+    },
+    effects: {
+      onComplete: (player) => {
+        if (!player.hasUpgrade?.(UpgradeType.FighterLevel4)) {
+          player.addUpgrade?.(UpgradeType.FighterLevel4);
+        }
+        if (!player.hasUpgrade?.(UpgradeType.BomberLevel3)) {
+          player.addUpgrade?.(UpgradeType.BomberLevel3);
+        }
+      },
     },
   },
-  // Nuclear techs - Level 1: Nuclear Fission
+  // Nuclear techs - Level 1: Atomic Weapons
   [RESEARCH_TECH_IDS.NUCLEAR_FISSION]: {
     meta: {
-      name: "Nuclear Fission",
-      shortDescription: "Enables Atom Bomb, Silo",
-      description: "Enables: Atom Bomb, Silo",
+      name: "Atomic Weapons",
+      shortDescription: "Atom Bomb, Silo",
+      description: "Atom Bomb, Silo",
     },
     effects: {
       onComplete: (player) => {
@@ -314,12 +329,12 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       },
     },
   },
-  // Nuclear techs - Level 2: Thermonuclear Staging
+  // Nuclear techs - Level 2: Thermonuclear Weapons
   [RESEARCH_TECH_IDS.THERMONUCLEAR_STAGING]: {
     meta: {
-      name: "Thermonuclear Staging",
-      shortDescription: "Enables Hydrogen Bomb",
-      description: "Enables: Hydrogen Bomb",
+      name: "Thermonuclear Weapons",
+      shortDescription: "Hydrogen Bomb",
+      description: "Hydrogen Bomb",
     },
     effects: {
       onComplete: (player) => {
@@ -329,12 +344,12 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
       },
     },
   },
-  // Nuclear techs - Level 3: MIRV Technology
+  // Nuclear techs - Level 3: MIRV Warheads
   [RESEARCH_TECH_IDS.MIRV_TECHNOLOGY]: {
     meta: {
-      name: "MIRV Technology",
-      shortDescription: "Enables MIRV",
-      description: "Enables: MIRV",
+      name: "MIRV Warheads",
+      shortDescription: "MIRV",
+      description: "MIRV",
     },
     effects: {
       onComplete: (player) => {
@@ -347,9 +362,16 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
   // Nuclear techs - Level 4: TBD
   [RESEARCH_TECH_IDS.NUCLEAR_TBD_LEVEL4]: {
     meta: {
-      name: "Nuclear Level 4 - TBD",
-      shortDescription: "Placeholder nuclear tech",
-      description: "Placeholder for future nuclear technology.",
+      name: "Doomsday Device",
+      shortDescription: "Global deterrence",
+      description: "Unlocks Doomsday Device (auto-launches nukes on defeat).",
+    },
+    effects: {
+      onComplete: (player) => {
+        if (!player.hasUpgrade?.(UpgradeType.DoomsdayDeviceResearch)) {
+          player.addUpgrade?.(UpgradeType.DoomsdayDeviceResearch);
+        }
+      },
     },
   },
 });
