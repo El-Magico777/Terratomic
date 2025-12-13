@@ -52,6 +52,8 @@ export function isUpgradeableUnit(type: UnitType): boolean {
   return UPGRADEABLE_UNITS.has(type);
 }
 
+const MAX_STACK_COUNT = 25;
+
 // Maximum TECH upgrade level for structures (SAM, Airfield)
 // This is NOT the stack count - it's the quality tier from research.
 export function maxStructureTechLevel(type: UnitType): number {
@@ -62,12 +64,12 @@ export function maxStructureTechLevel(type: UnitType): number {
 
 // Maximum stack count for stackable structures
 export function maxStackCount(type: UnitType): number {
-  return isStackableStructure(type) ? 99 : 1;
+  return isStackableStructure(type) ? MAX_STACK_COUNT : 1;
 }
 
-// Legacy function - returns max stack count (99 for all stackable structures)
+// Legacy function - returns max stack count (25 for all stackable structures)
 export function maxStructureLevel(type: UnitType): number {
-  return isStackableStructure(type) ? 99 : 1;
+  return isStackableStructure(type) ? MAX_STACK_COUNT : 1;
 }
 
 // Return maximum upgrade level for upgradeable combat units.
@@ -140,16 +142,16 @@ export function playerMaxUnitLevel(player: HasUpgrade, type: UnitType): number {
 }
 
 // Return maximum level for a structure based on stacking capability.
-// All stackable structures (including SAM, Airfield, MissileSilo) can stack up to 99.
+// All stackable structures (including SAM, Airfield, MissileSilo) can stack up to 25.
 // Note: SAM and Airfield have separate tech upgrades (SAMLevel1-3, BomberLevel1-3)
 // that affect the quality/stats, but stacking is independent.
 export function playerMaxStructureLevel(
   _player: HasUpgrade,
   type: UnitType,
 ): number {
-  // All stackable structures can go up to 99 stacks
+  // All stackable structures can go up to 25 stacks
   if (isUpgradeableStructure(type)) {
-    return 99;
+    return MAX_STACK_COUNT;
   }
 
   // Non-stackable structures have max level 1

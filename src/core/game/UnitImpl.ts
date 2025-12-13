@@ -16,6 +16,7 @@ import { GameImpl } from "./GameImpl";
 import { TileRef } from "./GameMap";
 import { GameUpdateType, UnitUpdate } from "./GameUpdates";
 import { PlayerImpl } from "./PlayerImpl";
+import { maxStackCount } from "./Upgradeables";
 
 export class UnitImpl implements Unit {
   private _active = true;
@@ -304,7 +305,8 @@ export class UnitImpl implements Unit {
   }
 
   setStackCount(count: number): void {
-    this._stackCount = Math.max(1, count);
+    const cap = maxStackCount(this._type);
+    this._stackCount = Math.max(1, Math.min(cap, count));
     this.mg.addUpdate(this.toUpdate());
   }
 

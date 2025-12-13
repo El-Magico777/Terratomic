@@ -771,7 +771,7 @@ export class Transport {
         const obj = JSON.parse(rawStack) as Record<string, number>;
         const val = obj?.[String(event.unit)];
         if (typeof val === "number" && val > 1) {
-          stackCount = Math.min(99, val);
+          stackCount = Math.min(25, val);
         }
       }
     } catch {

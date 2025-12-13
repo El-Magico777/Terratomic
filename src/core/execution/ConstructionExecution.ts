@@ -18,6 +18,7 @@ import {
   isStackableStructure,
   isTechUpgradeableStructure,
   isUpgradeableUnit,
+  maxStackCount,
   playerMaxStructureTechLevel,
   playerMaxUnitLevel,
 } from "../game/Upgradeables";
@@ -324,7 +325,7 @@ export class ConstructionExecution implements Execution {
   private computeStackCount(type: UnitType): number {
     // Use client-provided stack count, clamped to valid range
     if (isStackableStructure(type) && this.stackCount && this.stackCount > 1) {
-      return Math.min(99, this.stackCount);
+      return Math.min(maxStackCount(type), this.stackCount);
     }
     return 1;
   }
