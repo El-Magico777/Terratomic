@@ -722,19 +722,14 @@ export class BuildMenu extends LitElement {
               : baseName;
       }
 
-      // Show stack count if > 1
-      if (stackCount > 1) {
-        return `×${stackCount} ${name}`;
-      }
+      // Do not prefix stack count in the label; chip handles it
       return name;
     }
 
     // Handle other stackable structures
     if (isStackableStructure(unitType)) {
-      const stackCount = this._desiredStackCount(unitType);
-      if (stackCount > 1) {
-        return `×${stackCount} ${baseName}`;
-      }
+      // Do not prefix stack count in the label; chip handles it
+      return baseName;
     }
 
     return baseName;
@@ -786,6 +781,7 @@ export class BuildMenu extends LitElement {
                   item.unitType,
                   baseName,
                 );
+                const desiredStack = this._desiredStackCount(item.unitType);
 
                 return html`
                   <button
@@ -824,6 +820,11 @@ export class BuildMenu extends LitElement {
                         />
                       </span>
                     </div>
+                    ${desiredStack > 1
+                      ? html`<div class="build-level-chip" title="Stack count">
+                          ×${desiredStack}
+                        </div>`
+                      : ""}
                     ${item.countable
                       ? html`<div class="build-count-chip">
                           <span class="build-count">${this.count(item)}</span>

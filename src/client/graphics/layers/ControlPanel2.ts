@@ -1694,6 +1694,41 @@ export class ControlPanel2 extends LitElement implements Layer {
                     />
                     <span>Multi-Build Structures</span>
                   </button>
+                  <button
+                    class="upgrade-structures-button ${this.uiState.upgradeMode
+                      ? "selected"
+                      : ""}"
+                    title="Click structures to add stacks (+1 per click)"
+                    @click=${() => {
+                      const enabled = !this.uiState.upgradeMode;
+                      this.uiState.upgradeMode = enabled;
+                      this.eventBus.emit(new ToggleUpgradeModeEvent(enabled));
+                      // Disable mass production if stacking is enabled
+                      if (enabled && this._multibuildEnabled) {
+                        this._multibuildEnabled = false;
+                        this.uiState.multibuildEnabled = false;
+                      }
+                      // Disable bomber upgrade mode if stacking is enabled
+                      if (enabled && this.uiState.bomberUpgradeMode) {
+                        this.uiState.bomberUpgradeMode = false;
+                        this.eventBus.emit(
+                          new ToggleBomberUpgradeModeEvent(false),
+                        );
+                      }
+                      // Clear pending build selection when stacking is enabled
+                      if (enabled) {
+                        this.uiState.pendingBuildUnitType = null;
+                      }
+                      this.requestUpdate();
+                    }}
+                  >
+                    <img
+                      class="upgrade-icon"
+                      src=${upgradeArrowIcon}
+                      alt="Stack"
+                    />
+                    <span>Stack Structures</span>
+                  </button>
                   <div class="relative inline-block">
                     <div
                       class="flex items-center h-[36px] px-3"
@@ -1756,41 +1791,6 @@ export class ControlPanel2 extends LitElement implements Layer {
                       </button>
                     </div>
                   </div>
-                  <button
-                    class="upgrade-structures-button ${this.uiState.upgradeMode
-                      ? "selected"
-                      : ""}"
-                    title="Click structures to add stacks (+1 per click)"
-                    @click=${() => {
-                      const enabled = !this.uiState.upgradeMode;
-                      this.uiState.upgradeMode = enabled;
-                      this.eventBus.emit(new ToggleUpgradeModeEvent(enabled));
-                      // Disable mass production if stacking is enabled
-                      if (enabled && this._multibuildEnabled) {
-                        this._multibuildEnabled = false;
-                        this.uiState.multibuildEnabled = false;
-                      }
-                      // Disable bomber upgrade mode if stacking is enabled
-                      if (enabled && this.uiState.bomberUpgradeMode) {
-                        this.uiState.bomberUpgradeMode = false;
-                        this.eventBus.emit(
-                          new ToggleBomberUpgradeModeEvent(false),
-                        );
-                      }
-                      // Clear pending build selection when stacking is enabled
-                      if (enabled) {
-                        this.uiState.pendingBuildUnitType = null;
-                      }
-                      this.requestUpdate();
-                    }}
-                  >
-                    <img
-                      class="upgrade-icon"
-                      src=${upgradeArrowIcon}
-                      alt="Stack"
-                    />
-                    <span>Stack Structures</span>
-                  </button>
                 </div>
                 <build-menu
                   style="width: 100%; display: block;"
