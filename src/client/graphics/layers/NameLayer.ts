@@ -1,3 +1,4 @@
+import doveIcon from "../../../../proprietary/images/dove.png";
 import allianceIcon from "../../../../resources/images/AllianceIcon.svg";
 import allianceRequestBlackIcon from "../../../../resources/images/AllianceRequestBlackIcon.svg";
 import allianceRequestWhiteIcon from "../../../../resources/images/AllianceRequestWhiteIcon.svg";
@@ -8,6 +9,7 @@ import embargoWhiteIcon from "../../../../resources/images/EmbargoWhiteIcon.svg"
 import nukeRedIcon from "../../../../resources/images/NukeIconRed.svg";
 import nukeWhiteIcon from "../../../../resources/images/NukeIconWhite.svg";
 import shieldIcon from "../../../../resources/images/ShieldIconBlack.svg";
+import swordIconBlack from "../../../../resources/images/SwordIcon.svg";
 import targetIcon from "../../../../resources/images/TargetIcon.svg";
 import traitorIcon from "../../../../resources/images/TraitorIcon.svg";
 import { EventBus } from "../../../core/EventBus";
@@ -55,6 +57,8 @@ export class NameLayer implements Layer {
   private nukeWhiteIconImage: HTMLImageElement;
   private nukeRedIconImage: HTMLImageElement;
   private shieldIconImage: HTMLImageElement;
+  private warIconImage: HTMLImageElement;
+  private doveIconImage: HTMLImageElement;
   private container: HTMLDivElement;
   private firstPlace: PlayerView | null = null;
   private theme: Theme = this.game.config().theme();
@@ -90,6 +94,10 @@ export class NameLayer implements Layer {
     this.nukeRedIconImage.src = nukeRedIcon;
     this.shieldIconImage = new Image();
     this.shieldIconImage.src = shieldIcon;
+    this.warIconImage = new Image();
+    this.warIconImage.src = swordIconBlack;
+    this.doveIconImage = new Image();
+    this.doveIconImage.src = doveIcon;
   }
 
   resizeCanvas() {
@@ -424,7 +432,8 @@ export class NameLayer implements Layer {
 
     // Alliance icon
     const existingAlliance = iconsDiv.querySelector('[data-icon="alliance"]');
-    if (myPlayer !== null && myPlayer.isAlliedWith(render.player)) {
+    const isSelf = myPlayer !== null && render.player === myPlayer;
+    if (!isSelf && myPlayer !== null && myPlayer.isAlliedWith(render.player)) {
       if (!existingAlliance) {
         iconsDiv.appendChild(
           this.createIconElement(
@@ -436,6 +445,35 @@ export class NameLayer implements Layer {
       }
     } else if (existingAlliance) {
       existingAlliance.remove();
+    }
+
+    // War icon
+    const existingWar = iconsDiv.querySelector('[data-icon="war"]');
+    if (!isSelf && myPlayer !== null && myPlayer.isAtWarWith(render.player)) {
+      if (!existingWar) {
+        iconsDiv.appendChild(
+          this.createIconElement(this.warIconImage.src, iconSize, "war"),
+        );
+      }
+    } else if (existingWar) {
+      existingWar.remove();
+    }
+
+    // Neutral icon
+    const existingNeutral = iconsDiv.querySelector('[data-icon="neutral"]');
+    if (
+      !isSelf &&
+      myPlayer !== null &&
+      !myPlayer.isAlliedWith(render.player) &&
+      !myPlayer.isAtWarWith(render.player)
+    ) {
+      if (!existingNeutral) {
+        iconsDiv.appendChild(
+          this.createIconElement(this.doveIconImage.src, iconSize, "neutral"),
+        );
+      }
+    } else if (existingNeutral) {
+      existingNeutral.remove();
     }
 
     // Alliance request icon
@@ -604,6 +642,25 @@ export class NameLayer implements Layer {
     id: string,
     center: boolean = false,
   ): HTMLImageElement {
+    // For war icon, use mask + background color to match exact warColor (#8B0000)
+    if (id === "war") {
+      const div = document.createElement("div");
+      div.style.width = `${size}px`;
+      div.style.height = `${size}px`;
+      div.style.backgroundColor = "#8B0000"; // match radial menu warColor
+      div.style.mask = `url(${src}) no-repeat center / contain`;
+      div.style.webkitMask = `url(${src}) no-repeat center / contain`;
+      div.setAttribute("data-icon", id);
+      div.setAttribute("dark-mode", this.userSettings.darkMode().toString());
+      if (center) {
+        div.style.position = "absolute";
+        div.style.top = "50%";
+        div.style.transform = "translateY(-50%)";
+      }
+      // Type cast to HTMLImageElement for existing call sites
+      return div as unknown as HTMLImageElement;
+    }
+
     const icon = document.createElement("img");
     icon.src = src;
     icon.style.width = `${size}px`;
