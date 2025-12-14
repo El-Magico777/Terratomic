@@ -1,10 +1,5 @@
 import { CityAAExecution } from "../execution/CityAAExecution";
 import { Game, Player, UpgradeType } from "../game/Game";
-import {
-  getAllPolicyDirectives,
-  getPolicyOption,
-  type PolicyDirectiveId,
-} from "./PolicyDirectives";
 import { RESEARCH_TECH_IDS } from "./TechIds";
 // Re-export for backward compatibility with existing imports
 export { RESEARCH_TECH_IDS } from "./TechIds";
@@ -181,6 +176,9 @@ export const TECHS: Readonly<Record<string, TechDefinition>> = Object.freeze({
         if (!player.hasUpgrade?.(UpgradeType.Roads)) {
           player.addUpgrade?.(UpgradeType.Roads);
           game.markPlayerNodesForReconnection?.(player);
+        }
+        if (!player.hasUpgrade?.(UpgradeType.InternationalTrade)) {
+          player.addUpgrade?.(UpgradeType.InternationalTrade);
         }
       },
     },
@@ -446,7 +444,6 @@ export function applyTechCompletionEffects(
  */
 export function defenseCasualtyModifiers(defender: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): DefenseCasualtyModifiers {
   const mods: DefenseCasualtyModifiers = {
     attackerLossMul: 1.0,
@@ -455,22 +452,6 @@ export function defenseCasualtyModifiers(defender: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (defender.hasResearchedTech?.(techId)) {
       def.effects?.defense?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = defender.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.defenderLossMul) {
-        mods.defenderLossMul *= option.effects.defenderLossMul;
-      }
-      if (option?.effects.attackerLossMulOnDefense) {
-        mods.attackerLossMul *= option.effects.attackerLossMulOnDefense;
-      }
     }
   }
   return mods;
@@ -484,7 +465,6 @@ export function defenseCasualtyModifiers(defender: {
  */
 export function attackCasualtyModifiers(attacker: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): DefenseCasualtyModifiers {
   const mods: DefenseCasualtyModifiers = {
     attackerLossMul: 1.0,
@@ -493,22 +473,6 @@ export function attackCasualtyModifiers(attacker: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (attacker.hasResearchedTech?.(techId)) {
       def.effects?.attack?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = attacker.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.attackerLossMul) {
-        mods.attackerLossMul *= option.effects.attackerLossMul;
-      }
-      if (option?.effects.enemyLossMulOnAttack) {
-        mods.defenderLossMul *= option.effects.enemyLossMulOnAttack;
-      }
     }
   }
   return mods;
@@ -520,7 +484,6 @@ export function attackCasualtyModifiers(attacker: {
  */
 export function attackSpeedModifiers(attacker: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): AttackSpeedModifiers {
   const mods: AttackSpeedModifiers = {
     speedMul: 1.0,
@@ -528,19 +491,6 @@ export function attackSpeedModifiers(attacker: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (attacker.hasResearchedTech?.(techId)) {
       def.effects?.attackSpeed?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = attacker.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.attackSpeedMul) {
-        mods.speedMul *= option.effects.attackSpeedMul;
-      }
     }
   }
   return mods;
@@ -552,7 +502,6 @@ export function attackSpeedModifiers(attacker: {
  */
 export function constructionSpeedModifiers(player: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): ConstructionSpeedModifiers {
   const mods: ConstructionSpeedModifiers = {
     speedMul: 1.0,
@@ -561,19 +510,6 @@ export function constructionSpeedModifiers(player: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (player.hasResearchedTech?.(techId)) {
       def.effects?.constructionSpeed?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = player.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.constructionSpeedMul) {
-        mods.speedMul *= option.effects.constructionSpeedMul;
-      }
     }
   }
   return mods;
@@ -604,7 +540,6 @@ export function researchEffectivenessModifiers(
  */
 export function incomeModifiers(player: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): IncomeModifiers {
   const mods: IncomeModifiers = {
     domesticIncomeMul: 1.0,
@@ -613,19 +548,6 @@ export function incomeModifiers(player: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (player.hasResearchedTech?.(techId)) {
       def.effects?.income?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = player.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.domesticIncomeMul) {
-        mods.domesticIncomeMul *= option.effects.domesticIncomeMul;
-      }
     }
   }
   return mods;
@@ -637,7 +559,6 @@ export function incomeModifiers(player: {
  */
 export function infrastructureEffectivenessModifiers(player: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): InfrastructureEffectivenessModifiers {
   const mods: InfrastructureEffectivenessModifiers = {
     effectivenessMul: 1.0,
@@ -645,20 +566,6 @@ export function infrastructureEffectivenessModifiers(player: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (player.hasResearchedTech?.(techId)) {
       def.effects?.infrastructureEffectiveness?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = player.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.infrastructureSpendingEffectivenessMul) {
-        mods.effectivenessMul *=
-          option.effects.infrastructureSpendingEffectivenessMul;
-      }
     }
   }
   return mods;
@@ -671,7 +578,6 @@ export function infrastructureEffectivenessModifiers(player: {
  */
 export function tradeIncomeModifiers(player: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): TradeIncomeModifiers {
   const mods: TradeIncomeModifiers = {
     incomeMul: 1.0,
@@ -680,22 +586,6 @@ export function tradeIncomeModifiers(player: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (player.hasResearchedTech?.(techId)) {
       def.effects?.tradeIncome?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = player.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.tradeIncomeMul) {
-        mods.incomeMul *= option.effects.tradeIncomeMul;
-      }
-      if (option?.effects.tradeShipIncomeMul) {
-        mods.tradeShipIncomeMul *= option.effects.tradeShipIncomeMul;
-      }
     }
   }
   return mods;
@@ -707,7 +597,6 @@ export function tradeIncomeModifiers(player: {
  */
 export function roadEffectModifiers(player: {
   hasResearchedTech?(techId: string): boolean;
-  getPolicyChoice?(directiveId: string): string | null;
 }): RoadEffectModifiers {
   const mods: RoadEffectModifiers = {
     effectMul: 1.0,
@@ -716,19 +605,6 @@ export function roadEffectModifiers(player: {
   for (const [techId, def] of Object.entries(TECHS)) {
     if (player.hasResearchedTech?.(techId)) {
       def.effects?.roadEffect?.(mods);
-    }
-  }
-  // Apply policy directive effects
-  for (const directive of getAllPolicyDirectives()) {
-    const chosenOptionId = player.getPolicyChoice?.(directive.id);
-    if (chosenOptionId) {
-      const option = getPolicyOption(
-        directive.id as PolicyDirectiveId,
-        chosenOptionId,
-      );
-      if (option?.effects.roadEffectMul) {
-        mods.effectMul *= option.effects.roadEffectMul;
-      }
     }
   }
   return mods;

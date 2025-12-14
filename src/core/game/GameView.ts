@@ -348,14 +348,6 @@ export class PlayerView {
     return new Set(this.data.researchPriorities ?? []);
   }
 
-  // Policy Directive access
-  getPolicyChoice(directiveId: string): string | null {
-    return this.data.policyChoices?.[directiveId] ?? null;
-  }
-  hasUnseenPolicyDirectives(): boolean {
-    return this.data.hasUnseenPolicyDirectives ?? false;
-  }
-
   // Aggregate research progress across levels in [0, L] (L = max level in tree)
   researchTechLevel(): number {
     const tick = this.game.ticks();

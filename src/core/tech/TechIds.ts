@@ -19,11 +19,8 @@ export const RESEARCH_TECH_IDS = {
   LAND_MILITARY_ACADEMY: "Land-2",
   LAND_SAM_SYSTEMS: "Land-3",
   LAND_DOOMSDAY_DEVICE: "Land-4",
-  // Economy techs (legacy; category removed, map roads to Land-1 for back-compat)
+  // Economy techs (legacy; category removed, kept for backwards compatibility)
   ECONOMY_ROADS_HOSPITALS: "Land-1",
-  ECONOMY_INTERNATIONAL_TRADE: "Economy-2",
-  ECONOMY_INSURANCE: "Economy-3",
-  ECONOMY_TBD_LEVEL4: "Economy-4",
   // Nuclear techs
   NUCLEAR_FISSION: "Nuclear-1",
   THERMONUCLEAR_STAGING: "Nuclear-2",
@@ -45,10 +42,6 @@ export const RESEARCH_TECH_IDS = {
   INTEGRATED_SAM_BATTLEFIELD_COMMAND: "Land-4",
   NIGHT_VISION_THERMAL_C3I: "Land-5",
   NATIONAL_RECONSTRUCTION_PROGRAM: "Economy-1",
-  NATIONAL_RESEARCH_INDUSTRIAL_FOUNDATIONS: "Economy-2",
-  TRADE_POLICY_FRAMEWORK: "Economy-3",
-  NATIONAL_INFRASTRUCTURE_MODERNIZATION: "Economy-4",
-  DIGITAL_ADMINISTRATION_SYSTEMS: "Economy-5",
   DOOMSDAY_DEVICE: "Nuclear-4",
 } as const;
 

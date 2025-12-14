@@ -1,4 +1,3 @@
-import { renderNumber } from "../../client/Utils";
 import { simpleHash, toInt, withinInt } from "../Util";
 import {
   AllUnitParams,
@@ -103,13 +102,6 @@ export class UnitImpl implements Unit {
       "sourceAirfield" in params
         ? (params.sourceAirfield ?? undefined)
         : undefined;
-    // TEMPORARILY DISABLED: Structure insurance
-    // if (
-    //   isStructureType(this._type) &&
-    //   this._owner.hasUpgrade(UpgradeType.StructureInsurance)
-    // ) {
-    //   this._insuredBy = this._owner;
-    // }
 
     switch (this._type) {
       case UnitType.Warship:
@@ -454,23 +446,6 @@ export class UnitImpl implements Unit {
   }
 
   setOwner(newOwner: PlayerImpl): void {
-    if (this._insuredBy) {
-      const baseCost = this.info().cost(this._insuredBy);
-      if (baseCost > 0n) {
-        const num = BigInt(this.mg.config().structureInsuranceRefundNum());
-        const den = BigInt(this.mg.config().structureInsuranceRefundDen());
-        const refundAmount = (baseCost * num) / den;
-        this._insuredBy.addGold(refundAmount);
-        this.mg.displayMessage(
-          "messages.insurance_refund_conquest",
-          MessageType.INSURANCE_REFUND,
-          this._insuredBy.id(),
-          refundAmount,
-          { amount: renderNumber(refundAmount) },
-        );
-      }
-    }
-    this._insuredBy = null;
     switch (this._type) {
       case UnitType.Warship:
       case UnitType.FighterJet:
@@ -540,23 +515,6 @@ export class UnitImpl implements Unit {
     if (!this.isActive()) {
       throw new Error(`cannot delete ${this} not active`);
     }
-    if (this._insuredBy) {
-      const baseCost = this.info().cost(this._insuredBy);
-      if (baseCost > 0n) {
-        const num = BigInt(this.mg.config().structureInsuranceRefundNum());
-        const den = BigInt(this.mg.config().structureInsuranceRefundDen());
-        const refundAmount = (baseCost * num) / den;
-        this._insuredBy.addGold(refundAmount);
-        this.mg.displayMessage(
-          "messages.insurance_refund",
-          MessageType.INSURANCE_REFUND,
-          this._insuredBy.id(),
-          refundAmount,
-          { amount: renderNumber(refundAmount) },
-        );
-      }
-    }
-    this._insuredBy = null;
     this._owner._units = this._owner._units.filter((b) => b !== this);
     this._active = false;
     this.mg.addUpdate(this.toUpdate());

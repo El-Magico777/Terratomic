@@ -119,20 +119,9 @@ export class BuildUnitIntentEvent implements GameEvent {
   ) {}
 }
 
-export class SendScorchedEarthIntentEvent implements GameEvent {}
-
 export class SendResearchTreeSelectIntentEvent implements GameEvent {
   constructor(public readonly techId: string) {}
 }
-
-export class SendPolicyDirectiveSelectIntentEvent implements GameEvent {
-  constructor(
-    public readonly directiveId: string,
-    public readonly optionId: string,
-  ) {}
-}
-
-export class SendMarkPolicyDirectivesSeenIntentEvent implements GameEvent {}
 
 export class SendTargetPlayerIntentEvent implements GameEvent {
   constructor(public readonly targetID: PlayerID) {}
@@ -346,9 +335,6 @@ export class Transport {
       this.onSendSetAutoBombingEvent(e),
     );
 
-    this.eventBus.on(SendScorchedEarthIntentEvent, () =>
-      this.onSendScorchedEarthIntent(),
-    );
     this.eventBus.on(SendUpgradeStructureIntentEvent, (e) =>
       this.onSendUpgradeStructureIntent(e),
     );
@@ -361,14 +347,6 @@ export class Transport {
 
     this.eventBus.on(SendResearchTreeSelectIntentEvent, (e) =>
       this.onSendResearchTreeSelectIntent(e),
-    );
-
-    this.eventBus.on(SendPolicyDirectiveSelectIntentEvent, (e) =>
-      this.onSendPolicyDirectiveSelectIntent(e),
-    );
-
-    this.eventBus.on(SendMarkPolicyDirectivesSeenIntentEvent, () =>
-      this.onSendMarkPolicyDirectivesSeenIntent(),
     );
 
     this.eventBus.on(BuildUnitIntentEvent, (e) => this.onBuildUnitIntent(e));
@@ -789,13 +767,6 @@ export class Transport {
     });
   }
 
-  private onSendScorchedEarthIntent() {
-    this.sendIntent({
-      type: "activate_scorched_earth",
-      clientID: this.lobbyConfig.clientID,
-    });
-  }
-
   private onSendUpgradeStructureIntent(event: SendUpgradeStructureIntentEvent) {
     // Prefer new generic intent
     this.sendIntent({
@@ -821,24 +792,6 @@ export class Transport {
       type: "research_tree_select",
       clientID: this.lobbyConfig.clientID,
       techId: event.techId,
-    });
-  }
-
-  private onSendPolicyDirectiveSelectIntent(
-    event: SendPolicyDirectiveSelectIntentEvent,
-  ) {
-    this.sendIntent({
-      type: "policy_directive_select",
-      clientID: this.lobbyConfig.clientID,
-      directiveId: event.directiveId,
-      optionId: event.optionId,
-    });
-  }
-
-  private onSendMarkPolicyDirectivesSeenIntent() {
-    this.sendIntent({
-      type: "mark_policy_directives_seen",
-      clientID: this.lobbyConfig.clientID,
     });
   }
 
