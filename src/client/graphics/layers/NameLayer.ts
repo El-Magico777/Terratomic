@@ -15,7 +15,12 @@ import traitorIcon from "../../../../resources/images/TraitorIcon.svg";
 import { EventBus } from "../../../core/EventBus";
 import { PseudoRandom } from "../../../core/PseudoRandom";
 import { Theme } from "../../../core/configuration/Config";
-import { AllPlayers, Cell, nukeTypes } from "../../../core/game/Game";
+import {
+  AllPlayers,
+  Cell,
+  nukeTypes,
+  PlayerType,
+} from "../../../core/game/Game";
 import { GameView, PlayerView } from "../../../core/game/GameView";
 import { UserSettings } from "../../../core/game/UserSettings";
 import { AlternateViewEvent } from "../../InputHandler";
@@ -433,7 +438,15 @@ export class NameLayer implements Layer {
     // Alliance icon
     const existingAlliance = iconsDiv.querySelector('[data-icon="alliance"]');
     const isSelf = myPlayer !== null && render.player === myPlayer;
-    if (!isSelf && myPlayer !== null && myPlayer.isAlliedWith(render.player)) {
+    const isHumanOrFakeHuman =
+      render.player.type() === PlayerType.Human ||
+      render.player.type() === PlayerType.FakeHuman;
+    if (
+      !isSelf &&
+      isHumanOrFakeHuman &&
+      myPlayer !== null &&
+      myPlayer.isAlliedWith(render.player)
+    ) {
       if (!existingAlliance) {
         iconsDiv.appendChild(
           this.createIconElement(
@@ -449,7 +462,12 @@ export class NameLayer implements Layer {
 
     // War icon
     const existingWar = iconsDiv.querySelector('[data-icon="war"]');
-    if (!isSelf && myPlayer !== null && myPlayer.isAtWarWith(render.player)) {
+    if (
+      !isSelf &&
+      isHumanOrFakeHuman &&
+      myPlayer !== null &&
+      myPlayer.isAtWarWith(render.player)
+    ) {
       if (!existingWar) {
         iconsDiv.appendChild(
           this.createIconElement(this.warIconImage.src, iconSize, "war"),
@@ -463,6 +481,7 @@ export class NameLayer implements Layer {
     const existingNeutral = iconsDiv.querySelector('[data-icon="neutral"]');
     if (
       !isSelf &&
+      isHumanOrFakeHuman &&
       myPlayer !== null &&
       !myPlayer.isAlliedWith(render.player) &&
       !myPlayer.isAtWarWith(render.player)
@@ -622,12 +641,6 @@ export class NameLayer implements Layer {
         iconsDiv.appendChild(this.createIconElement(icon, iconSize, "nuke"));
       }
     }
-    // Update all icon sizes
-    const icons = iconsDiv.getElementsByTagName("img");
-    for (const icon of icons) {
-      icon.style.width = `${iconSize}px`;
-      icon.style.height = `${iconSize}px`;
-    }
 
     // Position element with scale
     if (render.location && render.location !== oldLocation) {
@@ -642,31 +655,31 @@ export class NameLayer implements Layer {
     id: string,
     center: boolean = false,
   ): HTMLImageElement {
-    // For war icon, use mask + background color to match exact warColor (#8B0000)
-    if (id === "war") {
-      const div = document.createElement("div");
-      div.style.width = `${size}px`;
-      div.style.height = `${size}px`;
-      div.style.backgroundColor = "#8B0000"; // match radial menu warColor
-      div.style.mask = `url(${src}) no-repeat center / contain`;
-      div.style.webkitMask = `url(${src}) no-repeat center / contain`;
-      div.setAttribute("data-icon", id);
-      div.setAttribute("dark-mode", this.userSettings.darkMode().toString());
-      if (center) {
-        div.style.position = "absolute";
-        div.style.top = "50%";
-        div.style.transform = "translateY(-50%)";
-      }
-      // Type cast to HTMLImageElement for existing call sites
-      return div as unknown as HTMLImageElement;
-    }
-
     const icon = document.createElement("img");
     icon.src = src;
-    icon.style.width = `${size}px`;
-    icon.style.height = `${size}px`;
+
+    // Make war icon 20% smaller
+    const actualSize = id === "war" ? size * 0.8 : size;
+    icon.style.width = `${actualSize}px`;
+    icon.style.height = `${actualSize}px`;
     icon.setAttribute("data-icon", id);
     icon.setAttribute("dark-mode", this.userSettings.darkMode().toString());
+
+    if (id === "war") {
+      // Use CSS mask with exact warColor #8B0000 from radial menu
+      icon.style.backgroundColor = "#8B0000";
+      icon.style.webkitMaskImage = `url(${src})`;
+      icon.style.maskImage = `url(${src})`;
+      icon.style.webkitMaskSize = "contain";
+      icon.style.maskSize = "contain";
+      icon.style.webkitMaskRepeat = "no-repeat";
+      icon.style.maskRepeat = "no-repeat";
+      icon.style.webkitMaskPosition = "center";
+      icon.style.maskPosition = "center";
+      // Clear the src to prevent img from loading
+      icon.removeAttribute("src");
+    }
+
     if (center) {
       icon.style.position = "absolute";
       icon.style.top = "50%";
