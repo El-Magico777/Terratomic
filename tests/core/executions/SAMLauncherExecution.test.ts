@@ -231,4 +231,33 @@ describe("SAM", () => {
     expect(sam1.isInCooldown()).toBeFalsy();
     expect(sam2.isInCooldown()).toBeTruthy();
   });
+
+  test("neutral: SAM should not intercept bomber unless bomber targets defender land", async () => {
+    const sam = defender.buildUnit(UnitType.SAMLauncher, game.ref(1, 1), {});
+    game.addExecution(new SAMLauncherExecution(defender, null, sam));
+
+    // Bomber in range but targeting attacker land.
+    const bomber = attacker.buildUnit(UnitType.Bomber, game.ref(2, 1), {
+      targetTile: game.ref(7, 7),
+    });
+
+    // Run enough ticks to hit the 20-tick plane interception sweep.
+    executeTicks(game, 25);
+
+    expect(bomber.targetedBySAM()).toBe(false);
+  });
+
+  test("neutral: SAM should intercept bomber when bomber targets defender land", async () => {
+    const sam = defender.buildUnit(UnitType.SAMLauncher, game.ref(1, 1), {});
+    game.addExecution(new SAMLauncherExecution(defender, null, sam));
+
+    // Bomber in range and targeting a tile owned by defender.
+    const bomber = attacker.buildUnit(UnitType.Bomber, game.ref(2, 1), {
+      targetTile: game.ref(1, 1),
+    });
+
+    executeTicks(game, 25);
+
+    expect(bomber.targetedBySAM()).toBe(true);
+  });
 });

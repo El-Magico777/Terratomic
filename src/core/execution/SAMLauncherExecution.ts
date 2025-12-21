@@ -383,6 +383,12 @@ export class SAMLauncherExecution implements Execution {
         if (unitOwner === this.player) return false;
 
         if (this.player.isFriendly(unitOwner as Player)) return false;
+
+        // Neutral behavior: only intercept when at war, except defend against
+        // bomber/paratrooper explicitly targeting our land.
+        if (!this.canEngageAirborneTarget(unitOwner as Player, unit)) {
+          return false;
+        }
         if (
           targetUnitOwner === this.player ||
           (targetUnitOwner &&
@@ -458,6 +464,27 @@ export class SAMLauncherExecution implements Execution {
         );
       }
     }
+  }
+
+  private canEngageAirborneTarget(unitOwner: Player, unit: Unit): boolean {
+    if (this.player.isAtWarWith(unitOwner)) {
+      return true;
+    }
+
+    // Neutral: only defend against incoming bomber/paratrooper attacks.
+    if (
+      unit.type() !== UnitType.Bomber &&
+      unit.type() !== UnitType.Paratrooper
+    ) {
+      return false;
+    }
+
+    const targetTile = unit.targetTile();
+    if (targetTile === undefined) {
+      return false;
+    }
+
+    return this.mg.owner(targetTile) === this.player;
   }
 
   isActive(): boolean {
