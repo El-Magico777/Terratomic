@@ -20,6 +20,12 @@ export class BomberExecution implements Execution {
   private currentWaypointIndex = 0;
   private hasRebasedToNewAirfield = false; // Track if bomber rebased due to home airfield destruction
   private lastHealthLogTick = 0; // For health logging
+  private cachedTarget:
+    | { tile: TileRef; unit: Unit | null }
+    | null
+    | undefined = undefined;
+  private cachedTargetTick = -999;
+  private static readonly TARGET_CACHE_DURATION = 10;
 
   constructor(
     private origOwner: Player,
@@ -364,6 +370,27 @@ export class BomberExecution implements Execution {
     this.cleanupBomberTargets();
     const intent = this.origOwner.getBomberIntent?.();
 
+    // Check cache validity
+    const currentTick = this.mg.ticks();
+    if (
+      currentTick - this.cachedTargetTick <
+      BomberExecution.TARGET_CACHE_DURATION
+    ) {
+      // Validate cached target is still valid
+      if (
+        this.cachedTarget &&
+        this.cachedTarget.unit &&
+        !this.isTargetValid(this.cachedTarget.unit)
+      ) {
+        // Cached target became invalid, invalidate cache
+        this.cachedTarget = undefined;
+        this.cachedTargetTick = -999;
+      } else {
+        // Return cached result (may be null/undefined)
+        return this.cachedTarget ?? null;
+      }
+    }
+
     // Manual targeting mode
     if (
       intent?.targetPlayerID &&
@@ -379,13 +406,22 @@ export class BomberExecution implements Execution {
         );
         // If we found a target in manual mode, use it
         if (target) {
+          // Cache the result
+          this.cachedTarget = target;
+          this.cachedTargetTick = this.mg.ticks();
           return target;
         }
         // If no targets remain, clear the manual intent and fall through to auto-bombing
         this.origOwner.setBomberIntent(null);
+        // Invalidate cache since intent changed
+        this.cachedTarget = undefined;
+        this.cachedTargetTick = -999;
       }
     } // Auto-bombing mode
     if (!this.origOwner.isAutoBombingEnabled()) {
+      // Cache the null result
+      this.cachedTarget = null;
+      this.cachedTargetTick = this.mg.ticks();
       return null;
     }
 
@@ -437,10 +473,14 @@ export class BomberExecution implements Execution {
     });
 
     // Try with SAM avoidance first, then fall back to direct paths
-    return (
+    const result =
       this.trySelectTarget(sortedEnemies, true) ??
-      this.trySelectTarget(sortedEnemies, false)
-    );
+      this.trySelectTarget(sortedEnemies, false);
+
+    // Cache the result
+    this.cachedTarget = result;
+    this.cachedTargetTick = this.mg.ticks();
+    return result;
   }
 
   private findTargetFromQueue(
