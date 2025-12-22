@@ -22,6 +22,16 @@ export class SubmarineExecution implements Execution {
   private lastShellAttack = 0;
   private alreadySentShell = new Set<Unit>();
 
+  // Target caching to reduce nearbyUnits() calls
+  private cachedTarget: Unit | undefined = undefined;
+  private cachedTargetTick = 0;
+  private readonly TARGET_CACHE_DURATION = 10; // ticks
+
+  // Detection state caching
+  private cachedDetectionState = false;
+  private cachedDetectionTick = 0;
+  private readonly DETECTION_CACHE_DURATION = 8; // ticks
+
   constructor(
     private input: (UnitParams<UnitType.Submarine> & OwnerComp) | Unit,
     private desiredLevel: number = 1,
@@ -89,6 +99,18 @@ export class SubmarineExecution implements Execution {
   }
 
   private updateDetectionState(): void {
+    const currentTick = this.mg.ticks();
+
+    // Check cache validity
+    if (
+      currentTick - this.cachedDetectionTick <
+      this.DETECTION_CACHE_DURATION
+    ) {
+      this.submarine.isDetectedByNavalUnit = this.cachedDetectionState;
+      return;
+    }
+
+    // Cache miss - do full scan
     const nearbyNavalUnits = this.mg.nearbyUnits(
       this.submarine.tile()!,
       this.mg.config().warshipTargettingRange(), // Using warship's range for detection
@@ -98,14 +120,32 @@ export class SubmarineExecution implements Execution {
         !unit.owner().isFriendly(this.submarine.owner() as any),
     );
 
-    if (nearbyNavalUnits.length > 0) {
-      this.submarine.isDetectedByNavalUnit = true;
-    } else {
-      this.submarine.isDetectedByNavalUnit = false;
-    }
+    const isDetected = nearbyNavalUnits.length > 0;
+    this.submarine.isDetectedByNavalUnit = isDetected;
+
+    // Update cache
+    this.cachedDetectionState = isDetected;
+    this.cachedDetectionTick = currentTick;
   }
 
   private findTargetUnit(): Unit | undefined {
+    const currentTick = this.mg.ticks();
+
+    // Check cache validity
+    if (
+      this.cachedTarget !== undefined &&
+      this.cachedTarget.isActive() &&
+      currentTick - this.cachedTargetTick < this.TARGET_CACHE_DURATION
+    ) {
+      // Verify target is still valid
+      if (this.isValidTarget(this.cachedTarget)) {
+        return this.cachedTarget;
+      }
+      // Cache invalid, clear it
+      this.cachedTarget = undefined;
+    }
+
+    // Cache miss or invalid - do full scan
     const hasPort = this.submarine.owner().unitCount(UnitType.Port) > 0;
     const patrolRangeSquared = this.mg.config().warshipPatrolRange() ** 2;
 
@@ -184,6 +224,67 @@ export class SubmarineExecution implements Execution {
       // If both are the same type, sort by distance (lower `distSquared` means closer)
       return distA - distB;
     })[0]?.unit;
+
+    const bestTarget = potentialTargets.sort((a, b) => {
+      const { unit: unitA, distSquared: distA } = a;
+      const { unit: unitB, distSquared: distB } = b;
+
+      // Prioritize Warships
+      if (
+        unitA.type() === UnitType.Warship &&
+        unitB.type() !== UnitType.Warship
+      )
+        return -1;
+      if (
+        unitA.type() !== UnitType.Warship &&
+        unitB.type() === UnitType.Warship
+      )
+        return 1;
+
+      // Then favor Transport Ships over Trade Ships
+      if (
+        unitA.type() === UnitType.TransportShip &&
+        unitB.type() !== UnitType.TransportShip
+      )
+        return -1;
+      if (
+        unitA.type() !== UnitType.TransportShip &&
+        unitB.type() === UnitType.TransportShip
+      )
+        return 1;
+
+      // If both are the same type, sort by distance (lower `distSquared` means closer)
+      return distA - distB;
+    })[0]?.unit;
+
+    // Update cache
+    this.cachedTarget = bestTarget;
+    this.cachedTargetTick = currentTick;
+
+    return bestTarget;
+  }
+
+  private isValidTarget(target: Unit): boolean {
+    if (!target.isActive()) return false;
+    if (target.health() <= 0) return false;
+    if (target.owner() === this.submarine.owner()) return false;
+    if (target.owner().isFriendly(this.submarine.owner() as any)) return false;
+    if (this.alreadySentShell.has(target)) return false;
+
+    // Check if at war
+    if (!this.submarine.owner().isAtWarWith(target.owner())) {
+      return false;
+    }
+
+    // Check range
+    const dist = this.mg.euclideanDistSquared(
+      this.submarine.tile()!,
+      target.tile(),
+    );
+    const maxRange = this.mg.config().warshipTargettingRange();
+    if (dist > maxRange * maxRange) return false;
+
+    return true;
   }
 
   private shootTarget() {
