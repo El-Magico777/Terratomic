@@ -30,7 +30,7 @@ export class WarshipExecution implements Execution {
 
   // Target caching to reduce nearbyUnits() calls
   private cachedTarget: Unit | undefined = undefined;
-  private cachedTargetTick = 0;
+  private cachedTargetTick = -999; // Start old so first scan happens
   private readonly TARGET_CACHE_DURATION = 10; // ticks
 
   constructor(
@@ -103,21 +103,24 @@ export class WarshipExecution implements Execution {
   private findTargetUnit(): Unit | undefined {
     const currentTick = this.mg.ticks();
 
-    // Check cache validity
-    if (
-      this.cachedTarget !== undefined &&
-      this.cachedTarget.isActive() &&
-      currentTick - this.cachedTargetTick < this.TARGET_CACHE_DURATION
-    ) {
-      // Verify target is still valid
-      if (this.isValidTarget(this.cachedTarget)) {
-        return this.cachedTarget;
+    // Check if cache is still valid (even if result was "no target")
+    if (currentTick - this.cachedTargetTick < this.TARGET_CACHE_DURATION) {
+      // If we cached a target, verify it's still valid
+      if (this.cachedTarget !== undefined) {
+        if (
+          this.cachedTarget.isActive() &&
+          this.isValidTarget(this.cachedTarget)
+        ) {
+          return this.cachedTarget;
+        }
+        // Cached target became invalid, fall through to rescan
+      } else {
+        // We cached "no target found" - return that result without rescanning
+        return undefined;
       }
-      // Cache invalid, clear it
-      this.cachedTarget = undefined;
     }
 
-    // Cache miss or invalid - do full scan
+    // Cache expired or cached target invalid - do full scan
     const hasPort = this.warship.owner().unitCount(UnitType.Port) > 0;
     const patrolRangeSquared = this.mg.config().warshipPatrolRange() ** 2;
 
