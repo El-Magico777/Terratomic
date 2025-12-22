@@ -28,6 +28,11 @@ export class WarshipExecution implements Execution {
   private nextAAMissileFireTick = 0;
   private pseudoRandom: PseudoRandom;
 
+  // Target caching to reduce nearbyUnits() calls
+  private cachedTarget: Unit | undefined = undefined;
+  private cachedTargetTick = 0;
+  private readonly TARGET_CACHE_DURATION = 10; // ticks
+
   constructor(
     private input: (UnitParams<UnitType.Warship> & OwnerComp) | Unit,
     private desiredLevel: number = 1,
@@ -96,6 +101,23 @@ export class WarshipExecution implements Execution {
   }
 
   private findTargetUnit(): Unit | undefined {
+    const currentTick = this.mg.ticks();
+
+    // Check cache validity
+    if (
+      this.cachedTarget !== undefined &&
+      this.cachedTarget.isActive() &&
+      currentTick - this.cachedTargetTick < this.TARGET_CACHE_DURATION
+    ) {
+      // Verify target is still valid
+      if (this.isValidTarget(this.cachedTarget)) {
+        return this.cachedTarget;
+      }
+      // Cache invalid, clear it
+      this.cachedTarget = undefined;
+    }
+
+    // Cache miss or invalid - do full scan
     const hasPort = this.warship.owner().unitCount(UnitType.Port) > 0;
     const patrolRangeSquared = this.mg.config().warshipPatrolRange() ** 2;
 
@@ -177,7 +199,7 @@ export class WarshipExecution implements Execution {
       potentialTargets.push({ unit: unit, distSquared });
     }
 
-    return potentialTargets.sort((a, b) => {
+    const bestTarget = potentialTargets.sort((a, b) => {
       const { unit: unitA, distSquared: distA } = a;
       const { unit: unitB, distSquared: distB } = b;
 
@@ -232,6 +254,46 @@ export class WarshipExecution implements Execution {
       // If both are the same type, sort by distance (lower `distSquared` means closer)
       return distA - distB;
     })[0]?.unit;
+
+    // Update cache
+    this.cachedTarget = bestTarget;
+    this.cachedTargetTick = currentTick;
+
+    return bestTarget;
+  }
+
+  private isValidTarget(target: Unit): boolean {
+    if (!target.isActive()) return false;
+    if (target.health() <= 0) return false;
+    if (target.owner() === this.warship.owner()) return false;
+    if (target.owner().isFriendly(this.warship.owner())) return false;
+    if (this.alreadySentShell.has(target)) return false;
+
+    // Check if at war (for non-trade ships)
+    if (target.type() !== UnitType.TradeShip) {
+      if (!this.warship.owner().isAtWarWith(target.owner())) {
+        return false;
+      }
+    }
+
+    // Check submarine visibility
+    if (target.type() === UnitType.Submarine) {
+      const isVisible =
+        (target.isAttacking ?? false) ||
+        (target.isDetectedByNavalUnit ?? false) ||
+        this.mg.ticks() - (target.lastVisibleTick ?? -Infinity) < 30;
+      if (!isVisible) return false;
+    }
+
+    // Check range
+    const dist = this.mg.euclideanDistSquared(
+      this.warship.tile()!,
+      target.tile(),
+    );
+    const maxRange = this.mg.config().warshipTargettingRange();
+    if (dist > maxRange * maxRange) return false;
+
+    return true;
   }
 
   private shootTarget() {
