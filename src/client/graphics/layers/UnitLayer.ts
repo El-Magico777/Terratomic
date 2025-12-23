@@ -183,6 +183,9 @@ export class UnitLayer implements Layer {
   private ghostRenders: GhostRenderInfo[] = [];
   private renderedUnits = new Map<number, UnitView>();
 
+  // Cache bomber visibility at airfield (updated once per tick instead of 60×/sec)
+  private bomberAtAirfield = new Map<number, boolean>();
+
   constructor(
     private game: GameView,
     private eventBus: EventBus,
@@ -504,6 +507,29 @@ export class UnitLayer implements Layer {
       this.updateUnitsSprites(zombieIds);
     }
 
+    // Clean up inactive PIXI sprites
+    for (let i = this.pixiRenders.length - 1; i >= 0; i--) {
+      const render = this.pixiRenders[i];
+      if (!render.unit.isActive()) {
+        this.removePixiUnit(render.unit.id());
+      }
+    }
+
+    // Update bomber-at-airfield cache for all active bombers
+    for (const render of this.pixiRenders) {
+      if (render.unit.type() === UnitType.Bomber && render.unit.isActive()) {
+        const atAirfield = this.game
+          .units(UnitType.Airfield)
+          .find(
+            (a) =>
+              a.owner() === render.unit.owner() &&
+              a.tile() === render.unit.tile() &&
+              a.isActive(),
+          );
+        this.bomberAtAirfield.set(render.unit.id(), !!atAirfield);
+      }
+    }
+
     this.updateGhosts();
     this.updatePixiUnits();
   }
@@ -536,6 +562,7 @@ export class UnitLayer implements Layer {
       } else {
         // Unit removed
         this.removePixiUnit(unitView.id());
+        this.bomberAtAirfield.delete(unitView.id());
       }
     }
   }
@@ -845,17 +872,10 @@ export class UnitLayer implements Layer {
       return;
     }
 
-    // Hide bombers at their airfield
+    // Hide bombers at their airfield (use cached check from updatePixiUnits)
     if (unit.type() === UnitType.Bomber) {
-      const airfieldAtSamePos = this.game
-        .units(UnitType.Airfield)
-        .find(
-          (a) =>
-            a.owner() === unit.owner() &&
-            a.tile() === unit.tile() &&
-            a.isActive(),
-        );
-      if (airfieldAtSamePos) {
+      const atAirfield = this.bomberAtAirfield.get(unit.id()) ?? false;
+      if (atAirfield) {
         render.pixiSprite.visible = false;
         return; // Skip rendering this bomber
       } else {
