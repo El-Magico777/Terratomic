@@ -55,6 +55,7 @@ const PIXI_UNIT_TYPES = new Set<UnitType>([
   UnitType.Bomber,
   UnitType.FighterJet,
   UnitType.TradeShip,
+  UnitType.Shell,
 ]);
 
 // PIXI render info for tracking sprites
@@ -550,6 +551,13 @@ export class UnitLayer implements Layer {
   }
 
   private createPixiSprite(unit: UnitView): PIXI.Sprite {
+    // Shells use Graphics instead of Sprite textures
+    if (unit.type() === UnitType.Shell) {
+      const graphics = new PIXI.Graphics() as any;
+      this.pixiStage.addChild(graphics);
+      return graphics; // Graphics extends Container like Sprite
+    }
+
     const texture = this.createPixiTexture(unit, false);
     const sprite = new PIXI.Sprite(texture);
     sprite.anchor.set(0.5, 0.5);
@@ -831,6 +839,12 @@ export class UnitLayer implements Layer {
   private updatePixiSpritePosition(render: UnitRenderInfo) {
     const unit = render.unit;
 
+    // Handle Shell projectiles with PIXI Graphics
+    if (unit.type() === UnitType.Shell) {
+      this.updateShellGraphics(render);
+      return;
+    }
+
     // Hide bombers at their airfield
     if (unit.type() === UnitType.Bomber) {
       const airfieldAtSamePos = this.game
@@ -925,6 +939,50 @@ export class UnitLayer implements Layer {
     }
 
     // All units now use horizontal flip - no rotation needed
+  }
+
+  private updateShellGraphics(render: UnitRenderInfo) {
+    const unit = render.unit;
+    const graphics = render.pixiSprite as any as PIXI.Graphics;
+
+    graphics.clear();
+
+    // Get color
+    const color = this.theme.borderColor(unit.owner());
+    const colorNum = parseInt(color.toHex().substring(1), 16);
+
+    // Interpolate position
+    const alpha = this.computeTickAlpha();
+    const position = this.interpolatePosition(unit, alpha);
+
+    const screenPos = this.transformHandler.worldToScreenCoordinates(
+      new Cell(position.x, position.y),
+    );
+
+    // Draw trail from last position
+    const lastTile = unit.lastTile();
+    const lastWorldPos = { x: this.game.x(lastTile), y: this.game.y(lastTile) };
+
+    if (lastWorldPos.x !== position.x || lastWorldPos.y !== position.y) {
+      const lastScreenPos = this.transformHandler.worldToScreenCoordinates(
+        new Cell(lastWorldPos.x, lastWorldPos.y),
+      );
+
+      // Draw trail line
+      graphics.lineStyle(1, colorNum, 0.7);
+      graphics.moveTo(lastScreenPos.x, lastScreenPos.y);
+      graphics.lineTo(screenPos.x, screenPos.y);
+    }
+
+    // Draw center pixel (1x1)
+    graphics.beginFill(colorNum, 1.0);
+    graphics.drawRect(screenPos.x - 0.5, screenPos.y - 0.5, 1, 1);
+    graphics.endFill();
+
+    // Draw outer glow (2x2)
+    graphics.beginFill(colorNum, 0.4);
+    graphics.drawRect(screenPos.x - 1, screenPos.y - 1, 2, 2);
+    graphics.endFill();
   }
 
   private isUnitTargeting(unit: UnitView): boolean {
