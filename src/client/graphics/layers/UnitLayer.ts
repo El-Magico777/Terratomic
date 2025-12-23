@@ -36,6 +36,7 @@ import {
 } from "../SpriteLoader";
 
 // PIXI unit icons
+import tradeShipIcon from "../../../../proprietary/images/tradeship.png.png";
 import warshipIcon from "../../../../resources/images/BattleshipIconWhite.svg";
 import fighterJetIcon from "../../../../resources/images/FighterJetIcon.svg";
 import submarineIcon from "../../../../resources/images/submarine.svg";
@@ -53,6 +54,7 @@ const PIXI_UNIT_TYPES = new Set<UnitType>([
   UnitType.Submarine,
   UnitType.Bomber,
   UnitType.FighterJet,
+  UnitType.TradeShip,
 ]);
 
 // PIXI render info for tracking sprites
@@ -174,6 +176,7 @@ export class UnitLayer implements Layer {
   private submarineIconImage: HTMLImageElement | null = null;
   private fighterJetIconImage: HTMLImageElement | null = null;
   private bomberIconImage: HTMLImageElement | null = null;
+  private tradeShipIconImage: HTMLImageElement | null = null;
 
   // Submarine ghost sprites
   private ghostRenders: GhostRenderInfo[] = [];
@@ -227,6 +230,14 @@ export class UnitLayer implements Layer {
     bomberImg.onload = () => {
       this.bomberIconImage = bomberImg;
       this.clearTextureCache(UnitType.Bomber);
+    };
+
+    // Load trade ship icon
+    const tradeShipImg = new Image();
+    tradeShipImg.src = tradeShipIcon;
+    tradeShipImg.onload = () => {
+      this.tradeShipIconImage = tradeShipImg;
+      this.clearTextureCache(UnitType.TradeShip);
     };
   }
 
@@ -287,6 +298,8 @@ export class UnitLayer implements Layer {
         return this.fighterJetIconImage;
       case UnitType.Bomber:
         return this.bomberIconImage;
+      case UnitType.TradeShip:
+        return this.tradeShipIconImage;
       default:
         return null;
     }
@@ -364,7 +377,8 @@ export class UnitLayer implements Layer {
 
     // Draw level indicator stars (bronze) in top-left corner
     // FighterJets have 4 levels, others typically have 3
-    if (level && level >= 1 && level <= 4) {
+    // TradeShips don't have levels, so skip stars
+    if (unitType !== UnitType.TradeShip && level && level >= 1 && level <= 4) {
       const tierColor = "#CD7F32"; // bronze
       const starSize = 4;
       const spacing = 0.3;
@@ -850,8 +864,22 @@ export class UnitLayer implements Layer {
     }
 
     // Use interpolated position for smooth movement
-    const alpha = this.computeTickAlpha();
-    const position = this.interpolatePosition(unit, alpha);
+    // Only interpolate if unit is actually moving between tiles
+    const lastTile = unit.lastTile();
+    const currentTile = unit.tile();
+    const isMoving = lastTile !== currentTile;
+
+    let position: { x: number; y: number };
+    if (isMoving) {
+      const alpha = this.computeTickAlpha();
+      position = this.interpolatePosition(unit, alpha);
+    } else {
+      // Unit is stationary - use exact tile position
+      position = {
+        x: this.game.x(currentTile),
+        y: this.game.y(currentTile),
+      };
+    }
 
     const screenPos = this.transformHandler.worldToScreenCoordinates(
       new Cell(position.x, position.y),
@@ -868,10 +896,9 @@ export class UnitLayer implements Layer {
       unit.type() === UnitType.Warship ||
       unit.type() === UnitType.Submarine ||
       unit.type() === UnitType.FighterJet ||
-      unit.type() === UnitType.Bomber
+      unit.type() === UnitType.Bomber ||
+      unit.type() === UnitType.TradeShip
     ) {
-      const lastTile = unit.lastTile();
-      const currentTile = unit.tile();
       if (lastTile && currentTile) {
         const lastX = this.game.x(lastTile);
         const currentX = this.game.x(currentTile);
