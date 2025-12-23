@@ -477,30 +477,10 @@ export class UnitLayer implements Layer {
           this.pixiSeenUnits.add(unitView.id());
           const sprite = this.createPixiSprite(unitView);
           const render = new UnitRenderInfo(unitView, sprite);
-          // Calculate initial rotation for aircraft
-          if (
-            unitView.type() === UnitType.Bomber ||
-            unitView.type() === UnitType.FighterJet
-          ) {
-            render.lastAngle = this.getUnitAngle(unitView) ?? 0;
-          }
+          // All units now use horizontal flip - no rotation needed
           this.pixiRenders.push(render);
-        } else {
-          // Existing unit - update rotation angle on tick (not every frame)
-          const render = this.pixiRenders.find(
-            (r) => r.unit.id() === unitView.id(),
-          );
-          if (
-            render &&
-            (unitView.type() === UnitType.Bomber ||
-              unitView.type() === UnitType.FighterJet)
-          ) {
-            const angle = this.getUnitAngle(unitView);
-            if (angle !== null) {
-              render.lastAngle = angle;
-            }
-          }
         }
+        // Note: All units now use horizontal flip - no rotation angle tracking needed
       } else {
         // Unit removed
         this.removePixiUnit(unitView.id());
@@ -843,13 +823,15 @@ export class UnitLayer implements Layer {
     render.pixiSprite.x = Math.floor(screenPos.x + 0.5);
     render.pixiSprite.y = Math.floor(screenPos.y + 0.5);
 
-    // Set scale (including horizontal flip for warships/submarines based on direction)
+    // Set scale (including horizontal flip for all PIXI units based on direction)
     const baseScale = this.iconScreenScale();
 
-    // Warships and Submarines: flip horizontally based on east/west movement
+    // All PIXI units: flip horizontally based on east/west movement
     if (
       unit.type() === UnitType.Warship ||
-      unit.type() === UnitType.Submarine
+      unit.type() === UnitType.Submarine ||
+      unit.type() === UnitType.FighterJet ||
+      unit.type() === UnitType.Bomber
     ) {
       const lastTile = unit.lastTile();
       const currentTile = unit.tile();
@@ -874,15 +856,7 @@ export class UnitLayer implements Layer {
       render.pixiSprite.texture = texture;
     }
 
-    // Handle rotation for aircraft (Bomber, FighterJet)
-    // Warships and Submarines don't rotate
-    // Angle is calculated per-tick in updatePixiUnits, not per-frame (optimization)
-    if (
-      unit.type() === UnitType.Bomber ||
-      unit.type() === UnitType.FighterJet
-    ) {
-      render.pixiSprite.rotation = render.lastAngle;
-    }
+    // All units now use horizontal flip - no rotation needed
   }
 
   private isUnitTargeting(unit: UnitView): boolean {
