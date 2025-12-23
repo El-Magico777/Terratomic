@@ -61,6 +61,7 @@ class UnitRenderInfo {
     public unit: UnitView,
     public pixiSprite: PIXI.Sprite,
     public lastAngle: number = 0, // For smooth rotation interpolation
+    public facingLeft: boolean = false, // Track horizontal facing direction
   ) {}
 }
 
@@ -325,9 +326,8 @@ export class UnitLayer implements Layer {
     ctx.scale(ICON_TEXTURE_QUALITY, ICON_TEXTURE_QUALITY);
 
     // Draw icon (NO background, just icon + stars)
-    // Apply player color to icon
-    const iconColor = isTargeting ? "#C80000" : borderColor;
-    const colored = this.getImageColored(iconImage, iconColor);
+    // Apply player color to icon (targeting shown by marker, not color change)
+    const colored = this.getImageColored(iconImage, borderColor);
     const padded = 4;
     const maxW = ICON_DIM - padded * 2;
     const maxH = ICON_DIM - padded * 2;
@@ -349,6 +349,17 @@ export class UnitLayer implements Layer {
     );
     const dx = Math.round((ICON_DIM - dw) / 2);
     const dy = Math.round((ICON_DIM - dh) / 2);
+
+    // Draw subtle white shadow for visibility on dark backgrounds
+    const whiteShadow = this.getImageColored(iconImage, "#FFFFFF");
+    ctx.shadowColor = "#FFFFFF";
+    ctx.shadowBlur = 3;
+    ctx.globalAlpha = 0.25;
+    ctx.drawImage(whiteShadow, dx, dy, dw, dh);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1.0;
+
+    // Draw icon with player color on top
     ctx.drawImage(colored, dx, dy, dw, dh);
 
     // Draw level indicator stars (bronze) in top-left corner
@@ -366,6 +377,32 @@ export class UnitLayer implements Layer {
         const x = startX + i * (starSize + spacing);
         this.drawStar(ctx, x, startY, starSize);
       }
+    }
+
+    // Draw small red target marker in top-right when targeting
+    if (isTargeting) {
+      const markerSize = 5;
+      const padding = 1;
+      const centerX = ICON_DIM - padding - markerSize / 2;
+      const centerY = padding + markerSize / 2;
+
+      ctx.strokeStyle = "#FF0000";
+      ctx.lineWidth = 0.8;
+
+      // Draw crosshair
+      ctx.beginPath();
+      // Outer circle
+      ctx.arc(centerX, centerY, markerSize / 2, 0, Math.PI * 2);
+      ctx.stroke();
+      // Horizontal line
+      ctx.moveTo(centerX - markerSize / 2, centerY);
+      ctx.lineTo(centerX + markerSize / 2, centerY);
+      ctx.stroke();
+      // Vertical line
+      ctx.moveTo(centerX, centerY - markerSize / 2);
+      ctx.lineTo(centerX, centerY + markerSize / 2);
+      ctx.stroke();
+      ctx.closePath();
     }
 
     const texture = PIXI.Texture.from(canvas);
@@ -839,8 +876,12 @@ export class UnitLayer implements Layer {
         const lastX = this.game.x(lastTile);
         const currentX = this.game.x(currentTile);
         const dx = currentX - lastX;
-        // Flip if moving west (negative dx)
-        const scaleX = dx < 0 ? -baseScale : baseScale;
+        // Only update facing direction when moving horizontally
+        if (dx !== 0) {
+          render.facingLeft = dx < 0;
+        }
+        // Use stored facing direction
+        const scaleX = render.facingLeft ? -baseScale : baseScale;
         render.pixiSprite.scale.set(scaleX, baseScale);
       } else {
         render.pixiSprite.scale.set(baseScale, baseScale);
@@ -860,9 +901,10 @@ export class UnitLayer implements Layer {
   }
 
   private isUnitTargeting(unit: UnitView): boolean {
-    // Warships and FighterJets show red tint when attacking
+    // Warships, Submarines, and FighterJets show target marker when attacking
     if (
       unit.type() === UnitType.Warship ||
+      unit.type() === UnitType.Submarine ||
       unit.type() === UnitType.FighterJet
     ) {
       return unit.targetUnitId() !== undefined;
