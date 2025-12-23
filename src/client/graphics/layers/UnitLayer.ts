@@ -297,7 +297,8 @@ export class UnitLayer implements Layer {
   ): PIXI.Texture {
     const border = this.theme.borderColor(unit.owner());
     const borderColor = border.darken(0.17).toRgbString();
-    const level = unit.level ? unit.level() : 1;
+    // Get level, default to 1 if undefined/null, ensure it's a valid number
+    const level = (unit.level && unit.level()) || 1;
     const unitType = unit.type();
     const cache = isTargeting ? this.targetingTextureCache : this.textureCache;
     const cacheSuffix = isTargeting ? "-targeting" : "";
@@ -333,7 +334,11 @@ export class UnitLayer implements Layer {
     const iw = Math.max(1, colored.width);
     const ih = Math.max(1, colored.height);
     const baseScale = Math.min(maxW / iw, maxH / ih);
-    const factor = 1.4;
+    // Reduce bomber and fighterjet size to match old sprite sizes
+    const factor =
+      unitType === UnitType.Bomber || unitType === UnitType.FighterJet
+        ? 1.0
+        : 1.4;
     const dw = Math.min(
       ICON_DIM,
       Math.max(1, Math.round(iw * baseScale * factor)),
@@ -347,7 +352,8 @@ export class UnitLayer implements Layer {
     ctx.drawImage(colored, dx, dy, dw, dh);
 
     // Draw level indicator stars (bronze) in top-left corner
-    if (level >= 1 && level <= 3) {
+    // FighterJets have 4 levels, others typically have 3
+    if (level && level >= 1 && level <= 4) {
       const tierColor = "#CD7F32"; // bronze
       const starSize = 4;
       const spacing = 0.3;
@@ -836,7 +842,30 @@ export class UnitLayer implements Layer {
 
     render.pixiSprite.x = Math.floor(screenPos.x + 0.5);
     render.pixiSprite.y = Math.floor(screenPos.y + 0.5);
-    render.pixiSprite.scale.set(this.iconScreenScale());
+
+    // Set scale (including horizontal flip for warships/submarines based on direction)
+    const baseScale = this.iconScreenScale();
+
+    // Warships and Submarines: flip horizontally based on east/west movement
+    if (
+      unit.type() === UnitType.Warship ||
+      unit.type() === UnitType.Submarine
+    ) {
+      const lastTile = unit.lastTile();
+      const currentTile = unit.tile();
+      if (lastTile && currentTile) {
+        const lastX = this.game.x(lastTile);
+        const currentX = this.game.x(currentTile);
+        const dx = currentX - lastX;
+        // Flip if moving west (negative dx)
+        const scaleX = dx < 0 ? -baseScale : baseScale;
+        render.pixiSprite.scale.set(scaleX, baseScale);
+      } else {
+        render.pixiSprite.scale.set(baseScale, baseScale);
+      }
+    } else {
+      render.pixiSprite.scale.set(baseScale, baseScale);
+    }
 
     // Handle targeting tint for Warship and FighterJet
     const isTargeting = this.isUnitTargeting(unit);
