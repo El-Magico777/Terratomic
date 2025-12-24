@@ -196,38 +196,6 @@ export class SubmarineExecution implements Execution {
       potentialTargets.push({ unit: unit, distSquared });
     }
 
-    return potentialTargets.sort((a, b) => {
-      const { unit: unitA, distSquared: distA } = a;
-      const { unit: unitB, distSquared: distB } = b;
-
-      // Prioritize Warships
-      if (
-        unitA.type() === UnitType.Warship &&
-        unitB.type() !== UnitType.Warship
-      )
-        return -1;
-      if (
-        unitA.type() !== UnitType.Warship &&
-        unitB.type() === UnitType.Warship
-      )
-        return 1;
-
-      // Then favor Transport Ships over Trade Ships
-      if (
-        unitA.type() === UnitType.TransportShip &&
-        unitB.type() !== UnitType.TransportShip
-      )
-        return -1;
-      if (
-        unitA.type() !== UnitType.TransportShip &&
-        unitB.type() === UnitType.TransportShip
-      )
-        return 1;
-
-      // If both are the same type, sort by distance (lower `distSquared` means closer)
-      return distA - distB;
-    })[0]?.unit;
-
     const bestTarget = potentialTargets.sort((a, b) => {
       const { unit: unitA, distSquared: distA } = a;
       const { unit: unitB, distSquared: distB } = b;
