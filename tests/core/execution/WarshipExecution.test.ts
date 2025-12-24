@@ -41,6 +41,10 @@ describe("WarshipExecution AA Capability", () => {
     player1 = game.player("p1_id");
     player2 = game.player("p2_id");
 
+    // Set players at war so warship AA will engage
+    player1.setWarWith(player2);
+    player2.setWarWith(player1);
+
     // Create the warship for player1 at a known valid sea coordinate
     warship = player1.buildUnit(UnitType.Warship, game.ref(7, 10), {
       patrolTile: game.ref(7, 10),

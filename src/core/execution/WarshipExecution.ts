@@ -510,7 +510,8 @@ export class WarshipExecution implements Execution {
       ({ unit, distSquared }) =>
         !unit.owner().isFriendly(this.warship.owner()) &&
         !unit.targetedBySAM() &&
-        distSquared <= rangeSq,
+        distSquared <= rangeSq &&
+        this.canEngageAircraft(unit.owner() as Player, unit as Unit),
     );
 
     if (nearbyAircraft.length === 0) {
@@ -563,6 +564,27 @@ export class WarshipExecution implements Execution {
       this.nextAAMissileFireTick =
         this.mg.ticks() + this.mg.config().warshipAACooldown();
     }
+  }
+
+  private canEngageAircraft(aircraftOwner: Player, aircraft: Unit): boolean {
+    if (this.warship.owner().isAtWarWith(aircraftOwner)) {
+      return true;
+    }
+
+    // Neutral behavior: only defend against incoming bomber/paratrooper attacks.
+    if (
+      aircraft.type() !== UnitType.Bomber &&
+      aircraft.type() !== UnitType.Paratrooper
+    ) {
+      return false;
+    }
+
+    const targetTile = aircraft.targetTile();
+    if (targetTile === undefined) {
+      return false;
+    }
+
+    return this.mg.owner(targetTile) === this.warship.owner();
   }
 }
 
