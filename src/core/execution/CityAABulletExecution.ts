@@ -97,9 +97,6 @@ export class CityAABulletExecution implements Execution {
       !this.canEngageTarget(targetOwner, this.target) ||
       this.target.isAtSourceAirfield()
     ) {
-      console.log(
-        `AA bullet missed: target ${!this.target.isActive() ? "destroyed" : this.target.isAtSourceAirfield() ? "landed at airfield" : "became friendly"}`,
-      );
       this.bullet.delete(false);
       this.active = false;
       return;
