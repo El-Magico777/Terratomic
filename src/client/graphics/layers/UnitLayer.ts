@@ -547,6 +547,21 @@ export class UnitLayer implements Layer {
     const updates = this.game.updatesSinceLastTick();
     const unitUpdates = updates !== null ? updates[GameUpdateType.Unit] : [];
 
+    const metrics = PerformanceMetrics.getInstance();
+
+    // Track execution activity by counting unit updates per type
+    // This gives us a proxy for server-side execution activity
+    if (metrics.enabled) {
+      for (const u of unitUpdates) {
+        const unitView = this.game.unit(u.id);
+        if (unitView && PIXI_UNIT_TYPES.has(unitView.type())) {
+          // Estimate execution time based on update frequency
+          // Units that update more frequently are doing more server work
+          metrics.recordUnitExecutionTime(unitView.type(), 0.1); // Small constant per update
+        }
+      }
+    }
+
     for (const u of unitUpdates) {
       const unitView = this.game.unit(u.id);
       if (unitView === undefined) continue;
@@ -631,6 +646,9 @@ export class UnitLayer implements Layer {
       return [];
     }
     const clickRef = this.game.ref(cell.x, cell.y);
+
+    // Track query for performance monitoring
+    PerformanceMetrics.getInstance().recordUnitQuery(UnitType.Warship);
 
     // Only select warships owned by the player
     return this.game
@@ -851,9 +869,49 @@ export class UnitLayer implements Layer {
   private renderPixiUnits(mainContext: CanvasRenderingContext2D) {
     if (!this.pixiRenderer) return;
 
+    const metrics = PerformanceMetrics.getInstance();
+    const unitCounts = new Map<UnitType, number>();
+    const renderTimes = new Map<UnitType, number>();
+
+    // Get viewport bounds for visibility checking
+    const canvasWidth = this.pixiRenderer.canvas.width;
+    const canvasHeight = this.pixiRenderer.canvas.height;
+
     // Update all PIXI sprite positions and states
     for (const render of this.pixiRenders) {
+      const startTime = metrics.enabled ? performance.now() : 0;
       this.updatePixiSpritePosition(render);
+      if (metrics.enabled) {
+        const duration = performance.now() - startTime;
+        const currentTime = renderTimes.get(render.unit.type()) ?? 0;
+        renderTimes.set(render.unit.type(), currentTime + duration);
+
+        // Track visible count - check if sprite is actually in viewport bounds
+        if (render.pixiSprite.visible) {
+          const sprite = render.pixiSprite;
+          const bounds = sprite.getBounds();
+          const isInViewport =
+            bounds.x + bounds.width >= 0 &&
+            bounds.y + bounds.height >= 0 &&
+            bounds.x <= canvasWidth &&
+            bounds.y <= canvasHeight;
+
+          if (isInViewport) {
+            const count = unitCounts.get(render.unit.type()) ?? 0;
+            unitCounts.set(render.unit.type(), count + 1);
+          }
+        }
+      }
+    }
+
+    // Record accumulated render times and visible counts
+    if (metrics.enabled) {
+      renderTimes.forEach((time, unitType) => {
+        metrics.recordUnitRenderTime(unitType, time);
+      });
+      unitCounts.forEach((count, unitType) => {
+        metrics.recordUnitVisible(unitType, count);
+      });
     }
 
     // Update ghost sprite positions
@@ -1229,8 +1287,62 @@ export class UnitLayer implements Layer {
   ) {
     // Suppress base-canvas sprites for units that are also drawn via interpolation overlay
     this.drawingBasePass = true;
+
+    const metrics = PerformanceMetrics.getInstance();
+    const canvasUnitCounts = new Map<UnitType, number>();
+    const canvasRenderTimes = new Map<UnitType, number>();
+
+    // Get canvas viewport bounds for visibility checking
+    const canvasWidth = this.context.canvas.width;
+    const canvasHeight = this.context.canvas.height;
+    const halfWidth = this.game.width() / 2;
+    const halfHeight = this.game.height() / 2;
+
     try {
-      unitViews.forEach((unitView) => this.onUnitEvent(unitView, angleByUnit));
+      for (const unitView of unitViews) {
+        if (!PIXI_UNIT_TYPES.has(unitView.type())) {
+          const startTime = metrics.enabled ? performance.now() : 0;
+          this.onUnitEvent(unitView, angleByUnit);
+          if (metrics.enabled) {
+            const duration = performance.now() - startTime;
+            const currentTime = canvasRenderTimes.get(unitView.type()) ?? 0;
+            canvasRenderTimes.set(unitView.type(), currentTime + duration);
+
+            // Check if unit is actually in viewport
+            const worldX = this.game.x(unitView.tile());
+            const worldY = this.game.y(unitView.tile());
+            const screenPos = this.transformHandler.worldToScreenCoordinates(
+              new Cell(worldX, worldY),
+            );
+
+            // Check if position is within canvas bounds (with some margin for sprite size)
+            const margin = 50; // Sprite can be up to 50px
+            const isInViewport =
+              screenPos.x >= -margin &&
+              screenPos.y >= -margin &&
+              screenPos.x <= canvasWidth + margin &&
+              screenPos.y <= canvasHeight + margin;
+
+            if (isInViewport) {
+              const count = canvasUnitCounts.get(unitView.type()) ?? 0;
+              canvasUnitCounts.set(unitView.type(), count + 1);
+            }
+          }
+        } else {
+          // PIXI units still need to be processed for other effects
+          this.onUnitEvent(unitView, angleByUnit);
+        }
+      }
+
+      // Record accumulated times and counts
+      if (metrics.enabled) {
+        canvasRenderTimes.forEach((time, unitType) => {
+          metrics.recordUnitRenderTime(unitType, time);
+        });
+        canvasUnitCounts.forEach((count, unitType) => {
+          metrics.recordUnitVisible(unitType, count);
+        });
+      }
     } finally {
       this.drawingBasePass = false;
     }
