@@ -71,6 +71,7 @@ class UnitRenderInfo {
 // Ghost sprite for submarine last-known positions
 class GhostRenderInfo {
   constructor(
+    public ghostId: number,
     public position: { x: number; y: number },
     public pixiSprite: PIXI.Sprite,
   ) {}
@@ -2346,17 +2347,15 @@ export class UnitLayer implements Layer {
 
     this.pixiStage.addChild(sprite);
     this.ghostRenders.push(
-      new GhostRenderInfo({ x: worldX, y: worldY }, sprite),
+      new GhostRenderInfo(ghost.id, { x: worldX, y: worldY }, sprite),
     );
   }
 
   private removePixiGhost(ghostId: number) {
-    // Find ghost by checking if any ghost matches this ID
-    const idx = this.ghostRenders.findIndex((_, index) => {
-      const ghostsArray =
-        (this.game as any).submarineGhosts?.call(this.game) ?? [];
-      return ghostsArray[index]?.id === ghostId;
-    });
+    // Find ghost sprite by ID
+    const idx = this.ghostRenders.findIndex(
+      (ghost) => ghost.ghostId === ghostId,
+    );
 
     if (idx !== -1) {
       const ghostRender = this.ghostRenders[idx];
