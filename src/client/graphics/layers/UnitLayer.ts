@@ -36,11 +36,11 @@ import {
 } from "../SpriteLoader";
 
 // PIXI unit icons
+import bomberSprite from "../../../../proprietary/images/bomberv2.png";
 import tradeShipIcon from "../../../../proprietary/images/tradeship.png.png";
 import warshipIcon from "../../../../resources/images/BattleshipIconWhite.svg";
 import fighterJetIcon from "../../../../resources/images/FighterJetIcon.svg";
 import submarineIcon from "../../../../resources/images/submarine.svg";
-import bomberSprite from "../../../../resources/sprites/bomber.png";
 
 // PIXI rendering constants
 const ICON_TEXTURE_QUALITY = 4; // Render textures at higher pixel density
@@ -382,7 +382,14 @@ export class UnitLayer implements Layer {
     // Draw level indicator stars (bronze) in top-left corner
     // FighterJets have 4 levels, others typically have 3
     // TradeShips don't have levels, so skip stars
-    if (unitType !== UnitType.TradeShip && level && level >= 1 && level <= 4) {
+    // Bombers don't show levels (rotation makes badges look bad)
+    if (
+      unitType !== UnitType.TradeShip &&
+      unitType !== UnitType.Bomber &&
+      level &&
+      level >= 1 &&
+      level <= 4
+    ) {
       const tierColor = "#CD7F32"; // bronze
       const starSize = 4;
       const spacing = 0.3;
@@ -881,6 +888,12 @@ export class UnitLayer implements Layer {
       } else {
         render.pixiSprite.visible = true;
       }
+
+      // Apply rotation to point bomber in movement direction
+      const angle = this.getUnitAngle(unit);
+      if (angle !== null) {
+        render.pixiSprite.rotation = angle;
+      }
     }
 
     // Handle submarine stealth opacity (75% when not detected/attacking/cooldown)
@@ -925,12 +938,12 @@ export class UnitLayer implements Layer {
     // Set scale (including horizontal flip for all PIXI units based on direction)
     const baseScale = this.iconScreenScale();
 
-    // All PIXI units: flip horizontally based on east/west movement
+    // All PIXI units except Bomber: flip horizontally based on east/west movement
+    // Bombers use rotation instead of flip to handle all directions
     if (
       unit.type() === UnitType.Warship ||
       unit.type() === UnitType.Submarine ||
       unit.type() === UnitType.FighterJet ||
-      unit.type() === UnitType.Bomber ||
       unit.type() === UnitType.TradeShip
     ) {
       if (lastTile && currentTile) {
