@@ -231,11 +231,11 @@ export class PerformanceMetrics {
 
     this.executionTime.set(
       typeName,
-      (this.executionTime.get(typeName) || 0) + milliseconds,
+      (this.executionTime.get(typeName) ?? 0) + milliseconds,
     );
     this.executionCount.set(
       typeName,
-      (this.executionCount.get(typeName) || 0) + 1,
+      (this.executionCount.get(typeName) ?? 0) + 1,
     );
   }
 
