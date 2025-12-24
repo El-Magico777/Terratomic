@@ -1,6 +1,6 @@
 import { Colord } from "colord";
 import artillerySprite from "../../../proprietary/images/artillery-battery.png";
-import bomberSprite from "../../../proprietary/images/bomberv2.png";
+import bomberSprite from "../../../proprietary/images/bomberv3.png";
 import atomBombSprite from "../../../resources/sprites/atombomb.png";
 import cargoPlaneSprite from "../../../resources/sprites/cargoplane.png";
 import fighterJetSprite from "../../../resources/sprites/fighterJet.png";

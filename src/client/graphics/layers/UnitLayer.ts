@@ -36,7 +36,7 @@ import {
 } from "../SpriteLoader";
 
 // PIXI unit icons
-import bomberSprite from "../../../../proprietary/images/bomberv2.png";
+import bomberSprite from "../../../../proprietary/images/bomberv3.png";
 import tradeShipIcon from "../../../../proprietary/images/tradeship.png";
 import warshipIcon from "../../../../resources/images/BattleshipIconWhite.svg";
 import fighterJetIcon from "../../../../resources/images/FighterJetIcon.svg";
