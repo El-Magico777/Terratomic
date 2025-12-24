@@ -314,10 +314,19 @@ export class UnitLayer implements Layer {
     isTargeting: boolean = false,
   ): PIXI.Texture {
     const border = this.theme.borderColor(unit.owner());
-    const borderColor = border.darken(0.17).toRgbString();
+    const unitType = unit.type();
+
+    // Naval units use lighter color for contrast with water, air units use darker
+    const isNavalUnit =
+      unitType === UnitType.Warship ||
+      unitType === UnitType.Submarine ||
+      unitType === UnitType.TradeShip;
+    const borderColor = isNavalUnit
+      ? border.lighten(0.1).toRgbString()
+      : border.darken(0.1).toRgbString();
+
     // Get level, default to 1 if undefined/null, ensure it's a valid number
     const level = (unit.level && unit.level()) || 1;
-    const unitType = unit.type();
     const cache = isTargeting ? this.targetingTextureCache : this.textureCache;
     const cacheSuffix = isTargeting ? "-targeting" : "";
     const cacheKey = `${unitType}-${unit.owner().id()}-${borderColor}-${level}${cacheSuffix}`;
@@ -367,16 +376,7 @@ export class UnitLayer implements Layer {
     const dx = Math.round((ICON_DIM - dw) / 2);
     const dy = Math.round((ICON_DIM - dh) / 2);
 
-    // Draw subtle white shadow for visibility on dark backgrounds
-    const whiteShadow = this.getImageColored(iconImage, "#FFFFFF");
-    ctx.shadowColor = "#FFFFFF";
-    ctx.shadowBlur = 3;
-    ctx.globalAlpha = 0.25;
-    ctx.drawImage(whiteShadow, dx, dy, dw, dh);
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1.0;
-
-    // Draw icon with player color on top
+    // Draw icon with player color
     ctx.drawImage(colored, dx, dy, dw, dh);
 
     // Draw level indicator stars (bronze) in top-left corner
