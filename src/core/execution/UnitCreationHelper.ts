@@ -1,4 +1,4 @@
-import { Game, Gold, Player, TerrainType, UnitType } from "../game/Game";
+import { Game, Gold, Player, TerrainType, Unit, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { ConstructionExecution } from "./ConstructionExecution";
@@ -19,6 +19,7 @@ export class UnitCreationHelper {
   // Max caps for structures (regardless of density)
   private static readonly MAX_ACADEMY = 4;
   private static readonly MAX_HOSPITAL = 4;
+  private static readonly MAX_CITY_STACK = 25;
 
   // Mobile unit base ratios (1 unit per X production buildings)
   private static readonly WARSHIP_PER_PORTS = 5;
@@ -362,6 +363,40 @@ export class UnitCreationHelper {
         new ConstructionExecution(this.player, bestType, bestTile),
       );
       return true;
+    }
+
+    // Fallback: If saturated, stack cities up to MAX_CITY_STACK
+    const cities = this.player.units(UnitType.City);
+    if (cities.length > 0) {
+      // Find city with lowest stack count that's below the cap
+      let lowestStackCity: Unit | null = null;
+      let lowestStackCount = UnitCreationHelper.MAX_CITY_STACK + 1;
+
+      for (const city of cities) {
+        const stackCount = city.stackCount();
+        if (
+          stackCount < UnitCreationHelper.MAX_CITY_STACK &&
+          stackCount < lowestStackCount
+        ) {
+          lowestStackCount = stackCount;
+          lowestStackCity = city;
+        }
+      }
+
+      if (lowestStackCity !== null) {
+        const cityCost = this.cost(UnitType.City);
+        if (this.player.gold() >= cityCost) {
+          this.mg.addExecution(
+            new ConstructionExecution(
+              this.player,
+              UnitType.City,
+              lowestStackCity.tile(),
+              lowestStackCount + 1, // Stack one level higher
+            ),
+          );
+          return true;
+        }
+      }
     }
 
     return false;
