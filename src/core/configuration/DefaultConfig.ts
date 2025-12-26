@@ -903,6 +903,10 @@ export class DefaultConfig implements Config {
       : this.pastelTheme;
   }
 
+  showBotPersonalityNames(): boolean {
+    return false;
+  }
+
   attackLogic(
     gm: Game,
     attackTroops: number,

@@ -2,6 +2,7 @@ import { Game, Gold, Player, TerrainType, UnitType } from "../game/Game";
 import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { ConstructionExecution } from "./ConstructionExecution";
+import { BotPersonality } from "./FakeHumanExecution";
 
 export class UnitCreationHelper {
   private static readonly CITY_DENSITY_PER_TILE = 1 / 6000;
@@ -21,6 +22,7 @@ export class UnitCreationHelper {
     private random: PseudoRandom,
     private mg: Game,
     private player: Player,
+    private personality: BotPersonality = BotPersonality.Balanced,
   ) {}
 
   // Per-handleUnits invocation caches to avoid repeated heavy work.

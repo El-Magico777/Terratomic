@@ -13,6 +13,7 @@ import { PseudoRandom } from "../../PseudoRandom";
 import { flattenedEmojiTable } from "../../Util";
 import { AttackExecution } from "../AttackExecution";
 import { EmojiExecution } from "../EmojiExecution";
+import { BotPersonality } from "../FakeHumanExecution";
 import { SetAutoBombingExecution } from "../SetAutoBombingExecution";
 
 export class BotBehavior {
@@ -30,6 +31,7 @@ export class BotBehavior {
     private player: Player,
     private triggerRatio: number,
     private reserveRatio: number,
+    private personality: BotPersonality = BotPersonality.Balanced,
   ) {}
 
   handleAllianceRequests() {

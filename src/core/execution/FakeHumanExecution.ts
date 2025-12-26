@@ -1,4 +1,5 @@
 import {
+  Difficulty,
   Execution,
   Game,
   Nation,
@@ -26,6 +27,14 @@ import { UnitCreationHelper } from "./UnitCreationHelper";
 import { closestTwoTiles } from "./Util";
 import { BotBehavior } from "./utils/BotBehavior";
 
+export enum BotPersonality {
+  Balanced = 0,
+  LandWarfare = 1,
+  AirSupremacy = 2,
+  NavalPower = 3,
+  Nuclear = 4,
+}
+
 export class FakeHumanExecution implements Execution {
   private firstMove = true;
 
@@ -51,6 +60,14 @@ export class FakeHumanExecution implements Execution {
   // alongside other private fields
   private boatDestinations: TileRef[] = [];
 
+  // Personality and investment settings
+  private personality: BotPersonality = BotPersonality.Balanced;
+  private researchInvestment: number = 0.2;
+  private roadInvestment: number = 0.2;
+  private researchPriority: string | null = null;
+  private initialTilesOwned: number | null = null;
+  private difficulty: Difficulty = Difficulty.Medium;
+
   constructor(
     gameID: GameID,
     private nation: Nation,
@@ -58,16 +75,110 @@ export class FakeHumanExecution implements Execution {
     this.random = new PseudoRandom(
       simpleHash(nation.playerInfo.id) + simpleHash(gameID),
     );
-    this.attackRate = 40;
+
+    // Apply difficulty-based settings
+    this.applyDifficultySettings();
+
+    // Apply personality (affects difficulty settings)
+    this.applyPersonality();
+
+    // Apply randomization for variety (±10% variance)
+    this.applyRandomVariance();
+
+    // Initialize other fields
     this.attackTick = this.random.nextInt(0, this.attackRate);
     this.diplomacyTick = this.random.nextInt(0, 10);
-    this.triggerRatio = 70 / 100;
-    this.reserveRatio = 50 / 100;
     this.heckleEmoji = ["🤡", "😡"].map((e) => flattenedEmojiTable.indexOf(e));
+  }
+
+  private applyDifficultySettings(): void {
+    const difficulty = this.difficulty;
+
+    // Difficulty-based combat parameters
+    switch (difficulty) {
+      case Difficulty.Easy:
+        this.attackRate = 50;
+        this.triggerRatio = 0.8;
+        this.reserveRatio = 0.6;
+        break;
+      case Difficulty.Medium:
+        this.attackRate = 40;
+        this.triggerRatio = 0.7;
+        this.reserveRatio = 0.5;
+        break;
+      case Difficulty.Hard:
+        this.attackRate = 30;
+        this.triggerRatio = 0.6;
+        this.reserveRatio = 0.4;
+        break;
+      case Difficulty.Impossible:
+        this.attackRate = 25;
+        this.triggerRatio = 0.5;
+        this.reserveRatio = 0.3;
+        break;
+    }
+  }
+
+  private applyPersonality(): void {
+    // 30% balanced, 17.5% each specialized type
+    const roll = this.random.nextFloat(0, 1);
+    if (roll < 0.3) this.personality = BotPersonality.Balanced;
+    else if (roll < 0.475) this.personality = BotPersonality.LandWarfare;
+    else if (roll < 0.65) this.personality = BotPersonality.AirSupremacy;
+    else if (roll < 0.825) this.personality = BotPersonality.NavalPower;
+    else this.personality = BotPersonality.Nuclear;
+
+    // Personality modifiers
+    switch (this.personality) {
+      case BotPersonality.LandWarfare:
+        this.attackRate = Math.max(20, this.attackRate - 10);
+        this.triggerRatio *= 0.85;
+        this.reserveRatio *= 0.75;
+        this.researchPriority = "land";
+        break;
+      case BotPersonality.AirSupremacy:
+        this.attackRate = Math.max(25, this.attackRate - 5);
+        this.researchPriority = "air";
+        this.researchInvestment = Math.min(0.3, this.researchInvestment * 1.3);
+        break;
+      case BotPersonality.NavalPower:
+        this.researchPriority = "sea";
+        this.researchInvestment = Math.min(0.28, this.researchInvestment * 1.2);
+        break;
+      case BotPersonality.Nuclear:
+        this.attackRate += 5;
+        this.triggerRatio *= 1.1;
+        this.researchPriority = "nuclear";
+        this.researchInvestment = Math.min(0.35, this.researchInvestment * 1.5);
+        break;
+      case BotPersonality.Balanced:
+        // No changes - baseline behavior, no research priority
+        this.researchPriority = null;
+        break;
+    }
+  }
+
+  private applyRandomVariance(): void {
+    const variance = () => 0.9 + this.random.nextFloat(0, 1) * 0.2; // 0.9 to 1.1
+
+    this.triggerRatio *= variance();
+    this.reserveRatio *= variance();
+    this.researchInvestment *= variance();
+    this.roadInvestment *= variance();
+
+    // Clamp to reasonable bounds
+    this.triggerRatio = Math.max(0.4, Math.min(0.9, this.triggerRatio));
+    this.reserveRatio = Math.max(0.2, Math.min(0.7, this.reserveRatio));
+    this.researchInvestment = Math.max(
+      0.15,
+      Math.min(0.35, this.researchInvestment),
+    );
+    this.roadInvestment = Math.max(0.15, Math.min(0.3, this.roadInvestment));
   }
 
   init(mg: Game) {
     this.mg = mg;
+    this.difficulty = mg.config().gameConfig().difficulty;
   }
 
   private updateRelationsFromEmbargos() {
@@ -134,14 +245,30 @@ export class FakeHumanExecution implements Execution {
       if (this.player === null) {
         return;
       }
+
+      // Track initial territory size for dynamic troop ratio
+      this.initialTilesOwned = this.player.numTilesOwned();
+
+      // Expose personality for dev mode debugging
+      (this.player as any).botPersonality = () => this.personality;
+
       this.player.addUpgrade(UpgradeType.InternationalTrade);
 
-      // Set research slider to 20% and set road investment to 20% at game start.
-      // Do NOT set any research priority here so the AI leaves research priority null.
+      // Set research/road investment based on personality and randomization
       this.mg.addExecution(
-        new SetResearchInvestmentExecution(this.player, 0.2),
+        new SetResearchInvestmentExecution(
+          this.player,
+          this.researchInvestment,
+        ),
       );
-      this.mg.addExecution(new SetRoadInvestmentExecution(this.player, 0.2));
+      this.mg.addExecution(
+        new SetRoadInvestmentExecution(this.player, this.roadInvestment),
+      );
+
+      // Set research priority if personality has one
+      if (this.researchPriority !== null) {
+        (this.player as any).setResearchPriority?.(this.researchPriority);
+      }
     }
 
     if (!this.player.isAlive()) {
@@ -156,6 +283,7 @@ export class FakeHumanExecution implements Execution {
       this.player,
       this.triggerRatio,
       this.reserveRatio,
+      this.personality,
     );
 
     this.nukeHelper ??= new NukeExecutionHelper(
@@ -168,6 +296,7 @@ export class FakeHumanExecution implements Execution {
       this.random,
       this.mg,
       this.player,
+      this.personality,
     );
 
     if (this.firstMove) {
@@ -262,11 +391,38 @@ export class FakeHumanExecution implements Execution {
     const lastSent = this.lastEmojiSent.get(enemy) ?? -300;
     if (this.mg.ticks() - lastSent <= 300) return;
     this.lastEmojiSent.set(enemy, this.mg.ticks());
+
+    // Context-aware emoji selection
+    let emoji: string;
+    const ourTroops = this.player.troops();
+    const theirTroops = enemy.troops();
+
+    // Winning hard
+    if (ourTroops > theirTroops * 2) {
+      emoji = this.random.randElement(["💪", "🔥", "😎"]);
+    }
+    // Losing
+    else if (ourTroops < theirTroops * 0.5) {
+      emoji = this.random.randElement(["😰", "🏳️", "😱"]);
+    }
+    // Personality-based
+    else if (this.personality === BotPersonality.LandWarfare) {
+      emoji = this.random.randElement(["😡", "⚔️", "💀"]);
+    } else if (this.personality === BotPersonality.AirSupremacy) {
+      emoji = this.random.randElement(["✈️", "💣", "🚁"]);
+    } else if (this.personality === BotPersonality.NavalPower) {
+      emoji = this.random.randElement(["🚢", "⚓", "🌊"]);
+    } else if (this.personality === BotPersonality.Nuclear) {
+      emoji = this.random.randElement(["☢️", "💀", "☠️"]);
+    } else {
+      emoji = this.random.randElement(["🤡", "😡"]); // Existing
+    }
+
     this.mg.addExecution(
       new EmojiExecution(
         this.player,
         enemy.id(),
-        this.random.randElement(this.heckleEmoji),
+        flattenedEmojiTable.indexOf(emoji),
       ),
     );
   }
