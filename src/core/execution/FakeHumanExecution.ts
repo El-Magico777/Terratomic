@@ -19,6 +19,7 @@ import { RESEARCH_TECH_IDS } from "../tech/TechEffects";
 import { flattenedEmojiTable, simpleHash } from "../Util";
 import { EmojiExecution } from "./EmojiExecution";
 import { NukeExecutionHelper } from "./NukeExecutionHelper";
+import { ParatrooperAttackExecution } from "./ParatrooperAttackExecution";
 import { PeaceRequestExecution } from "./PeaceRequestExecution";
 import { SetResearchInvestmentExecution } from "./SetResearchInvestmentExecution";
 import { SetRoadInvestmentExecution } from "./SetRoadInvestmentExecution";
@@ -428,10 +429,33 @@ export class FakeHumanExecution implements Execution {
     if (!enemy) return;
     this.maybeSendEmoji(enemy);
     this.nukeHelper.maybeSendNuke(enemy);
-    if (this.player.sharesBorderWith(enemy)) {
-      this.behavior.sendAttack(enemy);
+
+    // Personality-based attack type selection
+    if (this.personality === BotPersonality.AirSupremacy) {
+      // AirSupremacy: Prefer paratroopers (80% of the time), fallback to default
+      if (this.random.nextFloat(0, 1) < 0.8) {
+        this.maybeSendParatrooperAttack(enemy);
+      } else if (this.player.sharesBorderWith(enemy)) {
+        this.behavior.sendAttack(enemy);
+      } else {
+        this.maybeSendBoatAttack(enemy);
+      }
+    } else if (this.personality === BotPersonality.NavalPower) {
+      // NavalPower: Prefer boat attacks (80% of the time even with land border)
+      if (this.random.nextFloat(0, 1) < 0.8) {
+        this.maybeSendBoatAttack(enemy);
+      } else if (this.player.sharesBorderWith(enemy)) {
+        this.behavior.sendAttack(enemy);
+      } else {
+        this.maybeSendBoatAttack(enemy);
+      }
     } else {
-      this.maybeSendBoatAttack(enemy);
+      // Default behavior for other personalities
+      if (this.player.sharesBorderWith(enemy)) {
+        this.behavior.sendAttack(enemy);
+      } else {
+        this.maybeSendBoatAttack(enemy);
+      }
     }
   }
 
@@ -473,6 +497,70 @@ export class FakeHumanExecution implements Execution {
         this.player,
         enemy.id(),
         flattenedEmojiTable.indexOf(emoji),
+      ),
+    );
+  }
+
+  private maybeSendParatrooperAttack(other: Player) {
+    if (this.player === null) throw new Error("not initialized");
+    if (this.player.isOnSameTeam(other)) return;
+
+    // Check if we have JetEngines upgrade
+    if (!this.player.hasUpgrade(UpgradeType.JetEngines)) return;
+
+    const airfields = this.player.units(UnitType.Airfield);
+    if (airfields.length === 0) return;
+
+    // Target defense posts within paratrooper range (limit bots to 100 tile radius)
+    const maxRange = 100;
+    let bestTarget: TileRef | null = null;
+    let minDistance = Infinity;
+
+    // First try defense posts
+    const defensePosts = other.units(UnitType.DefensePost);
+    for (const defensePost of defensePosts) {
+      const targetTile = defensePost.tile();
+      // Find closest airfield to this target
+      for (const airfield of airfields) {
+        const distance = this.mg.manhattanDist(airfield.tile(), targetTile);
+        if (distance <= maxRange && distance < minDistance) {
+          minDistance = distance;
+          bestTarget = targetTile;
+          break; // Found valid target from this airfield, no need to check others
+        }
+      }
+      if (bestTarget !== null) break; // Found a defense post in range, use it
+    }
+
+    // If no defense posts in range, try random enemy land tiles
+    if (bestTarget === null) {
+      const enemyTiles = Array.from(other.borderTiles()).filter((t) =>
+        this.mg.isLand(t),
+      );
+      for (const tile of this.random.sampleArray(enemyTiles, 10)) {
+        for (const airfield of airfields) {
+          const distance = this.mg.manhattanDist(airfield.tile(), tile);
+          if (distance <= maxRange && distance < minDistance) {
+            minDistance = distance;
+            bestTarget = tile;
+            break; // Found valid target, no need to check other airfields
+          }
+        }
+        if (bestTarget !== null) break; // Found a tile in range, use it
+      }
+    }
+
+    if (bestTarget === null) return;
+
+    const troopsToSend = this.player.troops() / 5;
+    if (troopsToSend < 1) return;
+
+    this.mg.addExecution(
+      new ParatrooperAttackExecution(
+        this.player,
+        other.id(),
+        bestTarget,
+        troopsToSend,
       ),
     );
   }
