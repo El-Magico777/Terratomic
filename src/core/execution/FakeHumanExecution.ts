@@ -146,21 +146,21 @@ export class FakeHumanExecution implements Execution {
         this.attackRate = Math.max(20, this.attackRate - 10);
         this.triggerRatio *= 0.85;
         this.reserveRatio *= 0.75;
-        this.researchPriority = "land";
+        this.researchPriority = RESEARCH_TECH_IDS.LAND_DOOMSDAY_DEVICE;
         break;
       case BotPersonality.AirSupremacy:
         this.attackRate = Math.max(25, this.attackRate - 5);
-        this.researchPriority = "air";
+        this.researchPriority = RESEARCH_TECH_IDS.AIR_NAVAL_STRIKE;
         this.researchInvestment = Math.min(0.3, this.researchInvestment * 1.3);
         break;
       case BotPersonality.NavalPower:
-        this.researchPriority = "sea";
+        this.researchPriority = RESEARCH_TECH_IDS.SEA_NUCLEAR_SUBMARINES;
         this.researchInvestment = Math.min(0.28, this.researchInvestment * 1.2);
         break;
       case BotPersonality.Nuclear:
         this.attackRate += 5;
         this.triggerRatio *= 1.1;
-        this.researchPriority = "nuclear";
+        this.researchPriority = RESEARCH_TECH_IDS.NUCLEAR_FISSION;
         this.researchInvestment = Math.min(0.35, this.researchInvestment * 1.5);
         break;
       case BotPersonality.Balanced:
