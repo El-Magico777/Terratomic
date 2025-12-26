@@ -37,6 +37,56 @@ export class UnitCreationHelper {
     Array<{ tile: TileRef; x: number; y: number }>
   > | null = null;
 
+  /**
+   * Returns unit construction priorities based on personality.
+   * Order matters: earlier types are attempted first.
+   */
+  private getUnitPriorities(): UnitType[] {
+    switch (this.personality) {
+      case BotPersonality.LandWarfare:
+        return [
+          UnitType.DefensePost,
+          UnitType.Airfield,
+          UnitType.SAMLauncher,
+          UnitType.MissileSilo,
+          UnitType.Port,
+        ];
+      case BotPersonality.AirSupremacy:
+        return [
+          UnitType.Airfield,
+          UnitType.SAMLauncher,
+          UnitType.DefensePost,
+          UnitType.MissileSilo,
+          UnitType.Port,
+        ];
+      case BotPersonality.NavalPower:
+        return [
+          UnitType.Port,
+          UnitType.Airfield,
+          UnitType.DefensePost,
+          UnitType.SAMLauncher,
+          UnitType.MissileSilo,
+        ];
+      case BotPersonality.Nuclear:
+        return [
+          UnitType.MissileSilo,
+          UnitType.Airfield,
+          UnitType.DefensePost,
+          UnitType.SAMLauncher,
+          UnitType.Port,
+        ];
+      case BotPersonality.Balanced:
+      default:
+        return [
+          UnitType.Airfield,
+          UnitType.Port,
+          UnitType.DefensePost,
+          UnitType.SAMLauncher,
+          UnitType.MissileSilo,
+        ];
+    }
+  }
+
   handleUnits() {
     // Reset per-tick caches – this helper may be called multiple times per tick
     // and structureSpawnTile can be expensive without caching.
@@ -83,14 +133,34 @@ export class UnitCreationHelper {
       return true;
     }
 
-    return (
-      this.maybeSpawnStructure(UnitType.Airfield, 1) ||
-      this.maybeSpawnNavalUnit() ||
-      this.maybeSpawnArtillery() ||
-      this.maybeSpawnSAMLauncher() ||
-      this.maybeSpawnStructure(UnitType.MissileSilo, 1) ||
-      this.maybeSpawnDefensePost()
-    );
+    // Build structures based on personality priorities
+    const priorities = this.getUnitPriorities();
+    for (const unitType of priorities) {
+      let spawned = false;
+
+      switch (unitType) {
+        case UnitType.Airfield:
+          spawned = this.maybeSpawnStructure(UnitType.Airfield, 1);
+          break;
+        case UnitType.Port:
+          spawned = this.maybeSpawnNavalUnit();
+          break;
+        case UnitType.DefensePost:
+          spawned = this.maybeSpawnDefensePost();
+          break;
+        case UnitType.SAMLauncher:
+          spawned = this.maybeSpawnSAMLauncher();
+          break;
+        case UnitType.MissileSilo:
+          spawned = this.maybeSpawnStructure(UnitType.MissileSilo, 1);
+          break;
+      }
+
+      if (spawned) return true;
+    }
+
+    // Fallback: try artillery if nothing else worked
+    return this.maybeSpawnArtillery();
   }
 
   private getDensityBasedStructureInfo(type: UnitType): {
