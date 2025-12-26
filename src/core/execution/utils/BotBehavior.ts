@@ -1,5 +1,6 @@
 import {
   AllianceRequest,
+  Difficulty,
   Game,
   Player,
   PlayerType,
@@ -33,7 +34,7 @@ export class BotBehavior {
 
   handleAllianceRequests() {
     for (const req of this.player.incomingAllianceRequests()) {
-      if (shouldAcceptAllianceRequest(this.player, req)) {
+      if (shouldAcceptAllianceRequest(this.game, this.player, req)) {
         req.accept();
       } else {
         req.reject();
@@ -256,7 +257,18 @@ export class BotBehavior {
   }
 }
 
-function shouldAcceptAllianceRequest(player: Player, request: AllianceRequest) {
+function shouldAcceptAllianceRequest(
+  game: Game,
+  player: Player,
+  request: AllianceRequest,
+) {
+  const difficulty = game.config().gameConfig().difficulty;
+
+  // Impossible: Never accept alliances
+  if (difficulty === Difficulty.Impossible) {
+    return false;
+  }
+
   if (player.relation(request.requestor()) < Relation.Neutral) {
     return false; // Reject if hasMalice
   }
@@ -266,7 +278,24 @@ function shouldAcceptAllianceRequest(player: Player, request: AllianceRequest) {
   if (request.requestor().numTilesOwned() > player.numTilesOwned() * 3) {
     return true; // Accept if requestorIsMuchLarger
   }
-  if (request.requestor().alliances().length >= 3) {
+
+  // Difficulty-based alliance limits
+  let maxAlliances: number;
+  switch (difficulty) {
+    case Difficulty.Easy:
+      maxAlliances = 3; // Original behavior
+      break;
+    case Difficulty.Medium:
+      maxAlliances = 2;
+      break;
+    case Difficulty.Hard:
+      maxAlliances = 1;
+      break;
+    default:
+      maxAlliances = 3;
+  }
+
+  if (request.requestor().alliances().length >= maxAlliances) {
     return false; // Reject if tooManyAlliances
   }
   return true; // Accept otherwise
