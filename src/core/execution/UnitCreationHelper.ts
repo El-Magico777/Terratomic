@@ -7,8 +7,18 @@ import { BotPersonality } from "./FakeHumanExecution";
 export class UnitCreationHelper {
   private static readonly CITY_DENSITY_PER_TILE = 1 / 6000;
   private static readonly PORT_DENSITY_PER_TILE = 1 / 12000;
-  private static readonly MIN_BUILDING_DISTANCE_SQUARED = 1600; // 40 tiles squared
+  private static readonly FACTORY_DENSITY_PER_TILE = 1 / 8000;
+  private static readonly AIRFIELD_DENSITY_PER_TILE = 1 / 10000;
+  private static readonly MISSILE_SILO_DENSITY_PER_TILE = 1 / 15000;
+  private static readonly SAM_LAUNCHER_DENSITY_PER_TILE = 1 / 15000;
+  private static readonly ACADEMY_DENSITY_PER_TILE = 1 / 30000;
+  private static readonly HOSPITAL_DENSITY_PER_TILE = 1 / 20000;
   private static readonly DEFENSE_POST_DENSITY_PER_BORDER_TILE = 1 / 110;
+  private static readonly MIN_BUILDING_DISTANCE_SQUARED = 1600; // 40 tiles squared
+
+  // Max caps for structures (regardless of density)
+  private static readonly MAX_ACADEMY = 4;
+  private static readonly MAX_HOSPITAL = 4;
   private static readonly MAX_DISTANCE_FROM_BORDER_SQUARED = 400; // 20 tiles squared
   private static readonly MIN_DISTANCE_FROM_BORDER_SQUARED = 100; // 10 tiles squared
   private static readonly MIN_DISTANCE_BETWEEN_DEFENSE_POSTS_SQUARED = 900; // 30 tiles squared
@@ -38,153 +48,265 @@ export class UnitCreationHelper {
   > | null = null;
 
   /**
-   * Returns unit construction priorities based on personality.
-   * Order matters: earlier types are attempted first.
+   * Returns the personality multiplier for a given structure type.
+   * Multiplier adjusts the base density (higher = builds more frequently).
    */
-  private getUnitPriorities(): UnitType[] {
-    switch (this.personality) {
-      case BotPersonality.LandWarfare:
-        return [
-          UnitType.DefensePost,
-          UnitType.Airfield,
-          UnitType.SAMLauncher,
-          UnitType.MissileSilo,
-          UnitType.Port,
-        ];
-      case BotPersonality.AirSupremacy:
-        return [
-          UnitType.Airfield,
-          UnitType.SAMLauncher,
-          UnitType.DefensePost,
-          UnitType.MissileSilo,
-          UnitType.Port,
-        ];
-      case BotPersonality.NavalPower:
-        return [
-          UnitType.Port,
-          UnitType.Airfield,
-          UnitType.DefensePost,
-          UnitType.SAMLauncher,
-          UnitType.MissileSilo,
-        ];
-      case BotPersonality.Nuclear:
-        return [
-          UnitType.MissileSilo,
-          UnitType.Airfield,
-          UnitType.DefensePost,
-          UnitType.SAMLauncher,
-          UnitType.Port,
-        ];
-      case BotPersonality.Balanced:
+  private getPersonalityMultiplier(unitType: UnitType): number {
+    switch (unitType) {
+      case UnitType.City:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 1.2;
+          case BotPersonality.AirSupremacy:
+            return 0.8;
+          case BotPersonality.NavalPower:
+            return 0.8;
+          case BotPersonality.Nuclear:
+            return 0.9;
+          default:
+            return 1.0;
+        }
+      case UnitType.Port:
+        switch (this.personality) {
+          case BotPersonality.Balanced:
+            return 0.5;
+          case BotPersonality.NavalPower:
+            return 2.0;
+          default:
+            return 1.0;
+        }
+      case UnitType.Factory:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 1.5;
+          case BotPersonality.NavalPower:
+            return 0.5;
+          case BotPersonality.Nuclear:
+            return 0.75;
+          default:
+            return 1.0;
+        }
+      case UnitType.DefensePost:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 1.0;
+          case BotPersonality.Balanced:
+            return 0.75;
+          default:
+            return 0.5;
+        }
+      case UnitType.Airfield:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 0.8;
+          case BotPersonality.AirSupremacy:
+            return 1.5;
+          case BotPersonality.NavalPower:
+            return 0.5;
+          case BotPersonality.Nuclear:
+            return 0.7;
+          default:
+            return 1.0;
+        }
+      case UnitType.MissileSilo:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 1.2;
+          case BotPersonality.AirSupremacy:
+            return 0.7;
+          case BotPersonality.NavalPower:
+            return 0.7;
+          case BotPersonality.Nuclear:
+            return 2.0;
+          default:
+            return 1.0;
+        }
+      case UnitType.SAMLauncher:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 1.2;
+          case BotPersonality.AirSupremacy:
+            return 0.7;
+          case BotPersonality.NavalPower:
+            return 0.6;
+          case BotPersonality.Nuclear:
+            return 2.0;
+          default:
+            return 1.0;
+        }
+      case UnitType.Academy:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 1.5;
+          case BotPersonality.AirSupremacy:
+            return 0.5;
+          case BotPersonality.NavalPower:
+            return 0.5;
+          case BotPersonality.Nuclear:
+            return 0.0;
+          default:
+            return 1.0;
+        }
+      case UnitType.Hospital:
+        switch (this.personality) {
+          case BotPersonality.LandWarfare:
+            return 1.5;
+          case BotPersonality.AirSupremacy:
+            return 0.8;
+          case BotPersonality.NavalPower:
+            return 0.5;
+          default:
+            return 1.0;
+        }
       default:
-        return [
-          UnitType.Airfield,
-          UnitType.Port,
-          UnitType.DefensePost,
-          UnitType.SAMLauncher,
-          UnitType.MissileSilo,
-        ];
+        return 1.0;
     }
   }
 
   handleUnits() {
-    // Reset per-tick caches – this helper may be called multiple times per tick
-    // and structureSpawnTile can be expensive without caching.
+    // Reset per-tick caches
     this.spawnCache.clear();
     this.ownedTilesCache = null;
     this.shoreOwnedTilesCache = null;
     this.buildingBuckets = null;
 
-    const cityInfo = this.getDensityBasedStructureInfo(UnitType.City);
-    const portInfo = this.getDensityBasedStructureInfo(UnitType.Port);
+    // All structures are now density-based, checked in priority order
+    // Priority: City > Port > Factory > DefensePost > others by biggest density gap
+    const structureTypes = [
+      UnitType.City,
+      UnitType.Port,
+      UnitType.Factory,
+      UnitType.DefensePost,
+      UnitType.Airfield,
+      UnitType.MissileSilo,
+      UnitType.SAMLauncher,
+      UnitType.Academy,
+      UnitType.Hospital,
+    ];
 
-    let chosenType: UnitType | null = null;
-    let chosenTile: TileRef | null = null;
+    // Check each structure type and build the one with biggest density gap
+    let bestType: UnitType | null = null;
+    let bestGap = 0;
 
-    if (cityInfo.canBuild && portInfo.canBuild) {
-      if (cityInfo.cost < portInfo.cost) {
-        chosenType = UnitType.City;
-        chosenTile = cityInfo.tile;
-      } else if (portInfo.cost < cityInfo.cost) {
-        chosenType = UnitType.Port;
-        chosenTile = portInfo.tile;
-      } else {
-        // Costs are equal, choose based on density gap
-        if (cityInfo.densityGap > portInfo.densityGap) {
-          chosenType = UnitType.City;
-          chosenTile = cityInfo.tile;
-        } else {
-          chosenType = UnitType.Port;
-          chosenTile = portInfo.tile;
-        }
+    for (const type of structureTypes) {
+      const multiplier = this.getPersonalityMultiplier(type);
+      if (multiplier === 0) continue; // Skip structures this personality doesn't build
+
+      const info = this.getDensityInfo(type);
+      if (info.canBuild && info.densityGap > bestGap) {
+        bestGap = info.densityGap;
+        bestType = type;
       }
-    } else if (cityInfo.canBuild) {
-      chosenType = UnitType.City;
-      chosenTile = cityInfo.tile;
-    } else if (portInfo.canBuild) {
-      chosenType = UnitType.Port;
-      chosenTile = portInfo.tile;
     }
 
-    if (chosenType !== null && chosenTile !== null) {
-      this.mg.addExecution(
-        new ConstructionExecution(this.player, chosenType, chosenTile),
-      );
-      return true;
-    }
-
-    // Build structures based on personality priorities
-    const priorities = this.getUnitPriorities();
-    for (const unitType of priorities) {
-      let spawned = false;
-
-      switch (unitType) {
-        case UnitType.Airfield:
-          spawned = this.maybeSpawnStructure(UnitType.Airfield, 1);
-          break;
-        case UnitType.Port:
-          spawned = this.maybeSpawnNavalUnit();
-          break;
-        case UnitType.DefensePost:
-          spawned = this.maybeSpawnDefensePost();
-          break;
-        case UnitType.SAMLauncher:
-          spawned = this.maybeSpawnSAMLauncher();
-          break;
-        case UnitType.MissileSilo:
-          spawned = this.maybeSpawnStructure(UnitType.MissileSilo, 1);
-          break;
+    // Build the structure with the biggest density gap
+    if (bestType !== null) {
+      const info = this.getDensityInfo(bestType);
+      if (info.tile) {
+        this.mg.addExecution(
+          new ConstructionExecution(this.player, bestType, info.tile),
+        );
+        return true;
       }
-
-      if (spawned) return true;
     }
 
     // Fallback: try artillery if nothing else worked
     return this.maybeSpawnArtillery();
   }
 
-  private getDensityBasedStructureInfo(type: UnitType): {
+  private getDensityInfo(type: UnitType): {
     canBuild: boolean;
     cost: Gold;
     densityGap: number;
     tile: TileRef | null;
   } {
-    const tilesOwned = this.player.tiles().size;
+    // Check max cap first (before expensive calculations)
+    const currentCount = this.player.unitsOwned(type);
+    if (
+      type === UnitType.Academy &&
+      currentCount >= UnitCreationHelper.MAX_ACADEMY
+    ) {
+      return { canBuild: false, cost: 0n, densityGap: 0, tile: null };
+    }
+    if (
+      type === UnitType.Hospital &&
+      currentCount >= UnitCreationHelper.MAX_HOSPITAL
+    ) {
+      return { canBuild: false, cost: 0n, densityGap: 0, tile: null };
+    }
+
+    // DefensePost uses border tiles, all others use total tiles
+    const usesBorderTiles = type === UnitType.DefensePost;
+
+    let tilesOwned: number;
+    if (usesBorderTiles) {
+      const frontlineBorders = Array.from(this.player.borderTiles()).filter(
+        (t) => this.touchesEnemyLand(t),
+      );
+      tilesOwned = frontlineBorders.length;
+    } else {
+      tilesOwned = this.player.tiles().size;
+    }
+
     if (tilesOwned === 0) {
       return { canBuild: false, cost: 0n, densityGap: 0, tile: null };
     }
 
-    const densityThreshold =
-      type === UnitType.City
-        ? UnitCreationHelper.CITY_DENSITY_PER_TILE
-        : UnitCreationHelper.PORT_DENSITY_PER_TILE;
+    // Get base density threshold
+    let baseDensity: number;
+    switch (type) {
+      case UnitType.City:
+        baseDensity = UnitCreationHelper.CITY_DENSITY_PER_TILE;
+        break;
+      case UnitType.Port:
+        baseDensity = UnitCreationHelper.PORT_DENSITY_PER_TILE;
+        break;
+      case UnitType.Factory:
+        baseDensity = UnitCreationHelper.FACTORY_DENSITY_PER_TILE;
+        break;
+      case UnitType.DefensePost:
+        baseDensity = UnitCreationHelper.DEFENSE_POST_DENSITY_PER_BORDER_TILE;
+        break;
+      case UnitType.Airfield:
+        baseDensity = UnitCreationHelper.AIRFIELD_DENSITY_PER_TILE;
+        break;
+      case UnitType.MissileSilo:
+        baseDensity = UnitCreationHelper.MISSILE_SILO_DENSITY_PER_TILE;
+        break;
+      case UnitType.SAMLauncher:
+        baseDensity = UnitCreationHelper.SAM_LAUNCHER_DENSITY_PER_TILE;
+        break;
+      case UnitType.Academy:
+        baseDensity = UnitCreationHelper.ACADEMY_DENSITY_PER_TILE;
+        break;
+      case UnitType.Hospital:
+        baseDensity = UnitCreationHelper.HOSPITAL_DENSITY_PER_TILE;
+        break;
+      default:
+        throw new Error(`Unsupported structure type: ${type}`);
+    }
+
+    // Apply personality multiplier
+    const multiplier = this.getPersonalityMultiplier(type);
+    const densityThreshold = baseDensity * multiplier;
 
     const currentDensity = this.player.unitsOwned(type) / tilesOwned;
     const cost: Gold = this.cost(type);
     const densityGap = (densityThreshold - currentDensity) / densityThreshold;
 
     if (currentDensity < densityThreshold && this.player.gold() >= cost) {
-      const tile = this.structureSpawnTile(type);
+      let tile: TileRef | null;
+
+      // DefensePost uses special frontier tile logic
+      if (type === UnitType.DefensePost) {
+        const frontlineBorders = Array.from(this.player.borderTiles()).filter(
+          (t) => this.touchesEnemyLand(t),
+        );
+        tile = this.findSuitableDefensePostTile(frontlineBorders);
+      } else {
+        tile = this.structureSpawnTile(type);
+      }
+
       if (tile !== null && this.player.canBuild(type, tile)) {
         return { canBuild: true, cost, densityGap, tile };
       }
@@ -422,11 +544,31 @@ export class UnitCreationHelper {
       this.player.unitsOwned(UnitType.DefensePost) / frontlineBorders.length;
     const cost = this.cost(UnitType.DefensePost);
 
-    if (
-      currentDensity <
-        UnitCreationHelper.DEFENSE_POST_DENSITY_PER_BORDER_TILE &&
-      this.player.gold() >= cost
-    ) {
+    // Personality-based density thresholds
+    let densityThreshold =
+      UnitCreationHelper.DEFENSE_POST_DENSITY_PER_BORDER_TILE;
+    switch (this.personality) {
+      case BotPersonality.LandWarfare:
+        // LandWarfare prioritizes DefensePost - use full density
+        densityThreshold =
+          UnitCreationHelper.DEFENSE_POST_DENSITY_PER_BORDER_TILE;
+        break;
+      case BotPersonality.AirSupremacy:
+      case BotPersonality.NavalPower:
+      case BotPersonality.Nuclear:
+        // Specialized personalities build fewer DefensePosts (50% density)
+        densityThreshold =
+          UnitCreationHelper.DEFENSE_POST_DENSITY_PER_BORDER_TILE * 0.5;
+        break;
+      case BotPersonality.Balanced:
+      default:
+        // Balanced uses 75% density
+        densityThreshold =
+          UnitCreationHelper.DEFENSE_POST_DENSITY_PER_BORDER_TILE * 0.75;
+        break;
+    }
+
+    if (currentDensity < densityThreshold && this.player.gold() >= cost) {
       const tile = this.findSuitableDefensePostTile(frontlineBorders);
       if (tile && this.player.canBuild(UnitType.DefensePost, tile)) {
         this.mg.addExecution(
@@ -437,6 +579,7 @@ export class UnitCreationHelper {
     }
     return false;
   }
+
   private maybeSpawnSAMLauncher(): boolean {
     // Build 1 SAM for every silo / airfield that has none within 40 tiles.
     const sams = this.player.units(UnitType.SAMLauncher);
