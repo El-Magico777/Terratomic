@@ -353,7 +353,11 @@ export class FakeHumanExecution implements Execution {
           RESEARCH_TECH_IDS.NATIONAL_RECONSTRUCTION_PROGRAM,
         );
       }
-      this.unitCreationHelper.handleUnits();
+
+      // Throttle unit building checks to every 10 ticks (once per second at 10 ticks/sec)
+      if (ticks % 10 === 0) {
+        this.unitCreationHelper.handleUnits();
+      }
       this.handleEmbargoesToHostileNations();
 
       // Auto-peace: if at war but no aggression between sides for 30 seconds, request peace
