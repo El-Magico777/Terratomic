@@ -263,6 +263,7 @@ export class UnitCreationHelper {
     // Check each structure type and build the one with biggest density gap
     let bestType: UnitType | null = null;
     let bestGap = 0;
+    let bestTile: TileRef | null = null;
 
     for (const type of structureTypes) {
       const multiplier = this.getPersonalityMultiplier(type);
@@ -272,18 +273,16 @@ export class UnitCreationHelper {
       if (info.canBuild && info.densityGap > bestGap) {
         bestGap = info.densityGap;
         bestType = type;
+        bestTile = info.tile; // Store the tile from first call
       }
     }
 
     // Build the structure with the biggest density gap
-    if (bestType !== null) {
-      const info = this.getDensityInfo(bestType);
-      if (info.tile) {
-        this.mg.addExecution(
-          new ConstructionExecution(this.player, bestType, info.tile),
-        );
-        return true;
-      }
+    if (bestType !== null && bestTile !== null) {
+      this.mg.addExecution(
+        new ConstructionExecution(this.player, bestType, bestTile),
+      );
+      return true;
     }
 
     return false;
@@ -578,10 +577,11 @@ export class UnitCreationHelper {
         continue;
       }
       const tile = this.mg.ref(randX, randY);
-      // Must be land and not barrier
+      // Must be owned land and not barrier
       if (
         this.mg.isOcean(tile) ||
-        this.mg.terrainType(tile) === TerrainType.Barrier
+        this.mg.terrainType(tile) === TerrainType.Barrier ||
+        this.mg.owner(tile) !== this.player
       ) {
         continue;
       }
