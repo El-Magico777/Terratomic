@@ -9,6 +9,7 @@ import {
   Relation,
   TerrainType,
   Tick,
+  UnitType,
   UpgradeType,
 } from "../game/Game";
 import { TileRef } from "../game/GameMap";
@@ -290,6 +291,8 @@ export class FakeHumanExecution implements Execution {
       this.random,
       this.mg,
       this.player,
+      this.personality,
+      this.difficulty,
     );
 
     this.unitCreationHelper ??= new UnitCreationHelper(
@@ -344,6 +347,29 @@ export class FakeHumanExecution implements Execution {
       this.updateRelationsFromEmbargos();
       this.behavior.handleAllianceRequests();
       this.behavior.handleBombers();
+
+      // Track incoming nukes for retaliation
+      if (this.nukeHelper) {
+        for (const other of this.mg.players()) {
+          if (!other.isPlayer() || other === this.player) continue;
+          // Check for nukes heading toward our territory
+          const incomingNukes = other
+            .units(
+              UnitType.AtomBomb,
+              UnitType.HydrogenBomb,
+              UnitType.MIRV,
+              UnitType.MIRVWarhead,
+            )
+            .filter((nuke) => {
+              const targetTile = (nuke as any).target?.(); // NukeExecution has target() method
+              return targetTile && targetTile.owner() === this.player;
+            });
+          if (incomingNukes.length > 0) {
+            this.nukeHelper.markNukedBy(other.id());
+          }
+        }
+      }
+
       // Grant Roads via research tech if AI has enough gold and doesn't have it
       if (
         this.player.gold() > 1_000_000 &&
