@@ -3,6 +3,7 @@ import { TileRef } from "../game/GameMap";
 import { PseudoRandom } from "../PseudoRandom";
 import { ConstructionExecution } from "./ConstructionExecution";
 import { BotPersonality } from "./FakeHumanExecution";
+import { UpgradeStructureExecution } from "./UpgradeStructureExecution";
 
 export class UnitCreationHelper {
   private static readonly CITY_DENSITY_PER_TILE = 1 / 6000;
@@ -384,18 +385,11 @@ export class UnitCreationHelper {
       }
 
       if (lowestStackCity !== null) {
-        const cityCost = this.cost(UnitType.City);
-        if (this.player.gold() >= cityCost) {
-          this.mg.addExecution(
-            new ConstructionExecution(
-              this.player,
-              UnitType.City,
-              lowestStackCity.tile(),
-              lowestStackCount + 1, // Stack one level higher
-            ),
-          );
-          return true;
-        }
+        // Use UpgradeStructureExecution to stack the city
+        this.mg.addExecution(
+          new UpgradeStructureExecution(this.player, lowestStackCity),
+        );
+        return true;
       }
     }
 
