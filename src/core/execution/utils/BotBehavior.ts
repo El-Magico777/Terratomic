@@ -155,50 +155,62 @@ export class BotBehavior {
     const ourBordersSample = this.random.sampleArray(ourBordersAll, 10); // ≤10 tiles
     const radSq = this.enemySearchRadius * this.enemySearchRadius;
 
-    let weakest: Player | null = null;
-    let weakestTroops = Infinity;
+    const candidates: Array<{ player: Player; score: number }> = [];
 
     for (const p of this.game.players()) {
       if (!p.isPlayer() || p === this.player || this.player.isFriendly(p))
         continue;
 
-      // Direct neighbour counts immediately
+      // Base score = troop count (lower = better target)
+      let score = p.troops();
+
+      // Direct neighbour: strong preference
       if (this.player.neighbors().includes(p)) {
-        if (p.troops() < weakestTroops) {
-          weakest = p;
-          weakestTroops = p.troops();
-        }
-        continue;
-      }
+        score *= 0.7;
+      } else {
+        // Sample up to 10 of their border tiles for distance check
+        const theirBorders = this.random.sampleArray(
+          Array.from(p.borderTiles()),
+          10,
+        );
+        if (!theirBorders.length) continue;
 
-      // Sample up to 10 of their border tiles
-      const theirBorders = this.random.sampleArray(
-        Array.from(p.borderTiles()),
-        10,
-      );
-      if (!theirBorders.length) continue;
-
-      // Cheap nested loop: ≤100 distance checks per player
-      let closeEnough = false;
-      outer: for (const tb of theirBorders) {
-        for (const ob of ourBordersSample) {
-          const dx = this.game.x(ob) - this.game.x(tb);
-          const dy = this.game.y(ob) - this.game.y(tb);
-          if (dx * dx + dy * dy <= radSq) {
-            closeEnough = true;
-            break outer;
+        // Check if close enough (≤100 distance checks per player)
+        let closeEnough = false;
+        outer: for (const tb of theirBorders) {
+          for (const ob of ourBordersSample) {
+            const dx = this.game.x(ob) - this.game.x(tb);
+            const dy = this.game.y(ob) - this.game.y(tb);
+            if (dx * dx + dy * dy <= radSq) {
+              closeEnough = true;
+              break outer;
+            }
           }
         }
+
+        if (!closeEnough) continue;
+        score *= 1.2; // Distance penalty for non-neighbors
       }
 
-      if (closeEnough && p.troops() < weakestTroops) {
-        weakest = p;
-        weakestTroops = p.troops();
+      // Personality-based targeting preferences
+      if (this.personality === BotPersonality.LandWarfare) {
+        // Prefer weaker targets more aggressively
+        score *= p.troops() < this.player.troops() ? 0.6 : 1.4;
+      } else if (this.personality === BotPersonality.AirSupremacy) {
+        // Prefer targets with airfields (neutralize air threat)
+        const airfieldCount = p.units(UnitType.Airfield).length;
+        if (airfieldCount > 2) score *= 0.7;
+      } else if (this.personality === BotPersonality.NavalPower) {
+        // Prefer coastal players
+        if (p.units(UnitType.Port).length > 0) score *= 0.8;
       }
+
+      candidates.push({ player: p, score });
     }
 
-    if (weakest) {
-      this.setNewEnemy(weakest); // resets radius to 100
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => a.score - b.score);
+      this.setNewEnemy(candidates[0].player);
     } else {
       this.enemySearchRadius += 50; // widen search next tick
     }
@@ -277,7 +289,22 @@ function shouldAcceptAllianceRequest(
   if (request.requestor().isTraitor()) {
     return false; // Reject if isTraitor
   }
-  if (request.requestor().numTilesOwned() > player.numTilesOwned() * 3) {
+
+  const requestor = request.requestor();
+
+  // Context 1: Accept if we're significantly weaker (need protection)
+  const weAreMuchWeaker =
+    player.numTilesOwned() < requestor.numTilesOwned() * 0.5;
+  if (weAreMuchWeaker) return true;
+
+  // Context 2: Accept if we're under active attack
+  const underAttack = player.incomingAttacks().length > 0;
+  if (underAttack) return true;
+
+  // Context 3: Check if we share a border (mutual defense value)
+  const sharesBorder = player.neighbors().includes(requestor);
+
+  if (requestor.numTilesOwned() > player.numTilesOwned() * 3) {
     return true; // Accept if requestorIsMuchLarger
   }
 
@@ -297,7 +324,10 @@ function shouldAcceptAllianceRequest(
       maxAlliances = 3;
   }
 
-  if (request.requestor().alliances().length >= maxAlliances) {
+  // More lenient if we share border
+  const effectiveMax = sharesBorder ? maxAlliances + 1 : maxAlliances;
+
+  if (requestor.alliances().length >= effectiveMax) {
     return false; // Reject if tooManyAlliances
   }
   return true; // Accept otherwise

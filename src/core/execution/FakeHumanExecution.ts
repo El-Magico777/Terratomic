@@ -306,11 +306,34 @@ export class FakeHumanExecution implements Execution {
     }
 
     if (ticks % 100 === this.diplomacyTick) {
-      if (
-        this.player.troops() > 100_000 &&
-        this.player.targetTroopRatio() > 0.6
+      // Dynamic troop ratio based on threat level and game state
+      const incomingTroops = this.player
+        .incomingAttacks()
+        .reduce((sum, attack) => sum + attack.troops(), 0);
+      const ourTroops = this.player.troops();
+
+      let targetRatio = 0.6; // Default
+
+      // Under significant attack: go defensive
+      if (incomingTroops > ourTroops * 0.15) {
+        targetRatio = 0.85;
+      }
+      // Winning/safe: invest in economy
+      else if (
+        this.initialTilesOwned &&
+        this.player.numTilesOwned() > this.initialTilesOwned * 1.5
       ) {
-        this.player.setTargetTroopRatio(0.6);
+        targetRatio = 0.45;
+      }
+
+      // Personality modifier
+      if (this.personality === BotPersonality.LandWarfare) {
+        targetRatio = Math.min(0.9, targetRatio + 0.1);
+      }
+
+      // Apply if different
+      if (Math.abs(this.player.targetTroopRatio() - targetRatio) > 0.05) {
+        this.player.setTargetTroopRatio(targetRatio);
       }
 
       if (!this.hasSetInvestmentRate) {
