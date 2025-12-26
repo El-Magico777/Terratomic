@@ -235,6 +235,93 @@ export class UnitCreationHelper {
     }
   }
 
+  /**
+   * Returns personality-specific building priority order.
+   * All personalities start with City (economic foundation), then specialize.
+   */
+  private getBuildingPriorityOrder(): UnitType[] {
+    const common = [UnitType.Academy, UnitType.Hospital];
+
+    switch (this.personality) {
+      case BotPersonality.Nuclear:
+        return [
+          UnitType.City,
+          UnitType.MissileSilo,
+          UnitType.SAMLauncher,
+          ...common,
+          UnitType.Port,
+          UnitType.Factory,
+          UnitType.Airfield,
+          UnitType.DefensePost,
+          UnitType.Warship,
+          UnitType.Submarine,
+          UnitType.FighterJet,
+          UnitType.Artillery,
+        ];
+      case BotPersonality.NavalPower:
+        return [
+          UnitType.City,
+          UnitType.Port,
+          UnitType.Warship,
+          UnitType.Submarine,
+          ...common,
+          UnitType.Factory,
+          UnitType.Airfield,
+          UnitType.SAMLauncher,
+          UnitType.MissileSilo,
+          UnitType.DefensePost,
+          UnitType.FighterJet,
+          UnitType.Artillery,
+        ];
+      case BotPersonality.LandWarfare:
+        return [
+          UnitType.City,
+          UnitType.Factory,
+          UnitType.DefensePost,
+          UnitType.Artillery,
+          ...common,
+          UnitType.Port,
+          UnitType.Airfield,
+          UnitType.SAMLauncher,
+          UnitType.MissileSilo,
+          UnitType.Warship,
+          UnitType.Submarine,
+          UnitType.FighterJet,
+        ];
+      case BotPersonality.AirSupremacy:
+        return [
+          UnitType.City,
+          UnitType.Airfield,
+          UnitType.FighterJet,
+          UnitType.SAMLauncher,
+          ...common,
+          UnitType.Port,
+          UnitType.Factory,
+          UnitType.MissileSilo,
+          UnitType.DefensePost,
+          UnitType.Warship,
+          UnitType.Submarine,
+          UnitType.Artillery,
+        ];
+      case BotPersonality.Balanced:
+      default:
+        return [
+          UnitType.City,
+          UnitType.Port,
+          UnitType.Factory,
+          UnitType.Airfield,
+          UnitType.DefensePost,
+          ...common,
+          UnitType.MissileSilo,
+          UnitType.SAMLauncher,
+          UnitType.Warship,
+          UnitType.Submarine,
+          UnitType.FighterJet,
+          UnitType.Artillery,
+        ];
+    }
+  }
+
   handleUnits() {
     // Reset per-tick caches
     this.spawnCache.clear();
@@ -242,38 +329,30 @@ export class UnitCreationHelper {
     this.shoreOwnedTilesCache = null;
     this.buildingBuckets = null;
 
-    // All structures and mobile units are density-based, checked in priority order
-    // Priority: Structures first, then mobile units
-    const structureTypes = [
-      UnitType.City,
-      UnitType.Port,
-      UnitType.Factory,
-      UnitType.DefensePost,
-      UnitType.Airfield,
-      UnitType.MissileSilo,
-      UnitType.SAMLauncher,
-      UnitType.Academy,
-      UnitType.Hospital,
-      UnitType.Warship,
-      UnitType.Submarine,
-      UnitType.FighterJet,
-      UnitType.Artillery,
-    ];
+    // Get personality-specific building priority order
+    const structureTypes = this.getBuildingPriorityOrder();
 
-    // Check each structure type and build the one with biggest density gap
+    // Check each structure type and build the one with best priority-weighted density gap
     let bestType: UnitType | null = null;
-    let bestGap = 0;
+    let bestWeightedGap = 0;
     let bestTile: TileRef | null = null;
 
-    for (const type of structureTypes) {
+    for (let i = 0; i < structureTypes.length; i++) {
+      const type = structureTypes[i];
       const multiplier = this.getPersonalityMultiplier(type);
       if (multiplier === 0) continue; // Skip structures this personality doesn't build
 
       const info = this.getDensityInfo(type);
-      if (info.canBuild && info.densityGap > bestGap) {
-        bestGap = info.densityGap;
-        bestType = type;
-        bestTile = info.tile; // Store the tile from first call
+      if (info.canBuild && info.densityGap > 0) {
+        // Priority weight: 1.0 for first item, decreasing linearly to ~0 for last
+        const priorityWeight = 1.0 - i / structureTypes.length;
+        const weightedGap = info.densityGap * priorityWeight;
+
+        if (weightedGap > bestWeightedGap) {
+          bestWeightedGap = weightedGap;
+          bestType = type;
+          bestTile = info.tile;
+        }
       }
     }
 
