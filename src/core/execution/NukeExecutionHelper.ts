@@ -153,7 +153,7 @@ export class NukeExecutionHelper {
           case Difficulty.Easy:
             return [UnitType.AtomBomb];
           case Difficulty.Medium:
-            return [UnitType.HydrogenBomb, UnitType.AtomBomb];
+            return [UnitType.MIRV, UnitType.HydrogenBomb, UnitType.AtomBomb];
           case Difficulty.Hard:
           case Difficulty.Impossible:
             return [UnitType.MIRV, UnitType.HydrogenBomb, UnitType.AtomBomb];
@@ -169,7 +169,7 @@ export class NukeExecutionHelper {
           case Difficulty.Hard:
             return [UnitType.AtomBomb];
           case Difficulty.Impossible:
-            return [UnitType.AtomBomb, UnitType.HydrogenBomb];
+            return [UnitType.HydrogenBomb, UnitType.AtomBomb];
         }
         break;
     }
