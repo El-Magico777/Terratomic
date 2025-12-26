@@ -348,3 +348,48 @@ function shouldAcceptAllianceRequest(
   }
   return true; // Accept otherwise
 }
+
+export function shouldAcceptPeaceRequest(
+  game: Game,
+  player: Player,
+  requestor: Player,
+  personality: BotPersonality,
+): boolean {
+  const difficulty = game.config().gameConfig().difficulty;
+
+  // Auto-accept if losing badly (need relief from war)
+  const weAreLosing =
+    player.numTilesOwned() < requestor.numTilesOwned() * 0.4 ||
+    player.incomingAttacks().length > 3;
+  if (weAreLosing) return true;
+
+  // Auto-reject if winning decisively (press the advantage)
+  const weAreWinning =
+    requestor.numTilesOwned() < player.numTilesOwned() * 0.4 &&
+    player.population() > requestor.population() * 1.5;
+  if (weAreWinning) return false;
+
+  // Personality-based decisions for balanced situations
+  if (
+    personality === BotPersonality.Nuclear ||
+    personality === BotPersonality.LandWarfare
+  ) {
+    // Aggressive personalities: reject unless under pressure
+    return player.incomingAttacks().length > 0;
+  }
+
+  if (
+    personality === BotPersonality.NavalPower ||
+    personality === BotPersonality.AirSupremacy
+  ) {
+    // Diplomatic personalities: accept readily
+    return true;
+  }
+
+  // Balanced personality: Difficulty-based decision
+  if (difficulty === Difficulty.Impossible) {
+    return false; // Never accept on Impossible
+  }
+
+  return true; // Accept by default for Easy/Medium/Hard
+}
