@@ -9,6 +9,7 @@ import {
   Tick,
   UnitType,
 } from "../../game/Game";
+import { TileRef } from "../../game/GameMap";
 import { PseudoRandom } from "../../PseudoRandom";
 import { flattenedEmojiTable } from "../../Util";
 import { AttackExecution } from "../AttackExecution";
@@ -25,6 +26,10 @@ export class BotBehavior {
 
   private firstAttackSent = false;
 
+  // Performance cache for border tiles
+  private borderTilesCache: Map<string, { tiles: TileRef[]; tick: Tick }> =
+    new Map();
+
   constructor(
     private random: PseudoRandom,
     private game: Game,
@@ -33,6 +38,17 @@ export class BotBehavior {
     private reserveRatio: number,
     private personality: BotPersonality = BotPersonality.Balanced,
   ) {}
+
+  private getBorderTiles(player: Player): TileRef[] {
+    const cached = this.borderTilesCache.get(player.id());
+    // Cache valid for 100 ticks
+    if (cached && this.game.ticks() - cached.tick < 100) {
+      return cached.tiles;
+    }
+    const tiles = Array.from(player.borderTiles());
+    this.borderTilesCache.set(player.id(), { tiles, tick: this.game.ticks() });
+    return tiles;
+  }
 
   handleAllianceRequests() {
     for (const req of this.player.incomingAllianceRequests()) {
@@ -151,7 +167,7 @@ export class BotBehavior {
     if (this.enemy) return this.enemySanityCheck();
 
     /* ---------- 3. weakest nearby player, using *sampled* border tiles ---------- */
-    const ourBordersAll = Array.from(this.player.borderTiles());
+    const ourBordersAll = this.getBorderTiles(this.player);
     const ourBordersSample = this.random.sampleArray(ourBordersAll, 10); // ≤10 tiles
     const radSq = this.enemySearchRadius * this.enemySearchRadius;
 
@@ -170,7 +186,7 @@ export class BotBehavior {
       } else {
         // Sample up to 10 of their border tiles for distance check
         const theirBorders = this.random.sampleArray(
-          Array.from(p.borderTiles()),
+          this.getBorderTiles(p),
           10,
         );
         if (!theirBorders.length) continue;

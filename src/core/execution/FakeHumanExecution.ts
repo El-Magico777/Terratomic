@@ -62,6 +62,16 @@ export class FakeHumanExecution implements Execution {
   // alongside other private fields
   private boatDestinations: TileRef[] = [];
 
+  // Performance caches
+  private oceanShoreTilesCache: Map<PlayerID, TileRef[]> = new Map();
+  private borderTilesCache: Map<PlayerID, { tiles: TileRef[]; tick: Tick }> =
+    new Map();
+  private cacheInvalidTick: Tick = 0;
+
+  // Adaptive personality switching
+  private ticksSinceLandlocked: number = 0;
+  private originalPersonality: BotPersonality | null = null;
+
   // Personality and investment settings
   private personality: BotPersonality = BotPersonality.Balanced;
   private researchInvestment: number = 0.2;
@@ -413,6 +423,47 @@ export class FakeHumanExecution implements Execution {
     if (ticks % 10 === this.attackTick % 10) {
       this.checkOverwhelm();
     }
+
+    // Check for landlocked NavalPower bots every 50 ticks
+    if (ticks % 50 === 0) {
+      this.checkAdaptivePersonality();
+    }
+  }
+
+  private checkAdaptivePersonality() {
+    if (this.player === null) return;
+
+    // Only NavalPower bots adapt when landlocked
+    const isOriginalNavalPower =
+      this.personality === BotPersonality.NavalPower ||
+      this.originalPersonality === BotPersonality.NavalPower;
+
+    if (!isOriginalNavalPower) return;
+
+    const hasOceanAccess = this.getOceanShoreTiles(this.player).length > 0;
+
+    if (!hasOceanAccess) {
+      this.ticksSinceLandlocked += 50;
+
+      // Switch to Balanced after 30 seconds (300 ticks)
+      if (
+        this.ticksSinceLandlocked >= 300 &&
+        this.personality === BotPersonality.NavalPower
+      ) {
+        this.originalPersonality = BotPersonality.NavalPower;
+        this.personality = BotPersonality.Balanced;
+      }
+    } else {
+      // Has ocean access - reset landlocked counter
+      if (this.ticksSinceLandlocked > 0) {
+        this.ticksSinceLandlocked = 0;
+        // Restore original personality if they regained ocean access
+        if (this.originalPersonality === BotPersonality.NavalPower) {
+          this.personality = BotPersonality.NavalPower;
+          this.originalPersonality = null;
+        }
+      }
+    }
   }
 
   handleEnemies() {
@@ -565,15 +616,44 @@ export class FakeHumanExecution implements Execution {
     );
   }
 
+  private getOceanShoreTiles(player: Player): TileRef[] {
+    // Invalidate all caches every 500 ticks (territories change)
+    if (this.mg.ticks() - this.cacheInvalidTick > 500) {
+      this.oceanShoreTilesCache.clear();
+      this.borderTilesCache.clear();
+      this.cacheInvalidTick = this.mg.ticks();
+    }
+
+    if (!this.oceanShoreTilesCache.has(player.id())) {
+      // Sample 30 border tiles first, then filter for ocean shores
+      const borderSample = this.random.sampleArray(
+        Array.from(player.borderTiles()),
+        30,
+      );
+      const shores = borderSample.filter((t) => this.mg.isOceanShore(t));
+      this.oceanShoreTilesCache.set(player.id(), shores);
+    }
+    return this.oceanShoreTilesCache.get(player.id())!;
+  }
+
+  private getBorderTiles(player: Player): TileRef[] {
+    const cached = this.borderTilesCache.get(player.id());
+    // Cache valid for 100 ticks
+    if (cached && this.mg.ticks() - cached.tick < 100) {
+      return cached.tiles;
+    }
+    const tiles = Array.from(player.borderTiles());
+    this.borderTilesCache.set(player.id(), { tiles, tick: this.mg.ticks() });
+    return tiles;
+  }
+
   private maybeSendBoatAttack(other: Player) {
     if (this.player === null) throw new Error("not initialized");
     if (this.player.isOnSameTeam(other)) return;
     const closest = closestTwoTiles(
       this.mg,
-      Array.from(this.player.borderTiles()).filter((t) =>
-        this.mg.isOceanShore(t),
-      ),
-      Array.from(other.borderTiles()).filter((t) => this.mg.isOceanShore(t)),
+      this.getOceanShoreTiles(this.player),
+      this.getOceanShoreTiles(other),
     );
     if (closest === null) {
       return;
@@ -620,7 +700,7 @@ export class FakeHumanExecution implements Execution {
     if (this.player === null) throw new Error("not initialized");
     const x = this.mg.x(tile);
     const y = this.mg.y(tile);
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 100; i++) {
       const randX = this.random.nextInt(x - dist, x + dist);
       const randY = this.random.nextInt(y - dist, y + dist);
       if (!this.mg.isValidCoord(randX, randY)) {
@@ -657,7 +737,7 @@ export class FakeHumanExecution implements Execution {
     if (!tn) return false;
 
     /* ---------- 1. land-border check (unchanged) ---------- */
-    const bordersTN = Array.from(this.player.borderTiles()).some((tile) =>
+    const bordersTN = this.getBorderTiles(this.player).some((tile) =>
       this.mg
         .neighbors(tile)
         .some((n) => this.mg.isLand(n) && this.mg.ownerID(n) === tn.smallID()),
@@ -673,12 +753,8 @@ export class FakeHumanExecution implements Execution {
     // Use the same expanding radius as BotBehavior (defaults to 100)
     const radius = this.behavior.enemySearchRadius ?? 100;
 
-    const shoreSample = this.random.sampleArray(
-      Array.from(this.player.borderTiles()).filter((t) =>
-        this.mg.isOceanShore(t),
-      ),
-      8, // check at most 8 shore tiles
-    );
+    const shores = this.getOceanShoreTiles(this.player);
+    const shoreSample = this.random.sampleArray(shores, 8); // check at most 8 shore tiles
 
     for (const tile of shoreSample) {
       const dst = this.randOceanShoreTile(tile, radius);
