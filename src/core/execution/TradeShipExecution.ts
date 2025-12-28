@@ -98,7 +98,8 @@ export class TradeShipExecution implements Execution {
     }
 
     const curTile = this.tradeShip.tile();
-    if (curTile === this.dstPort()) {
+    // Ships can't move onto land (where ports are), so check if adjacent (manhattan dist = 1)
+    if (this.mg.manhattanDist(curTile, this.dstPort()) === 1) {
       this.complete();
       return;
     }
