@@ -21,12 +21,16 @@ export class TradeShipExecution implements Execution {
   private pathFinder: PathFinder;
   private tilesTraveled = 0;
   private precomputedPath: TileRef[] | null = null;
+  private stackMultiplier: number;
 
   constructor(
     private origOwner: Player,
     private srcPort: Unit,
     private _dstPort: Unit,
-  ) {}
+    stackMultiplier: number = 1,
+  ) {
+    this.stackMultiplier = Math.max(1, stackMultiplier);
+  }
 
   init(mg: Game, ticks: number): void {
     this.mg = mg;
@@ -82,7 +86,9 @@ export class TradeShipExecution implements Execution {
 
     if (
       !this.wasCaptured &&
-      (!this._dstPort.isActive() || !tradeShipOwner.canTrade(dstPortOwner))
+      (!this.srcPort.isActive() ||
+        !this._dstPort.isActive() ||
+        !tradeShipOwner.canTrade(dstPortOwner))
     ) {
       this.tradeShip.delete(false);
       this.active = false;
@@ -177,22 +183,27 @@ export class TradeShipExecution implements Execution {
     this.active = false;
     this.tradeShip!.delete(false);
     const baseGold = this.mg.config().tradeShipGold(this.tilesTraveled);
+    const multipliedGold = baseGold * BigInt(this.stackMultiplier);
 
     if (this.wasCaptured) {
-      this.tradeShip!.owner().addGold(baseGold);
+      this.tradeShip!.owner().addGold(multipliedGold);
       this.mg.displayMessage(
-        `Received ${renderNumber(baseGold)} gold from ship captured from ${this.origOwner.displayName()}`,
+        `Received ${renderNumber(multipliedGold)} gold from ship captured from ${this.origOwner.displayName()}`,
         MessageType.CAPTURED_ENEMY_UNIT,
         this.tradeShip!.owner().id(),
-        baseGold,
+        multipliedGold,
       );
     } else {
       // Apply tech modifiers to each port owner
       const srcMods = tradeIncomeModifiers(this.srcPort.owner());
       const dstMods = tradeIncomeModifiers(this._dstPort.owner());
 
-      const srcGold = BigInt(Math.floor(Number(baseGold) * srcMods.incomeMul));
-      const dstGold = BigInt(Math.floor(Number(baseGold) * dstMods.incomeMul));
+      const srcGold = BigInt(
+        Math.floor(Number(multipliedGold) * srcMods.incomeMul),
+      );
+      const dstGold = BigInt(
+        Math.floor(Number(multipliedGold) * dstMods.incomeMul),
+      );
 
       this.srcPort.owner().addGold(srcGold);
       this._dstPort.owner().addGold(dstGold);
