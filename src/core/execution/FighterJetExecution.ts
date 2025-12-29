@@ -26,6 +26,10 @@ export class FighterJetExecution implements Execution {
   private cachedScanTick = -999; // Start old so first scan happens
   private readonly SCAN_INTERVAL = 10; // ticks
 
+  // Track current angle for circular patrol
+  private patrolAngle: number = 0;
+  private patrolAngleInitialized: boolean = false;
+
   constructor(
     private input: (UnitParams<UnitType.FighterJet> & OwnerComp) | Unit,
     private desiredLevel: number = 1,
@@ -397,23 +401,37 @@ export class FighterJetExecution implements Execution {
       return undefined;
     }
 
+    const patrolCenter = this.fighterJet.patrolTile()!;
     const fighterJetPatrolRange = this.mg.config().fighterJetPatrolRange();
-    const x =
-      this.mg.x(this.fighterJet.patrolTile()!) +
-      this.random.nextInt(
-        Math.floor(-fighterJetPatrolRange / 2),
-        Math.floor(fighterJetPatrolRange / 2),
-      );
-    const y =
-      this.mg.y(this.fighterJet.patrolTile()!) +
-      this.random.nextInt(
-        Math.floor(-fighterJetPatrolRange / 2),
-        Math.floor(fighterJetPatrolRange / 2),
-      );
-    if (!this.mg.isValidCoord(x, y)) {
-      return undefined;
+
+    // Initialize angle randomly on first call
+    if (!this.patrolAngleInitialized) {
+      this.patrolAngle = this.random.nextFloat(0, Math.PI * 2);
+      this.patrolAngleInitialized = true;
     }
-    return this.mg.map().ref(x, y);
+
+    // Increment angle for next waypoint (creates circular motion)
+    // Random increment between 30-90 degrees for variety
+    const angleIncrement = this.random.nextFloat(Math.PI / 6, Math.PI / 2);
+    this.patrolAngle += angleIncrement;
+
+    // Vary the radius for less perfect circles
+    const radiusVariation = this.random.nextFloat(0.6, 1.0);
+    const radius = (fighterJetPatrolRange / 2) * radiusVariation;
+
+    // Calculate position on circle (only 2 trig calls per waypoint)
+    const targetX = Math.round(
+      this.mg.x(patrolCenter) + Math.cos(this.patrolAngle) * radius,
+    );
+    const targetY = Math.round(
+      this.mg.y(patrolCenter) + Math.sin(this.patrolAngle) * radius,
+    );
+
+    if (!this.mg.isValidCoord(targetX, targetY)) {
+      return patrolCenter;
+    }
+
+    return this.mg.map().ref(targetX, targetY);
   }
 
   isActive(): boolean {
