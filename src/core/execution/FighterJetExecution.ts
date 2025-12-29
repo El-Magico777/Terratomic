@@ -186,7 +186,7 @@ export class FighterJetExecution implements Execution {
       }
 
       if (unit.type() === UnitType.CargoPlane) {
-        if (owner.units(UnitType.Airfield).length === 0) {
+        if (!owner.hasAirfield()) {
           continue;
         }
         const cargoPlaneDestinationAirfield = unit.targetUnit();

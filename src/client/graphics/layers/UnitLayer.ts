@@ -172,6 +172,7 @@ export class UnitLayer implements Layer {
   private pixiSeenUnits: Set<number> = new Set();
   private textureCache: Map<string, PIXI.Texture> = new Map();
   private targetingTextureCache: Map<string, PIXI.Texture> = new Map(); // Red tint for attacking units
+  private starTextureCache: Map<number, PIXI.Texture> = new Map(); // Star level indicators (Phase 1 optimization)
 
   // Icon images for PIXI units
   private warshipIconImage: HTMLImageElement | null = null;
@@ -497,6 +498,41 @@ export class UnitLayer implements Layer {
     graphics.drawPolygon(points);
   }
 
+  /**
+   * Phase 1 Optimization: Get or create cached star texture for a given level
+   * Pre-renders stars to reusable textures instead of redrawing graphics every frame
+   */
+  private getStarTexture(level: number): PIXI.Texture {
+    if (this.starTextureCache.has(level)) {
+      return this.starTextureCache.get(level)!;
+    }
+
+    // Create canvas to render stars
+    const canvas = document.createElement("canvas");
+    const starSize = 8;
+    const spacing = 0.6;
+    const padding = 1;
+
+    // Calculate canvas size based on number of stars
+    canvas.width = Math.ceil(padding * 2 + level * (starSize + spacing));
+    canvas.height = starSize + padding * 2;
+
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#cd7f32"; // bronze color
+
+    // Draw stars to canvas
+    for (let i = 0; i < level; i++) {
+      const x = padding + starSize / 2 + i * (starSize + spacing);
+      const y = padding + starSize / 2;
+      this.drawStar(ctx, x, y, starSize);
+    }
+
+    // Create and cache texture
+    const texture = PIXI.Texture.from(canvas);
+    this.starTextureCache.set(level, texture);
+    return texture;
+  }
+
   private getImageColored(
     image: HTMLImageElement,
     color: string,
@@ -629,11 +665,14 @@ export class UnitLayer implements Layer {
       sprite.anchor.set(0.5, 0.5);
       container.addChild(sprite);
 
-      // Add star graphics overlay (will stay horizontal)
-      const starGraphics = new PIXI.Graphics();
-      container.addChild(starGraphics);
+      // Phase 1 Optimization: Use sprite with cached texture instead of Graphics
+      const level = unit.level ? unit.level() : 1;
+      const starTexture = this.getStarTexture(level);
+      const starSprite = new PIXI.Sprite(starTexture);
+      starSprite.anchor.set(0, 0); // Top-left anchor
+      container.addChild(starSprite);
       (container as any)._jetSprite = sprite;
-      (container as any)._starGraphics = starGraphics;
+      (container as any)._starSprite = starSprite;
 
       this.pixiStage.addChild(container);
       return container;
@@ -981,38 +1020,29 @@ export class UnitLayer implements Layer {
     if (unit.type() === UnitType.FighterJet) {
       const angle = this.getUnitAngle(unit);
       const jetSprite = (render.pixiSprite as any)._jetSprite;
-      const starGraphics = (render.pixiSprite as any)._starGraphics;
+      const starSprite = (render.pixiSprite as any)._starSprite;
 
       if (angle !== null && jetSprite) {
         jetSprite.rotation = angle;
       }
 
-      // Draw horizontal stars
-      if (starGraphics && jetSprite) {
+      // Phase 1 Optimization: Update star sprite texture only if level changed
+      if (starSprite && jetSprite) {
         const level = unit.level ? unit.level() : 1;
-        starGraphics.clear();
+        const starTexture = this.getStarTexture(level);
 
-        if (level >= 1 && level <= 4) {
-          const tierColor = 0xcd7f32; // bronze
-          const starSize = 8;
-          const spacing = 0.6;
-          const padding = 1;
-
-          // Get actual sprite dimensions from texture
-          const spriteWidth = jetSprite.texture.width;
-          const spriteHeight = jetSprite.texture.height;
-
-          // Stars go at top-left of the sprite (which is anchored at center)
-          const startX = -spriteWidth / 2 + padding + starSize / 2;
-          const startY = -spriteHeight / 2 + padding + starSize / 2;
-
-          starGraphics.beginFill(tierColor);
-          for (let i = 0; i < level; i++) {
-            const x = startX + i * (starSize + spacing);
-            this.drawPixiStar(starGraphics, x, startY, starSize);
-          }
-          starGraphics.endFill();
+        // Only update texture if it changed (level up/down)
+        if (starSprite.texture !== starTexture) {
+          starSprite.texture = starTexture;
         }
+
+        // Position stars at top-left of jet sprite
+        const spriteWidth = jetSprite.texture.width;
+        const spriteHeight = jetSprite.texture.height;
+        const padding = 1;
+
+        starSprite.x = -spriteWidth / 2 + padding;
+        starSprite.y = -spriteHeight / 2 + padding;
       }
     }
 
