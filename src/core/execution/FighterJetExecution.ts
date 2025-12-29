@@ -26,9 +26,10 @@ export class FighterJetExecution implements Execution {
   private cachedScanTick = -999; // Start old so first scan happens
   private readonly SCAN_INTERVAL = 10; // ticks
 
-  // Track current angle for circular patrol
+  // Track current angle for figure-eight patrol
   private patrolAngle: number = 0;
   private patrolAngleInitialized: boolean = false;
+  private lastPatrolTile: TileRef | undefined = undefined;
 
   constructor(
     private input: (UnitParams<UnitType.FighterJet> & OwnerComp) | Unit,
@@ -100,6 +101,9 @@ export class FighterJetExecution implements Execution {
     }
 
     if (this.fighterJet.targetUnit() !== undefined) {
+      // Reset patrol angle when engaging in combat so we smoothly rejoin figure-eight after
+      this.patrolAngleInitialized = false;
+
       if (this.fighterJet.targetUnit()?.type() === UnitType.CargoPlane) {
         this.captureCargoPlane();
       } else {
@@ -375,63 +379,85 @@ export class FighterJetExecution implements Execution {
   }
 
   private patrol() {
-    if (this.fighterJet.targetTile() === undefined) {
-      this.fighterJet.setTargetTile(this.randomTile());
-      if (this.fighterJet.targetTile() === undefined) {
-        return;
-      }
-    }
-
-    const result = this.pathFinder.nextTile(
-      this.fighterJet.tile(),
-      this.fighterJet.targetTile()!,
-      this.mg.config().fighterJetSpeed(this.fighterJet.level?.() ?? 1),
-    );
-
-    if (result === true) {
-      this.fighterJet.setTargetTile(undefined);
-    } else {
-      this.fighterJet.move(result);
-    }
-    this.fighterJet.touch();
-  }
-
-  private randomTile(): TileRef | undefined {
     if (this.fighterJet.patrolTile() === undefined) {
-      return undefined;
+      return;
     }
 
     const patrolCenter = this.fighterJet.patrolTile()!;
-    const fighterJetPatrolRange = this.mg.config().fighterJetPatrolRange();
 
-    // Initialize angle randomly on first call
-    if (!this.patrolAngleInitialized) {
-      this.patrolAngle = this.random.nextFloat(0, Math.PI * 2);
-      this.patrolAngleInitialized = true;
+    // Reset angle if patrol area changed
+    if (this.lastPatrolTile !== patrolCenter) {
+      this.patrolAngleInitialized = false;
+      this.lastPatrolTile = patrolCenter;
     }
 
-    // Increment angle for next waypoint (creates circular motion)
-    // Random increment between 30-90 degrees for variety
-    const angleIncrement = this.random.nextFloat(Math.PI / 6, Math.PI / 2);
-    this.patrolAngle += angleIncrement;
+    const radius = this.mg.config().fighterJetPatrolRange() / 2;
+    const speed = this.mg
+      .config()
+      .fighterJetSpeed(this.fighterJet.level?.() ?? 1);
 
-    // Vary the radius for less perfect circles
-    const radiusVariation = this.random.nextFloat(0.6, 1.0);
-    const radius = (fighterJetPatrolRange / 2) * radiusVariation;
+    // Check distance from patrol center
+    const distToCenter = this.mg.euclideanDistSquared(
+      this.fighterJet.tile(),
+      patrolCenter,
+    );
 
-    // Calculate position on circle (only 2 trig calls per waypoint)
-    const targetX = Math.round(
+    // If not yet initialized, fly toward the center first
+    if (!this.patrolAngleInitialized) {
+      const result = this.pathFinder.nextTile(
+        this.fighterJet.tile(),
+        patrolCenter,
+        speed,
+      );
+
+      if (result !== true) {
+        this.fighterJet.move(result);
+      }
+
+      // Initialize angle when we're close to center
+      if (distToCenter <= speed * speed * 4) {
+        this.patrolAngle = Math.PI / 2; // Start at center crossing point
+        this.patrolAngleInitialized = true;
+      }
+
+      this.fighterJet.touch();
+      return;
+    }
+
+    // Increment angle at constant rate for smooth motion
+    const angularSpeed = speed / radius;
+    this.patrolAngle += angularSpeed;
+
+    // Simple figure-eight: horizontal oscillation + double-frequency vertical
+    // Only 2 trig calls + 2 multiplies - very cheap
+    const newX = Math.round(
       this.mg.x(patrolCenter) + Math.cos(this.patrolAngle) * radius,
     );
-    const targetY = Math.round(
-      this.mg.y(patrolCenter) + Math.sin(this.patrolAngle) * radius,
+    const newY = Math.round(
+      this.mg.y(patrolCenter) + Math.sin(this.patrolAngle * 2) * (radius * 0.5),
     );
 
-    if (!this.mg.isValidCoord(targetX, targetY)) {
-      return patrolCenter;
+    // Clamp to map bounds
+    const clampedX = Math.max(0, Math.min(this.mg.width() - 1, newX));
+    const clampedY = Math.max(0, Math.min(this.mg.height() - 1, newY));
+
+    const newTile = this.mg.map().ref(clampedX, clampedY);
+
+    // Only move if we're actually on a different tile
+    if (
+      this.fighterJet.tile() === undefined ||
+      this.mg.x(newTile) !== this.mg.x(this.fighterJet.tile()!) ||
+      this.mg.y(newTile) !== this.mg.y(this.fighterJet.tile()!)
+    ) {
+      this.fighterJet.move(newTile);
     }
 
-    return this.mg.map().ref(targetX, targetY);
+    this.fighterJet.touch();
+  }
+
+  // Legacy method - no longer used for patrol, but kept in case other code references it
+  private randomTile(): TileRef | undefined {
+    return this.fighterJet.patrolTile();
   }
 
   isActive(): boolean {
