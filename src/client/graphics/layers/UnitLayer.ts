@@ -591,23 +591,67 @@ export class UnitLayer implements Layer {
       }
     }
 
+    this.updateGhosts();
+    // Process new/removed PIXI units BEFORE updating bomber-at-airfield cache
+    // so newly spawned bombers are included in the cache computation
+    this.updatePixiUnits();
+
     // Update bomber-at-airfield cache for all active bombers
     for (const render of this.pixiRenders) {
       if (render.unit.type() === UnitType.Bomber && render.unit.isActive()) {
-        const atAirfield = this.game
-          .units(UnitType.Airfield)
-          .find(
-            (a) =>
-              a.owner() === render.unit.owner() &&
-              a.tile() === render.unit.tile() &&
-              a.isActive(),
-          );
-        this.bomberAtAirfield.set(render.unit.id(), !!atAirfield);
+        this.bomberAtAirfield.set(
+          render.unit.id(),
+          this.isUnitAtOwnedAirfield(render.unit),
+        );
       }
     }
 
-    this.updateGhosts();
-    this.updatePixiUnits();
+    // DEBUG: Log bomber status every 10 ticks
+    if (this.game.ticks() % 10 === 0) {
+      const myPlayer = this.game.myPlayer();
+      if (myPlayer) {
+        // First log all airfields
+        const allAirfields = this.game.units(UnitType.Airfield);
+        const myAirfields = allAirfields.filter(
+          (a) => a.owner().smallID() === myPlayer.smallID(),
+        );
+        const airfieldTiles = myAirfields.map((a) => a.tile());
+        console.log(
+          `[My Airfields] Total: ${myAirfields.length}, tiles: [${airfieldTiles.join(", ")}]`,
+        );
+
+        for (const render of this.pixiRenders) {
+          if (
+            render.unit.type() === UnitType.Bomber &&
+            render.unit.owner().smallID() === myPlayer.smallID()
+          ) {
+            const unit = render.unit;
+            const cachedAtAirfield = this.bomberAtAirfield.get(unit.id());
+            const bomberTile = unit.tile();
+            const tileMatches = airfieldTiles.includes(bomberTile);
+            console.log(
+              `[Bomber ${unit.id()}] tile=${bomberTile}, tileMatchesAnyAirfield=${tileMatches}, ` +
+                `cachedAtAirfield=${cachedAtAirfield}, spriteVisible=${render.pixiSprite.visible}`,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  private isUnitAtOwnedAirfield(unit: UnitView): boolean {
+    const unitOwnerSmallId = unit.owner().smallID();
+    const unitTile = unit.tile();
+    return (
+      this.game
+        .units(UnitType.Airfield)
+        .find(
+          (a) =>
+            a.owner().smallID() === unitOwnerSmallId &&
+            a.tile() === unitTile &&
+            a.isActive(),
+        ) !== undefined
+    );
   }
 
   private updatePixiUnits() {
@@ -1509,15 +1553,7 @@ export class UnitLayer implements Layer {
 
       // Hide bombers at their airfield
       if (unit.type() === UnitType.Bomber) {
-        const airfieldAtSamePos = this.game
-          .units(UnitType.Airfield)
-          .find(
-            (a) =>
-              a.owner() === unit.owner() &&
-              a.tile() === unit.tile() &&
-              a.isActive(),
-          );
-        if (airfieldAtSamePos) {
+        if (this.isUnitAtOwnedAirfield(unit)) {
           continue; // Skip rendering this bomber
         }
       }
@@ -1687,15 +1723,7 @@ export class UnitLayer implements Layer {
 
     // Hide bombers at their airfield
     if (unit.type() === UnitType.Bomber) {
-      const airfieldAtSamePos = this.game
-        .units(UnitType.Airfield)
-        .find(
-          (a) =>
-            a.owner() === unit.owner() &&
-            a.tile() === unit.tile() &&
-            a.isActive(),
-        );
-      if (airfieldAtSamePos) {
+      if (this.isUnitAtOwnedAirfield(unit)) {
         return; // Skip rendering this bomber
       }
     }

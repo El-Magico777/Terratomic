@@ -146,22 +146,30 @@ export class GameRunner {
     const ghostLinger = this.game.config().submarineGhostLingerTicks?.() ?? 300;
 
     for (const u of updates[GameUpdateType.Unit]) {
-      // Filter bombers at their airfield - they should be invisible
-      // Check if bomber is at an airfield position by finding matching airfield update
+      // Filter bombers at their airfield - they should be invisible.
+      // IMPORTANT: do not drop the *arrival* movement update (pos != lastPos),
+      // otherwise clients can get stuck with a stale bomber position when the
+      // airfield is emitting frequent updates (e.g., regenerating after damage).
       if (u.unitType === UnitType.Bomber) {
-        // Check if there's an airfield at the bomber's position owned by same player
-        const airfieldAtSamePos = updates[GameUpdateType.Unit].find(
-          (other) =>
-            other.unitType === UnitType.Airfield &&
-            other.ownerID === u.ownerID &&
-            other.pos === u.pos &&
-            other.isActive,
-        );
+        // Determine whether there's an owned, active airfield at this tile using
+        // authoritative game state (not just the current update batch).
+        const atOwnedAirfield = this.game
+          .unitsAt(u.pos)
+          .some(
+            (unit) =>
+              unit.type() === UnitType.Airfield &&
+              unit.isActive() &&
+              unit.owner().smallID() === u.ownerID,
+          );
 
-        // Hide bomber if it's at the same position as an owned airfield
-        if (airfieldAtSamePos) {
-          continue; // Skip this bomber - don't add to newUnits
+        if (atOwnedAirfield) {
+          // Allow the movement update into the airfield tile through so the
+          // client can synchronize position, then rely on client-side hiding.
+          if (u.pos === u.lastPos) {
+            continue;
+          }
         }
+
         newUnits.push(u);
         continue;
       }
