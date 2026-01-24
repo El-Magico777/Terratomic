@@ -5,7 +5,7 @@ import { Tick, UnitType } from "../../../core/game/Game";
 import { GameUpdateType } from "../../../core/game/GameUpdates";
 import { GameView, UnitView } from "../../../core/game/GameView";
 import { UserSettings } from "../../../core/game/UserSettings";
-import { UnitSelectionEvent } from "../../InputHandler";
+import { ReplaySpeedChangeEvent, UnitSelectionEvent } from "../../InputHandler";
 import { ProgressBar } from "../ProgressBar";
 import { TransformHandler } from "../TransformHandler";
 import { Layer } from "./Layer";
@@ -36,6 +36,12 @@ export class UILayer implements Layer {
     { unit: UnitView; startTick: Tick; endTick: Tick; progressBar: ProgressBar }
   > = new Map();
   private allHealthBars: Map<number, ProgressBar> = new Map();
+  private healthBarUnits: Map<number, UnitView> = new Map();
+
+  private baseTickIntervalMs = 100;
+  private tickIntervalMs = 100;
+  private replaySpeedMultiplier = 1;
+  private lastTickTimestamp = 0;
   // Keep track of currently selected unit
   private selectedUnit: UnitView | null = null;
 
@@ -55,6 +61,12 @@ export class UILayer implements Layer {
     private transformHandler: TransformHandler,
   ) {
     this.theme = game.config().theme();
+    this.baseTickIntervalMs = this.game
+      .config()
+      .serverConfig()
+      .turnIntervalMs();
+    this.updateTickInterval();
+    this.lastTickTimestamp = this.now();
   }
 
   shouldTransform(): boolean {
@@ -62,6 +74,16 @@ export class UILayer implements Layer {
   }
 
   tick() {
+    this.lastTickTimestamp = this.now();
+    const configuredInterval = this.game
+      .config()
+      .serverConfig()
+      .turnIntervalMs();
+    if (configuredInterval !== this.baseTickIntervalMs) {
+      this.baseTickIntervalMs = configuredInterval;
+      this.updateTickInterval();
+    }
+
     // Update the selection animation time
     this.selectionAnimTime = (this.selectionAnimTime + 1) % 60;
 
@@ -88,10 +110,14 @@ export class UILayer implements Layer {
 
   init() {
     this.eventBus.on(UnitSelectionEvent, (e) => this.onUnitSelection(e));
+    this.eventBus.on(ReplaySpeedChangeEvent, (e) =>
+      this.onReplaySpeedChange(e),
+    );
     this.redraw();
   }
 
   renderLayer(context: CanvasRenderingContext2D) {
+    this.updateBarPositions();
     context.drawImage(
       this.canvas,
       -this.game.width() / 2,
@@ -318,23 +344,26 @@ export class UILayer implements Layer {
       // full hp/dead warships dont need a hp bar
       this.allHealthBars.get(unit.id())?.clear();
       this.allHealthBars.delete(unit.id());
+      this.healthBarUnits.delete(unit.id());
     } else if (
       unit.isActive() &&
       unit.health() < maxHealth &&
       unit.health() > 0
     ) {
       this.allHealthBars.get(unit.id())?.clear();
+      const pos = this.getUnitInterpolatedWorldPosition(unit);
       const healthBar = new ProgressBar(
         COLOR_PROGRESSION,
         this.context,
-        this.game.x(unit.tile()) - 4,
-        this.game.y(unit.tile()) + 6,
+        pos.x - 4,
+        pos.y + 6,
         HEALTHBAR_WIDTH,
         PROGRESSBAR_HEIGHT,
         unit.health() / maxHealth,
       );
       // keep track of units that have health bars for clearing purposes
       this.allHealthBars.set(unit.id(), healthBar);
+      this.healthBarUnits.set(unit.id(), unit);
     }
   }
 
@@ -358,11 +387,12 @@ export class UILayer implements Layer {
       return;
     }
     if (!this.allProgressBars.has(unit.id())) {
+      const pos = this.getUnitInterpolatedWorldPosition(unit);
       const progressBar = new ProgressBar(
         COLOR_PROGRESSION,
         this.context,
-        this.game.x(unit.tile()) - 6,
-        this.game.y(unit.tile()) + 6,
+        pos.x - 6,
+        pos.y + 6,
         LOADINGBAR_WIDTH,
         PROGRESSBAR_HEIGHT,
         0,
@@ -379,6 +409,93 @@ export class UILayer implements Layer {
         progressBar,
       });
     }
+  }
+
+  private updateBarPositions() {
+    if (this.context === null) return;
+
+    // Health bars: track damaged mobile units smoothly.
+    for (const [unitId, unit] of this.healthBarUnits) {
+      const bar = this.allHealthBars.get(unitId);
+      if (!bar) {
+        this.healthBarUnits.delete(unitId);
+        continue;
+      }
+
+      const maxHealth = unit.effectiveMaxHealth();
+      if (
+        !unit.isActive() ||
+        unit.health() >= maxHealth ||
+        unit.health() <= 0
+      ) {
+        bar.clear();
+        this.allHealthBars.delete(unitId);
+        this.healthBarUnits.delete(unitId);
+        continue;
+      }
+
+      const pos = this.getUnitInterpolatedWorldPosition(unit);
+      bar.setPosition(pos.x - 4, pos.y + 6);
+    }
+
+    // Loading bars: keep them aligned when camera is moving and for any future moving construction.
+    for (const { unit, progressBar } of this.allProgressBars.values()) {
+      if (!unit.isActive()) continue;
+      const pos = this.getUnitInterpolatedWorldPosition(unit);
+      progressBar.setPosition(pos.x - 6, pos.y + 6);
+    }
+  }
+
+  private getUnitInterpolatedWorldPosition(unit: UnitView): {
+    x: number;
+    y: number;
+  } {
+    const currentTile = unit.tile();
+    const lastTile = unit.lastTile?.() ?? currentTile;
+    if (lastTile !== currentTile) {
+      const alpha = this.computeTickAlpha();
+      const startX = this.game.x(lastTile);
+      const startY = this.game.y(lastTile);
+      const endX = this.game.x(currentTile);
+      const endY = this.game.y(currentTile);
+      return {
+        x: startX + (endX - startX) * alpha,
+        y: startY + (endY - startY) * alpha,
+      };
+    }
+    return { x: this.game.x(currentTile), y: this.game.y(currentTile) };
+  }
+
+  private computeTickAlpha(): number {
+    const elapsed = Math.min(
+      this.now() - this.lastTickTimestamp,
+      this.tickIntervalMs,
+    );
+    if (this.tickIntervalMs === 0) return 1;
+    return Math.max(0, elapsed / this.tickIntervalMs);
+  }
+
+  private onReplaySpeedChange(event: ReplaySpeedChangeEvent) {
+    this.replaySpeedMultiplier =
+      event.replaySpeedMultiplier as unknown as number;
+    this.updateTickInterval();
+    this.lastTickTimestamp = this.now();
+  }
+
+  private updateTickInterval() {
+    const baseInterval = this.baseTickIntervalMs;
+    if (baseInterval <= 0) {
+      this.tickIntervalMs = 0;
+      return;
+    }
+    this.tickIntervalMs = baseInterval * this.replaySpeedMultiplier;
+  }
+
+  private now(): number {
+    if (typeof performance !== "undefined" && performance.now) {
+      return performance.now();
+    }
+    return Date.now();
   }
 
   paintCell(x: number, y: number, color: Colord, alpha: number) {

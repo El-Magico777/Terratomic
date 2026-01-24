@@ -38,6 +38,15 @@ export class ProgressBar {
     this.progress = progress;
   }
 
+  setPosition(x: number, y: number): void {
+    if (x === this.x && y === this.y) return;
+    // Clear old position, then redraw at new position.
+    this.clear();
+    this.x = x;
+    this.y = y;
+    this.setProgress(this.progress);
+  }
+
   clear() {
     this.ctx.clearRect(
       this.x - ProgressBar.CLEAR_PADDING,
