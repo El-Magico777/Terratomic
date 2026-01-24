@@ -55,16 +55,26 @@ export class UILayer implements Layer {
   // Visual settings for selection
   private readonly SELECTION_BOX_SIZE = 6; // Size of the selection box (should be larger than the warship)
 
+  private configuredTurnIntervalMs(): number {
+    const config: any = this.game.config();
+    const serverConfig =
+      typeof config?.serverConfig === "function" ? config.serverConfig() : null;
+    const turnIntervalMs =
+      typeof serverConfig?.turnIntervalMs === "function"
+        ? serverConfig.turnIntervalMs()
+        : null;
+    return typeof turnIntervalMs === "number" && Number.isFinite(turnIntervalMs)
+      ? turnIntervalMs
+      : 100;
+  }
+
   constructor(
     private game: GameView,
     private eventBus: EventBus,
     private transformHandler: TransformHandler,
   ) {
     this.theme = game.config().theme();
-    this.baseTickIntervalMs = this.game
-      .config()
-      .serverConfig()
-      .turnIntervalMs();
+    this.baseTickIntervalMs = this.configuredTurnIntervalMs();
     this.updateTickInterval();
     this.lastTickTimestamp = this.now();
   }
@@ -75,10 +85,7 @@ export class UILayer implements Layer {
 
   tick() {
     this.lastTickTimestamp = this.now();
-    const configuredInterval = this.game
-      .config()
-      .serverConfig()
-      .turnIntervalMs();
+    const configuredInterval = this.configuredTurnIntervalMs();
     if (configuredInterval !== this.baseTickIntervalMs) {
       this.baseTickIntervalMs = configuredInterval;
       this.updateTickInterval();
