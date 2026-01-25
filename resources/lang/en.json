@@ -748,7 +748,9 @@
     "footer_hint": "You can change your priorities anytime using the RESEARCH button on the left side of the screen.",
     "footer_hint_simple": "Change priorities anytime via the RESEARCH button (left side). Adjust research investment in the Economy tab (bottom).",
     "warning_no_priority": "Please select at least one research priority to continue.",
-    "confirm_button": "Confirm & Start Game"
+    "confirm_button": "Confirm & Start Game",
+    "confirm_title": "Research Priority Set",
+    "confirm_text": "Prioritized {category} technologies. Change anytime via the RESEARCH button."
   },
   "unit_upgrade_settings": {
     "title": "Unit Upgrade Settings",
