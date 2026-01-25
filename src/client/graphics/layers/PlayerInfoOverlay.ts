@@ -61,6 +61,7 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
   private _isInfoVisible: boolean = false;
 
   private _isActive = false;
+  private _isTemporarilyDisabled = false;
 
   private lastMouseUpdate = 0;
 
@@ -103,6 +104,11 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
   }
 
   public maybeShow(x: number, y: number) {
+    // Don't show if temporarily disabled
+    if (this._isTemporarilyDisabled) {
+      return;
+    }
+
     this.hide();
     const worldCoord = this.transform.screenToWorldCoordinates(x, y);
     if (!this.game.isValidCoord(worldCoord.x, worldCoord.y)) {
@@ -148,6 +154,14 @@ export class PlayerInfoOverlay extends LitElement implements Layer {
   setVisible(visible: boolean) {
     this._isInfoVisible = visible;
     this.requestUpdate();
+  }
+
+  public temporarilyDisable(durationMs: number) {
+    this._isTemporarilyDisabled = true;
+    this.hide();
+    setTimeout(() => {
+      this._isTemporarilyDisabled = false;
+    }, durationMs);
   }
 
   private getRelationClass(relation: Relation): string {

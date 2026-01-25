@@ -850,3 +850,61 @@ news-button .active button {
   mask: url("../../resources/images/SwordIconWhite.svg") no-repeat center /
     cover;
 }
+
+/* Research Priority Confirmation Toast */
+.research-priority-confirmation-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  opacity: 0;
+  z-index: 10050;
+  background: linear-gradient(180deg, #27476e 0%, #183152 100%);
+  border: 2px solid #32629b;
+  border-radius: 8px;
+  padding: 18px 22px;
+  color: #dbe7ff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 352px;
+  max-width: 550px;
+  transition: all 0.3s ease;
+}
+
+.research-priority-confirmation-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.research-priority-confirmation-toast .toast-icon {
+  font-size: 31px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.research-priority-confirmation-toast .toast-content {
+  flex: 1;
+}
+
+.research-priority-confirmation-toast .toast-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.research-priority-confirmation-toast .toast-message {
+  font-size: 14px;
+  opacity: 0.95;
+  line-height: 1.4;
+}
