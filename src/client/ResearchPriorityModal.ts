@@ -92,6 +92,52 @@ export class ResearchPriorityModal extends LitElement {
 
     // Force immediate UI update
     this.requestUpdate();
+
+    // Show confirmation toast before closing
+    this.showConfirmationToast(category);
+
+    // Delay close slightly to ensure toast styles are applied
+    setTimeout(() => {
+      this.close();
+    }, 100);
+  }
+
+  private showConfirmationToast(category: Category) {
+    const message = translateText("research_priority.confirm_text", {
+      category,
+    });
+
+    // Temporarily disable player info overlay to prevent overlap
+    const playerInfo = document.querySelector("player-info-overlay") as any;
+    if (playerInfo && typeof playerInfo.temporarilyDisable === "function") {
+      playerInfo.temporarilyDisable(6300); // Toast duration + animation
+    }
+
+    // Create toast element
+    const toast = document.createElement("div");
+    toast.className = "research-priority-confirmation-toast";
+    toast.innerHTML = `
+      <div class="toast-icon">✓</div>
+      <div class="toast-content">
+        <div class="toast-title">${translateText("research_priority.confirm_title")}</div>
+        <div class="toast-message">${message}</div>
+      </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      toast.classList.add("show");
+    });
+
+    // Auto-remove after 6 seconds
+    setTimeout(() => {
+      toast.classList.remove("show");
+      setTimeout(() => {
+        toast.remove();
+      }, 300);
+    }, 6000);
   }
 
   render() {
