@@ -35,6 +35,7 @@ import { SubmarineExecution } from "./SubmarineExecution";
 import { WarshipExecution } from "./WarshipExecution";
 
 export class ConstructionExecution implements Execution {
+  executionName = "ConstructionExecution";
   private construction: Unit | null = null;
   private active: boolean = true;
   private mg: Game;

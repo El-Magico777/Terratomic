@@ -27,6 +27,7 @@ import { closestTwoTiles } from "./Util";
 import { BotBehavior } from "./utils/BotBehavior";
 
 export class FakeHumanExecution implements Execution {
+  executionName = "FakeHumanExecution";
   private firstMove = true;
 
   private active = true;

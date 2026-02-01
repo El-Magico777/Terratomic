@@ -465,7 +465,7 @@ export class GameImpl implements Game {
             const start = performance.now();
             e.tick(this._ticks);
             metrics.recordExecutionTime(
-              e.constructor.name,
+              e.executionName ?? e.constructor.name,
               performance.now() - start,
             );
           } else {
@@ -481,7 +481,7 @@ export class GameImpl implements Game {
         const start = performance.now();
         e.tick(this._ticks);
         metrics.recordExecutionTime(
-          e.constructor.name,
+          e.executionName ?? e.constructor.name,
           performance.now() - start,
         );
       } else {
@@ -496,7 +496,7 @@ export class GameImpl implements Game {
           const start = performance.now();
           e.init(this, this._ticks);
           metrics.recordExecutionTime(
-            e.constructor.name + ".init",
+            (e.executionName ?? e.constructor.name) + ".init",
             performance.now() - start,
           );
         } else {
