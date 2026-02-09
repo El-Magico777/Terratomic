@@ -38,6 +38,8 @@ import { OButton } from "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import "./graphics/layers/TutorialToast";
 import { isLoggedIn } from "./jwt";
+import { MobileDetector } from "./mobile/MobileDetector";
+import { MobileUI } from "./mobile/MobileUI";
 import "./styles.css";
 import { applyUiPalette, getUiPalette } from "./theme/UiPaletteLoader";
 import { initializeUiScaleFromStorage } from "./uiScale";
@@ -96,6 +98,8 @@ class Client {
   private menuMusic: HTMLAudioElement | null = null;
   // Track whether the UI is currently on the main menu (not in-game)
   private isOnMainMenu = true;
+  // Mobile UI system (initialized if on mobile device)
+  private mobileUI: MobileUI | null = null;
 
   constructor() {}
 
@@ -121,6 +125,13 @@ class Client {
       "dark-mode-changed",
       this.handleDarkModeChangedEvent,
     );
+
+    // Initialize mobile UI if on mobile device
+    if (MobileDetector.isMobile()) {
+      console.log("[Main] Mobile device detected, initializing mobile UI");
+      this.mobileUI = new MobileUI(this.eventBus);
+    }
+
     // Prepare main menu background music
     this.setupMenuMusic();
     // Sync menu music with persisted mute state and react to changes
@@ -255,6 +266,10 @@ class Client {
 
     window.addEventListener("beforeunload", () => {
       console.log("Browser is closing");
+      // Clean up mobile UI if present
+      if (this.mobileUI) {
+        this.mobileUI.destroy();
+      }
       if (this.gameStop !== null) {
         this.gameStop();
       }
