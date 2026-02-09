@@ -4,16 +4,32 @@
  */
 
 import { EventBus } from "../../core/EventBus";
+import { UnitType } from "../../core/game/Game";
+import type { TileRef } from "../../core/game/GameMap";
+import type { GameView } from "../../core/game/GameView";
+import { BuildUnitIntentEvent } from "../Transport";
 import { ButtonState, MobileContextButton } from "./MobileContextButton";
 import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
+import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
+import { MobilePlacementMode } from "./overlays/MobilePlacementMode";
+import { MobileBuildPopup } from "./popups/MobileBuildPopup";
 
 export class MobileUI {
   private contextButton: MobileContextButton;
   private topBar: MobileTopBar;
   private gestureDetector: GestureDetector | null = null;
   private canvas: HTMLCanvasElement | null = null;
+
+  // Phase 2 components
+  private buildPopup: MobileBuildPopup;
+  private placementMode: MobilePlacementMode;
+  private economyOverlay: MobileEconomyOverlay;
+
+  // Game state
+  private currentGame: GameView | null = null;
+  private selectedTile: TileRef | null = null;
 
   constructor(private eventBus: EventBus) {
     console.log("[MobileUI] Initializing mobile UI system");
@@ -26,6 +42,17 @@ export class MobileUI {
       "mobile-context-button",
     ) as MobileContextButton;
     this.topBar = document.createElement("mobile-top-bar") as MobileTopBar;
+
+    // Create Phase 2 components
+    this.buildPopup = document.createElement(
+      "mobile-build-popup",
+    ) as MobileBuildPopup;
+    this.placementMode = document.createElement(
+      "mobile-placement-mode",
+    ) as MobilePlacementMode;
+    this.economyOverlay = document.createElement(
+      "mobile-economy-overlay",
+    ) as MobileEconomyOverlay;
 
     // Set initial button size based on device
     this.contextButton.size = MobileDetector.getContextButtonSize();
@@ -57,6 +84,11 @@ export class MobileUI {
   private attachComponents(): void {
     document.body.appendChild(this.topBar);
     document.body.appendChild(this.contextButton);
+
+    // Attach Phase 2 components
+    document.body.appendChild(this.buildPopup);
+    document.body.appendChild(this.placementMode);
+    document.body.appendChild(this.economyOverlay);
 
     // Apply mobile-specific CSS to body
     document.body.classList.add("mobile-ui-enabled");
@@ -158,6 +190,27 @@ export class MobileUI {
       this.handleSettingsClick();
     });
 
+    // Build popup item selected
+    this.buildPopup.addEventListener("item-selected", (e: Event) => {
+      const event = e as CustomEvent<{ action: string }>;
+      this.handleBuildItemSelected(event.detail.action);
+    });
+
+    // Build popup closed
+    this.buildPopup.addEventListener("popup-closed", () => {
+      console.log("[MobileUI] Build popup closed");
+    });
+
+    // Placement mode cancelled
+    this.placementMode.addEventListener("placement-cancelled", () => {
+      this.exitPlacementMode();
+    });
+
+    // Economy overlay closed
+    this.economyOverlay.addEventListener("overlay-closed", () => {
+      console.log("[MobileUI] Economy overlay closed");
+    });
+
     // Handle orientation changes
     window.addEventListener("orientationchange", () => {
       this.handleOrientationChange();
@@ -179,12 +232,23 @@ export class MobileUI {
     // Register gesture callbacks
     this.gestureDetector.on("tap", (gesture) => {
       console.log("[MobileUI] Tap detected:", gesture.position);
-      // TODO: Handle map tile selection
+
+      // If in placement mode, handle placement
+      if (this.placementMode.active) {
+        this.handlePlacementTap(gesture.position);
+      } else {
+        // Otherwise, handle map tile selection
+        this.handleMapTap(gesture.position);
+      }
     });
 
     this.gestureDetector.on("long-press", (gesture) => {
       console.log("[MobileUI] Long-press detected:", gesture.position);
-      // TODO: Show info tooltip or economy overlay
+
+      // If not in placement mode, open economy overlay
+      if (!this.placementMode.active) {
+        this.economyOverlay.open();
+      }
     });
 
     this.gestureDetector.on("edge-swipe-left", (gesture) => {
@@ -206,7 +270,17 @@ export class MobileUI {
 
     this.gestureDetector.on("drag", (gesture) => {
       console.log("[MobileUI] Drag detected, delta:", gesture.delta);
-      // TODO: Handle map pan
+
+      // If in placement mode, update finger position
+      if (this.placementMode.active) {
+        this.placementMode.updateFingerPosition(
+          gesture.position.x,
+          gesture.position.y,
+        );
+      } else {
+        // Otherwise, handle map pan
+        // TODO: Handle map pan
+      }
     });
 
     console.log("[MobileUI] Gesture detection initialized");
@@ -217,6 +291,13 @@ export class MobileUI {
    */
   updateStats(stats: TopBarStats): void {
     this.topBar.updateStats(stats);
+  }
+
+  /**
+   * Update game state
+   */
+  updateGameState(game: GameView): void {
+    this.currentGame = game;
   }
 
   /**
@@ -259,7 +340,23 @@ export class MobileUI {
    */
   private handleBuildAction(): void {
     console.log("[MobileUI] Build action triggered");
-    // TODO: Show build popup (Phase 2)
+
+    // Check if we have a game and selected tile
+    if (!this.currentGame || !this.selectedTile) {
+      console.warn(
+        "[MobileUI] Cannot show build popup: no game or selected tile",
+      );
+      return;
+    }
+
+    // Show build popup at context button position
+    const buttonRect = this.contextButton.getBoundingClientRect();
+    const position = {
+      x: buttonRect.left + buttonRect.width / 2,
+      y: buttonRect.top,
+    };
+
+    this.buildPopup.openForTile(this.selectedTile, this.currentGame, position);
   }
 
   /**
@@ -299,7 +396,141 @@ export class MobileUI {
    */
   private handleWaterAction(): void {
     console.log("[MobileUI] Water action triggered");
-    // TODO: Show water build popup (Phase 2)
+    // Show water build popup (same as build action)
+    this.handleBuildAction();
+  }
+
+  /**
+   * Handle build item selected from popup
+   */
+  private handleBuildItemSelected(action: string): void {
+    console.log("[MobileUI] Build item selected:", action);
+
+    // Close the build popup
+    this.buildPopup.close();
+
+    // Get unit type and cost
+    const unitType = action as UnitType;
+
+    // TODO: Get actual cost from game data
+    const cost = this.getUnitCost(unitType);
+    const icon = this.getUnitIcon(unitType);
+
+    // Enter placement mode
+    this.placementMode.enter(unitType, cost, icon);
+  }
+
+  /**
+   * Handle map tap (for tile selection)
+   */
+  private handleMapTap(position: { x: number; y: number }): void {
+    console.log("[MobileUI] Map tap at:", position);
+
+    // TODO: Convert screen position to tile coordinates
+    // For now, just store the position
+    // This would typically be handled by the MapRenderer
+  }
+
+  /**
+   * Handle placement tap (finalize building placement)
+   */
+  private handlePlacementTap(position: { x: number; y: number }): void {
+    console.log("[MobileUI] Placement tap at:", position);
+
+    // TODO: Convert screen position to tile coordinates
+    const tile = this.screenToTile(position);
+
+    if (!tile) {
+      console.warn("[MobileUI] Could not convert position to tile");
+      return;
+    }
+
+    // Get the unit type from placement mode
+    const unitType = this.placementMode.unitType;
+
+    if (!unitType) {
+      console.warn("[MobileUI] No unit type in placement mode");
+      return;
+    }
+
+    // Emit BuildUnitIntentEvent
+    const event = new BuildUnitIntentEvent(unitType, tile);
+    this.eventBus.emit(event);
+
+    console.log("[MobileUI] BuildUnitIntentEvent emitted:", { unitType, tile });
+
+    // Exit placement mode
+    this.exitPlacementMode();
+  }
+
+  /**
+   * Exit placement mode
+   */
+  private exitPlacementMode(): void {
+    this.placementMode.exit();
+  }
+
+  /**
+   * Convert screen position to tile coordinates
+   * TODO: Implement actual conversion based on MapRenderer
+   */
+  private screenToTile(position: { x: number; y: number }): TileRef | null {
+    // Placeholder - this would need to be implemented based on the actual
+    // MapRenderer tile coordinate system
+    console.warn("[MobileUI] screenToTile not yet implemented");
+    return null;
+  }
+
+  /**
+   * Get unit cost (placeholder)
+   * TODO: Get from actual game data
+   */
+  private getUnitCost(unitType: UnitType): number {
+    // Default costs from documentation
+    const costs: Record<string, number> = {
+      City: 50,
+      Port: 180,
+      Hospital: 80,
+      Factory: 120,
+      "Defense Post": 200,
+      Silo: 500,
+      Airfield: 350,
+      "Research Lab": 300,
+      Academy: 400,
+      SAM: 280,
+      Doomsday: 2000,
+      Warship: 100,
+      Submarine: 150,
+      "Fighter Jet": 40,
+    };
+
+    return costs[unitType] ?? 100;
+  }
+
+  /**
+   * Get unit icon (placeholder)
+   * TODO: Get from actual sprite data
+   */
+  private getUnitIcon(unitType: UnitType): string {
+    // Default icons
+    const icons: Record<string, string> = {
+      City: "🏙️",
+      Port: "⚓",
+      Hospital: "🏥",
+      Factory: "🏭",
+      "Defense Post": "🛡️",
+      Silo: "🚀",
+      Airfield: "✈️",
+      "Research Lab": "🔬",
+      Academy: "🎓",
+      SAM: "🎯",
+      Doomsday: "☢️",
+      Warship: "🚢",
+      Submarine: "🔱",
+      "Fighter Jet": "✈️",
+    };
+
+    return icons[unitType] ?? "❓";
   }
 
   /**
@@ -356,6 +587,9 @@ export class MobileUI {
     // Remove components from DOM
     this.contextButton.remove();
     this.topBar.remove();
+    this.buildPopup.remove();
+    this.placementMode.remove();
+    this.economyOverlay.remove();
 
     // Clean up gesture detector
     if (this.gestureDetector) {
