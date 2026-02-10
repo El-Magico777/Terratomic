@@ -46,9 +46,12 @@ export class MobileBuildPopup extends MobileBasePopup {
     const isWater = !game.isLand(tile);
     if (isWater) return "water";
 
-    // Check if shore (land with adjacent water)
+    // Check if shore using game's built-in shoreline detection
+    if (game.isShoreline(tile)) return "shore";
+
+    // Fallback: check if land with adjacent water
     const neighbors = game.neighbors(tile);
-    const hasAdjacentWater = neighbors.some((n) => !game.isLand(n));
+    const hasAdjacentWater = Array.from(neighbors).some((n) => !game.isLand(n));
     if (hasAdjacentWater) return "shore";
 
     return "land";
@@ -186,7 +189,6 @@ export class MobileBuildPopup extends MobileBasePopup {
 
   private getShoreStructures(gold: number, myPlayer: any): PopupMenuItem[] {
     const items: PopupMenuItem[] = [
-      ...this.getLandStructures(gold, myPlayer),
       {
         icon: "⚓",
         label: "Port",
@@ -198,22 +200,15 @@ export class MobileBuildPopup extends MobileBasePopup {
             ? "Insufficient gold"
             : undefined,
       },
+      ...this.getLandStructures(gold, myPlayer),
     ];
 
     return items;
   }
 
   private getWaterUnits(gold: number, myPlayer: any): PopupMenuItem[] {
-    const hasPort =
-      myPlayer
-        .structures()
-        .filter((s) => s.type() === UnitType.Port && s.isActive()).length > 0;
-
-    const hasAirfield =
-      myPlayer
-        .structures()
-        .filter((s) => s.type() === UnitType.Airfield && s.isActive()).length >
-      0;
+    const hasPort = myPlayer.units(UnitType.Port).length > 0;
+    const hasAirfield = myPlayer.units(UnitType.Airfield).length > 0;
 
     const items: PopupMenuItem[] = [
       {

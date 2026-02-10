@@ -47,13 +47,8 @@ export class MobileAttackPopup extends MobileBasePopup {
       return "enemy-territory";
     }
 
-    // Check if at war
-    if (myPlayer && myPlayer.isAtWarWith(owner as any)) {
-      return "enemy-territory";
-    }
-
-    // Allied or neutral player
-    return "neutral";
+    // All other players are enemies (peace timer checks happen in canGroundAttack etc.)
+    return "enemy-territory";
   }
 
   private getTitle(): string {

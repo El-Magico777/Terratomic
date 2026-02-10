@@ -346,6 +346,7 @@ export class MobileUI {
       body.mobile-ui-enabled player-info-overlay,
       body.mobile-ui-enabled research-toggle-button,
       body.mobile-ui-enabled game-left-sidebar,
+      body.mobile-ui-enabled top-bar,
       body.mobile-ui-enabled .desktop-hud {
         display: none !important;
       }
@@ -386,6 +387,63 @@ export class MobileUI {
       /* Game canvas touch optimization */
       body.mobile-ui-enabled canvas {
         touch-action: pan-x pan-y;
+      }
+
+      /* Compact research priority modal on mobile */
+      body.mobile-ui-enabled .research-priority-banner {
+        top: calc(env(safe-area-inset-top, 0px) + 6px) !important;
+        width: 96vw !important;
+        max-width: 420px !important;
+        border-radius: 10px !important;
+        font-size: 13px !important;
+      }
+      body.mobile-ui-enabled .banner-header {
+        padding: 0.6rem 0.9rem !important;
+      }
+      body.mobile-ui-enabled .banner-title {
+        font-size: 15px !important;
+      }
+      body.mobile-ui-enabled .banner-content {
+        padding: 0.8rem !important;
+      }
+      body.mobile-ui-enabled .banner-intro {
+        font-size: 0.82em !important;
+        margin-bottom: 0.6rem !important;
+      }
+      body.mobile-ui-enabled .categories-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+      }
+      body.mobile-ui-enabled .category-tile {
+        min-height: 60px !important;
+        padding: 8px !important;
+        gap: 4px !important;
+      }
+      body.mobile-ui-enabled .category-tile-icon {
+        width: 24px !important;
+        height: 24px !important;
+      }
+      body.mobile-ui-enabled .category-tile-name {
+        font-size: 0.9em !important;
+      }
+      body.mobile-ui-enabled .category-tile-desc {
+        font-size: 0.65em !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+      }
+      body.mobile-ui-enabled .banner-footer {
+        font-size: 0.75em !important;
+        padding-top: 0.3rem !important;
+      }
+
+      /* Compact research priority confirmation toast on mobile */
+      body.mobile-ui-enabled .research-priority-confirmation-toast {
+        width: min(92vw, 300px) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        font-size: 13px !important;
       }
       
       /* Support for notched devices */
@@ -665,7 +723,7 @@ export class MobileUI {
   /**
    * Handle build action (show build popup)
    */
-  private handleBuildAction(): void {
+  private async handleBuildAction(): Promise<void> {
     console.log("[MobileUI] Build action triggered");
 
     // Check if we have a game and selected tile
@@ -687,7 +745,7 @@ export class MobileUI {
       return;
     }
 
-    if (this.tryExpandOnEmptyTile()) {
+    if (await this.tryExpandOnEmptyTile()) {
       return;
     }
 
@@ -709,7 +767,7 @@ export class MobileUI {
   /**
    * Handle attack action (show attack popup)
    */
-  private handleAttackAction(): void {
+  private async handleAttackAction(): Promise<void> {
     console.log("[MobileUI] Attack action triggered");
 
     if (!this.isAttackPopupReady()) {
@@ -725,7 +783,7 @@ export class MobileUI {
       return;
     }
 
-    if (this.tryExpandOnEmptyTile()) {
+    if (await this.tryExpandOnEmptyTile()) {
       return;
     }
 
@@ -739,7 +797,7 @@ export class MobileUI {
     this.attackPopup.openForTile(this.selectedTile, this.currentGame, position);
   }
 
-  private tryExpandOnEmptyTile(): boolean {
+  private async tryExpandOnEmptyTile(): Promise<boolean> {
     if (!this.currentGame || !this.selectedTile) {
       return false;
     }
@@ -754,13 +812,51 @@ export class MobileUI {
       return false;
     }
 
+    // Only auto-expand on neutral (non-player) land tiles
+    if (owner.isPlayer()) {
+      return false;
+    }
+
     if (!this.currentGame.isLand(this.selectedTile)) {
       return false;
     }
 
     const troops = this.attackRatio * myPlayer.troops();
-    this.eventBus.emit(new SendAttackIntentEvent(owner.id(), troops));
-    return true;
+
+    // Check if we need a boat attack (target is land but requires crossing water)
+    const actions = await myPlayer.actions(this.selectedTile);
+
+    if (actions.canAttack) {
+      // Ground attack is possible
+      this.eventBus.emit(new SendAttackIntentEvent(owner.id(), troops));
+      return true;
+    }
+
+    // Check if boat attack is possible
+    const transportShipBuildable = actions.buildableUnits.find(
+      (bu) => bu.type === UnitType.TransportShip,
+    );
+    if (
+      transportShipBuildable &&
+      transportShipBuildable.canBuild !== false &&
+      this.currentGame.isLand(this.selectedTile)
+    ) {
+      // Need boat attack - find best spawn port
+      const spawn = await myPlayer.bestTransportShipSpawn(this.selectedTile);
+      this.eventBus.emit(
+        new SendBoatAttackIntentEvent(
+          owner.id(),
+          this.selectedTile,
+          troops,
+          spawn === false ? null : spawn,
+        ),
+      );
+      console.log("[MobileUI] Boat attack sent for water crossing");
+      return true;
+    }
+
+    // Cannot attack by ground or boat
+    return false;
   }
 
   /**
@@ -1168,7 +1264,7 @@ export class MobileUI {
       // Neutral territory - attack to expand
       this.contextButton.updateState("attack");
     } else {
-      // Enemy territory - show attack or diplomacy
+      // Enemy player territory - always show attack (peace timer handled by game logic)
       this.contextButton.updateState("attack");
     }
   }
