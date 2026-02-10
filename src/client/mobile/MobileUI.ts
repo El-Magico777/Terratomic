@@ -9,11 +9,14 @@ import type { TileRef } from "../../core/game/GameMap";
 import type { GameView } from "../../core/game/GameView";
 import {
   BuildUnitIntentEvent,
+  SendAllianceRequestIntentEvent,
   SendAttackIntentEvent,
   SendBoatAttackIntentEvent,
   SendBomberIntentEvent,
+  SendBreakAllianceIntentEvent,
   SendDeclareWarIntentEvent,
   SendParatrooperAttackIntentEvent,
+  SendPeaceRequestIntentEvent,
 } from "../Transport";
 import { ButtonState, MobileContextButton } from "./MobileContextButton";
 import { MobileDetector } from "./MobileDetector";
@@ -21,9 +24,12 @@ import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
 import { MobileAttackRatioSlider } from "./overlays/MobileAttackRatioSlider";
 import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
+import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
 import { MobilePlacementMode } from "./overlays/MobilePlacementMode";
+import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
 import { MobileAttackPopup } from "./popups/MobileAttackPopup";
 import { MobileBuildPopup } from "./popups/MobileBuildPopup";
+import { MobileDiplomacyPopup } from "./popups/MobileDiplomacyPopup";
 import { MobileUnitActionPopup } from "./popups/MobileUnitActionPopup";
 
 export class MobileUI {
@@ -41,6 +47,11 @@ export class MobileUI {
   private attackPopup: MobileAttackPopup;
   private attackRatioSlider: MobileAttackRatioSlider;
   private unitActionPopup: MobileUnitActionPopup;
+
+  // Phase 4 components
+  private diplomacyPopup: MobileDiplomacyPopup;
+  private intelSidebar: MobileIntelSidebar;
+  private playerToast: MobilePlayerToast;
 
   // Game state
   private currentGame: GameView | null = null;
@@ -80,6 +91,17 @@ export class MobileUI {
     this.unitActionPopup = document.createElement(
       "mobile-unit-action-popup",
     ) as MobileUnitActionPopup;
+
+    // Create Phase 4 components
+    this.diplomacyPopup = document.createElement(
+      "mobile-diplomacy-popup",
+    ) as MobileDiplomacyPopup;
+    this.intelSidebar = document.createElement(
+      "mobile-intel-sidebar",
+    ) as MobileIntelSidebar;
+    this.playerToast = document.createElement(
+      "mobile-player-toast",
+    ) as MobilePlayerToast;
 
     // Set initial button size based on device
     this.contextButton.size = MobileDetector.getContextButtonSize();
@@ -121,6 +143,11 @@ export class MobileUI {
     document.body.appendChild(this.attackPopup);
     document.body.appendChild(this.attackRatioSlider);
     document.body.appendChild(this.unitActionPopup);
+
+    // Attach Phase 4 components
+    document.body.appendChild(this.diplomacyPopup);
+    document.body.appendChild(this.intelSidebar);
+    document.body.appendChild(this.playerToast);
 
     // Apply mobile-specific CSS to body
     document.body.classList.add("mobile-ui-enabled");
@@ -277,6 +304,40 @@ export class MobileUI {
       console.log("[MobileUI] Unit action popup closed");
     });
 
+    // Phase 4: Diplomacy popup item selected
+    this.diplomacyPopup.addEventListener("item-selected", (e: Event) => {
+      const event = e as CustomEvent<{ action: string }>;
+      this.handleDiplomacyItemSelected(event.detail.action);
+    });
+
+    // Phase 4: Diplomacy popup closed
+    this.diplomacyPopup.addEventListener("popup-closed", () => {
+      console.log("[MobileUI] Diplomacy popup closed");
+    });
+
+    // Phase 4: Intel sidebar closed
+    this.intelSidebar.addEventListener("sidebar-closed", () => {
+      console.log("[MobileUI] Intel sidebar closed");
+    });
+
+    // Phase 4: Player selected from sidebar
+    this.intelSidebar.addEventListener("player-selected", (e: Event) => {
+      const event = e as CustomEvent<{ player: any }>;
+      console.log(
+        "[MobileUI] Player selected from sidebar:",
+        event.detail.player,
+      );
+      // Could open diplomacy actions here
+    });
+
+    // Phase 4: Player toast clicked
+    this.playerToast.addEventListener("toast-clicked", (e: Event) => {
+      const event = e as CustomEvent<{ player: any }>;
+      console.log("[MobileUI] Player toast clicked:", event.detail.player);
+      // Open intel sidebar when toast is tapped
+      this.intelSidebar.open();
+    });
+
     // Handle orientation changes
     window.addEventListener("orientationchange", () => {
       this.handleOrientationChange();
@@ -364,6 +425,10 @@ export class MobileUI {
    */
   updateGameState(game: GameView): void {
     this.currentGame = game;
+
+    // Update Phase 4 components with game state
+    this.intelSidebar.game = game;
+    this.playerToast.game = game;
   }
 
   /**
@@ -470,7 +535,32 @@ export class MobileUI {
    */
   private handleDiplomacyAction(): void {
     console.log("[MobileUI] Diplomacy action triggered");
-    // TODO: Show diplomacy popup (Phase 4)
+
+    // Check if we have a game and selected tile
+    if (!this.currentGame || !this.selectedTile) {
+      console.warn(
+        "[MobileUI] Cannot show diplomacy popup: no game or selected tile",
+      );
+      return;
+    }
+
+    // Check if selected tile has a player owner
+    const owner = this.currentGame.owner(this.selectedTile);
+    if (!owner.isPlayer()) {
+      console.warn("[MobileUI] Selected tile has no player owner");
+      return;
+    }
+
+    // Show diplomacy popup at context button position
+    const buttonRect = this.contextButton.getBoundingClientRect();
+    const position = {
+      x: buttonRect.left + buttonRect.width / 2,
+      y: buttonRect.top,
+    };
+
+    this.diplomacyPopup.game = this.currentGame;
+    this.diplomacyPopup.selectedTile = this.selectedTile;
+    this.diplomacyPopup.show(position);
   }
 
   /**
@@ -698,6 +788,72 @@ export class MobileUI {
   }
 
   /**
+   * Handle diplomacy item selected from popup
+   */
+  private handleDiplomacyItemSelected(action: string): void {
+    console.log("[MobileUI] Diplomacy action selected:", action);
+
+    // Close the diplomacy popup
+    this.diplomacyPopup.close();
+
+    if (!this.currentGame || !this.selectedTile) return;
+
+    const owner = this.currentGame.owner(this.selectedTile);
+    if (!owner.isPlayer()) return;
+
+    // After isPlayer check, we know it's a PlayerView
+    const targetPlayer = owner as import("../../core/game/GameView").PlayerView;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    switch (action) {
+      case "diplomacy:propose-ally":
+        // Send alliance request
+        this.eventBus.emit(
+          new SendAllianceRequestIntentEvent(myPlayer, targetPlayer),
+        );
+        console.log("[MobileUI] Alliance request sent");
+        break;
+
+      case "diplomacy:break-alliance":
+        // Break alliance
+        this.eventBus.emit(
+          new SendBreakAllianceIntentEvent(myPlayer, targetPlayer),
+        );
+        console.log("[MobileUI] Alliance broken");
+        break;
+
+      case "diplomacy:request-peace":
+        // Request peace
+        this.eventBus.emit(
+          new SendPeaceRequestIntentEvent(myPlayer, targetPlayer),
+        );
+        console.log("[MobileUI] Peace request sent");
+        break;
+
+      case "diplomacy:send-emoji":
+        // TODO: Show emoji picker
+        console.log("[MobileUI] Send emoji - implementation pending");
+        break;
+
+      case "diplomacy:donate-troops":
+        // TODO: Show troop donation picker
+        console.log("[MobileUI] Donate troops - implementation pending");
+        break;
+
+      case "diplomacy:view-player":
+        // Open Intel sidebar
+        this.intelSidebar.open();
+        console.log("[MobileUI] Opening Intel sidebar");
+        break;
+
+      default:
+        console.warn("[MobileUI] Unknown diplomacy action:", action);
+    }
+  }
+
+  /**
    * Handle map tap (for tile selection)
    */
   private handleMapTap(position: { x: number; y: number }): void {
@@ -831,7 +987,7 @@ export class MobileUI {
    */
   private handleOpenIntelSidebar(): void {
     console.log("[MobileUI] Opening Intel sidebar");
-    // TODO: Implement Intel sidebar (Phase 4)
+    this.intelSidebar.toggle();
   }
 
   /**
@@ -870,6 +1026,9 @@ export class MobileUI {
     this.attackPopup.remove();
     this.attackRatioSlider.remove();
     this.unitActionPopup.remove();
+    this.diplomacyPopup.remove();
+    this.intelSidebar.remove();
+    this.playerToast.remove();
 
     // Clean up gesture detector
     if (this.gestureDetector) {

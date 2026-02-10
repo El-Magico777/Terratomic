@@ -1,0 +1,175 @@
+/**
+ * MobilePlayerToast - Quick player info toast (long-press trigger)
+ * Shows player name, relation, population, gold
+ * Part of Phase 4: Diplomacy & Intel System
+ */
+
+import { LitElement, css, html } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import type { GameView, PlayerView } from "../../../core/game/GameView";
+
+@customElement("mobile-player-toast")
+export class MobilePlayerToast extends LitElement {
+  @property({ type: Boolean }) visible: boolean = false;
+  @property({ type: Object }) game: GameView | null = null;
+  @property({ type: Object }) player: PlayerView | null = null;
+
+  private autoHideTimeout: number | null = null;
+
+  static styles = css`
+    :host {
+      display: block;
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      z-index: 2500;
+      pointer-events: none;
+      opacity: 0;
+      transition:
+        transform 0.3s ease,
+        opacity 0.3s ease;
+    }
+
+    :host([visible]) {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .toast {
+      background: rgba(20, 20, 30, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px;
+      padding: 16px 20px;
+      min-width: 240px;
+      box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.4),
+        0 4px 8px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .toast:active {
+      transform: scale(0.98);
+    }
+
+    .player-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .player-name {
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .relation-badge {
+      font-size: 18px;
+    }
+
+    .player-stats {
+      display: flex;
+      gap: 16px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .relation-text {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .relation-text.allied {
+      color: #10b981;
+    }
+
+    .relation-text.enemy {
+      color: #ef4444;
+    }
+  `;
+
+  render() {
+    if (!this.visible || !this.player || !this.game) return null;
+
+    const myPlayer = this.game.myPlayer();
+    if (!myPlayer) return null;
+
+    const isAllied = myPlayer.isAlliedWith(this.player);
+    const isEnemy = myPlayer.isAtWarWith(this.player);
+
+    const relation = isAllied ? "allied" : isEnemy ? "enemy" : "neutral";
+    const relationText = isAllied ? "Allied" : isEnemy ? "At War" : "Neutral";
+    const relationIcon = isAllied ? "🤝" : isEnemy ? "⚔️" : "";
+
+    const population = this.player.numTilesOwned();
+    const gold = Number(this.player.gold());
+
+    return html`
+      <div class="toast" @click="${this.handleClick}">
+        <div class="player-header">
+          <div class="player-name">${this.player.name()}</div>
+          ${relationIcon
+            ? html`<div class="relation-badge">${relationIcon}</div>`
+            : null}
+        </div>
+        <div class="player-stats">
+          <div class="stat">🏠 ${population}</div>
+          <div class="stat">💰 ${gold}</div>
+        </div>
+        <div class="relation-text ${relation}">${relationText}</div>
+      </div>
+    `;
+  }
+
+  show(player: PlayerView, duration: number = 3000): void {
+    this.player = player;
+    this.visible = true;
+
+    // Auto-hide after duration
+    if (this.autoHideTimeout !== null) {
+      clearTimeout(this.autoHideTimeout);
+    }
+    this.autoHideTimeout = window.setTimeout(() => {
+      this.hide();
+    }, duration);
+  }
+
+  hide(): void {
+    this.visible = false;
+    if (this.autoHideTimeout !== null) {
+      clearTimeout(this.autoHideTimeout);
+      this.autoHideTimeout = null;
+    }
+  }
+
+  private handleClick(): void {
+    // Emit event to expand to full player details (opens Intel sidebar)
+    this.dispatchEvent(
+      new CustomEvent("toast-clicked", {
+        detail: { player: this.player },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.hide();
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "mobile-player-toast": MobilePlayerToast;
+  }
+}
