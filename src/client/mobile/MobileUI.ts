@@ -27,6 +27,7 @@ import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
 import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
 import { MobilePlacementMode } from "./overlays/MobilePlacementMode";
 import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
+import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
 import { MobileAttackPopup } from "./popups/MobileAttackPopup";
 import { MobileBuildPopup } from "./popups/MobileBuildPopup";
 import { MobileDiplomacyPopup } from "./popups/MobileDiplomacyPopup";
@@ -52,6 +53,9 @@ export class MobileUI {
   private diplomacyPopup: MobileDiplomacyPopup;
   private intelSidebar: MobileIntelSidebar;
   private playerToast: MobilePlayerToast;
+
+  // Phase 5 components
+  private researchSidebar: MobileResearchSidebar;
 
   // Game state
   private currentGame: GameView | null = null;
@@ -103,6 +107,11 @@ export class MobileUI {
       "mobile-player-toast",
     ) as MobilePlayerToast;
 
+    // Create Phase 5 components
+    this.researchSidebar = document.createElement(
+      "mobile-research-sidebar",
+    ) as MobileResearchSidebar;
+
     // Set initial button size based on device
     this.contextButton.size = MobileDetector.getContextButtonSize();
 
@@ -148,6 +157,9 @@ export class MobileUI {
     document.body.appendChild(this.diplomacyPopup);
     document.body.appendChild(this.intelSidebar);
     document.body.appendChild(this.playerToast);
+
+    // Attach Phase 5 components
+    document.body.appendChild(this.researchSidebar);
 
     // Apply mobile-specific CSS to body
     document.body.classList.add("mobile-ui-enabled");
@@ -338,6 +350,11 @@ export class MobileUI {
       this.intelSidebar.open();
     });
 
+    // Phase 5: Research sidebar closed
+    this.researchSidebar.addEventListener("sidebar-closed", () => {
+      console.log("[MobileUI] Research sidebar closed");
+    });
+
     // Handle orientation changes
     window.addEventListener("orientationchange", () => {
       this.handleOrientationChange();
@@ -429,6 +446,10 @@ export class MobileUI {
     // Update Phase 4 components with game state
     this.intelSidebar.game = game;
     this.playerToast.game = game;
+
+    // Update Phase 5 components with game state
+    this.researchSidebar.game = game;
+    this.researchSidebar.eventBus = this.eventBus;
   }
 
   /**
@@ -995,7 +1016,7 @@ export class MobileUI {
    */
   private handleOpenResearchSidebar(): void {
     console.log("[MobileUI] Opening Research sidebar");
-    // TODO: Implement Research sidebar (Phase 5)
+    this.researchSidebar.toggle();
   }
 
   /**
@@ -1029,6 +1050,7 @@ export class MobileUI {
     this.diplomacyPopup.remove();
     this.intelSidebar.remove();
     this.playerToast.remove();
+    this.researchSidebar.remove();
 
     // Clean up gesture detector
     if (this.gestureDetector) {
