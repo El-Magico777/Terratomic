@@ -21,16 +21,31 @@ export class MobileDetector {
   /**
    * Detects if the current device is a mobile device
    * Checks for touch capability, screen size, and user agent
+   * Prioritizes screen size and user agent over touch to avoid false positives on desktop touchscreens
    */
   static isMobile(): boolean {
-    const touchDevice = "ontouchstart" in window;
     const smallScreen = window.innerWidth < 768;
+    const uaDataMobile =
+      "userAgentData" in navigator &&
+      Boolean(
+        (navigator as Navigator & { userAgentData?: { mobile?: boolean } })
+          .userAgentData?.mobile,
+      );
     const mobileUA =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
       );
+    const touchDevice =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
 
-    return touchDevice && (smallScreen || mobileUA);
+    // Mobile UA always enables mobile UI (supports device emulation)
+    if (uaDataMobile || mobileUA) {
+      return true;
+    }
+
+    // Otherwise require a small screen and real touch capability
+    return smallScreen && (touchDevice || coarsePointer);
   }
 
   /**

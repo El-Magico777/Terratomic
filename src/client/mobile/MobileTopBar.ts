@@ -29,7 +29,7 @@ export class MobileTopBar extends LitElement {
       top: 0;
       left: 0;
       right: 0;
-      z-index: 100;
+      z-index: 1600;
     }
 
     .top-bar {

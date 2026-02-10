@@ -17,7 +17,9 @@ import {
   SendDeclareWarIntentEvent,
   SendParatrooperAttackIntentEvent,
   SendPeaceRequestIntentEvent,
+  SendSpawnIntentEvent,
 } from "../Transport";
+import type { TransformHandler } from "../graphics/TransformHandler";
 import { ButtonState, MobileContextButton } from "./MobileContextButton";
 import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
@@ -38,6 +40,8 @@ export class MobileUI {
   private topBar: MobileTopBar;
   private gestureDetector: GestureDetector | null = null;
   private canvas: HTMLCanvasElement | null = null;
+  private transformHandler: TransformHandler | null = null;
+  private popupReadyPromise: Promise<void> | null = null;
 
   // Phase 2 components
   private buildPopup: MobileBuildPopup;
@@ -61,9 +65,15 @@ export class MobileUI {
   private currentGame: GameView | null = null;
   private selectedTile: TileRef | null = null;
   private attackRatio: number = 0.3; // Default 30%
+  private active: boolean | null = null;
+  private componentsAttached: boolean = false;
 
   constructor(private eventBus: EventBus) {
     console.log("[MobileUI] Initializing mobile UI system");
+
+    if (typeof window !== "undefined") {
+      (window as Window & { __MOBILE_UI__?: MobileUI }).__MOBILE_UI__ = this;
+    }
 
     // Create and register custom elements
     this.setupCustomElements();
@@ -112,19 +122,16 @@ export class MobileUI {
       "mobile-research-sidebar",
     ) as MobileResearchSidebar;
 
-    // Set initial button size based on device
-    this.contextButton.size = MobileDetector.getContextButtonSize();
+    // Don't attach to DOM yet - wait for setActive(true)
+    // Don't call any custom element methods yet - they're not registered until imports complete
+    // this.attachComponents(); // Deferred until activation
 
-    // Attach to DOM
-    this.attachComponents();
+    // Set up event listeners (will be called after first activation)
+    // this.setupEventListeners(); // Deferred until activation
 
-    // Set up event listeners
-    this.setupEventListeners();
-
-    // Initialize with default state
-    this.contextButton.updateState("build");
-
-    console.log("[MobileUI] Mobile UI system initialized");
+    console.log(
+      "[MobileUI] Mobile UI system initialized (components not attached yet)",
+    );
   }
 
   /**
@@ -161,14 +168,55 @@ export class MobileUI {
     // Attach Phase 5 components
     document.body.appendChild(this.researchSidebar);
 
-    // Apply mobile-specific CSS to body
-    document.body.classList.add("mobile-ui-enabled");
-
     // Add viewport meta tag if not present
     this.ensureViewportMeta();
+  }
 
-    // Add mobile-specific styles
-    this.injectMobileStyles();
+  /**
+   * Enable or disable mobile UI visibility and behavior
+   */
+  setActive(active: boolean): void {
+    if (this.active === active) return;
+    this.active = active;
+
+    if (active) {
+      // Attach components to DOM on first activation
+      if (!this.componentsAttached) {
+        console.log("[MobileUI] Attaching components to DOM");
+        this.attachComponents();
+        this.setupEventListeners();
+        // Initialize button state and size after custom elements are attached
+        this.contextButton.size = MobileDetector.getContextButtonSize();
+        this.contextButton.updateState("build");
+        this.componentsAttached = true;
+      }
+      this.contextButton.style.display = "";
+      this.topBar.style.display = "";
+      document.body.classList.add("mobile-ui-enabled");
+      this.injectMobileStyles();
+    } else {
+      // Only manipulate components if they've been attached
+      if (this.componentsAttached) {
+        this.contextButton.style.display = "none";
+        this.topBar.style.display = "none";
+        this.closeAllOverlays();
+      }
+      document.body.classList.remove("mobile-ui-enabled");
+      document.getElementById("mobile-ui-styles")?.remove();
+    }
+  }
+
+  private closeAllOverlays(): void {
+    this.buildPopup.close();
+    this.attackPopup.close();
+    this.unitActionPopup.close();
+    this.diplomacyPopup.close();
+    this.economyOverlay.close();
+    this.attackRatioSlider.close();
+    this.intelSidebar.close();
+    this.researchSidebar.close();
+    this.placementMode.exit();
+    this.playerToast.hide();
   }
 
   /**
@@ -219,6 +267,24 @@ export class MobileUI {
       
       /* Hide desktop-only UI components when mobile is enabled */
       body.mobile-ui-enabled .desktop-only {
+        display: none !important;
+      }
+
+      /* Hide desktop HUD elements while mobile UI is active */
+      body.mobile-ui-enabled #customMenu,
+      body.mobile-ui-enabled #radialMenu,
+      body.mobile-ui-enabled #settings-button,
+      body.mobile-ui-enabled control-panel,
+      body.mobile-ui-enabled control-panel2,
+      body.mobile-ui-enabled chat-display,
+      body.mobile-ui-enabled events-display,
+      body.mobile-ui-enabled heads-up-message,
+      body.mobile-ui-enabled options-menu,
+      body.mobile-ui-enabled replay-panel,
+      body.mobile-ui-enabled player-info-overlay,
+      body.mobile-ui-enabled research-toggle-button,
+      body.mobile-ui-enabled game-left-sidebar,
+      body.mobile-ui-enabled .desktop-hud {
         display: none !important;
       }
       
@@ -362,7 +428,9 @@ export class MobileUI {
 
     // Handle resize (for responsive button sizing)
     window.addEventListener("resize", () => {
-      this.contextButton.size = MobileDetector.getContextButtonSize();
+      if (this.componentsAttached) {
+        this.contextButton.size = MobileDetector.getContextButtonSize();
+      }
     });
   }
 
@@ -453,6 +521,13 @@ export class MobileUI {
   }
 
   /**
+   * Provide renderer transform handler for screen-to-tile conversion
+   */
+  setTransformHandler(transformHandler: TransformHandler): void {
+    this.transformHandler = transformHandler;
+  }
+
+  /**
    * Update context button state based on game state
    */
   updateContextButton(state: ButtonState): void {
@@ -501,6 +576,26 @@ export class MobileUI {
       return;
     }
 
+    // Spawn selection during spawn phase
+    if (this.currentGame.inSpawnPhase()) {
+      if (
+        this.currentGame.isLand(this.selectedTile) &&
+        !this.currentGame.hasOwner(this.selectedTile)
+      ) {
+        this.eventBus.emit(new SendSpawnIntentEvent(this.selectedTile));
+      }
+      return;
+    }
+
+    if (this.tryExpandOnEmptyTile()) {
+      return;
+    }
+
+    if (!this.isBuildPopupReady()) {
+      this.ensurePopupsReady().then(() => this.handleBuildAction());
+      return;
+    }
+
     // Show build popup at context button position
     const buttonRect = this.contextButton.getBoundingClientRect();
     const position = {
@@ -517,11 +612,20 @@ export class MobileUI {
   private handleAttackAction(): void {
     console.log("[MobileUI] Attack action triggered");
 
+    if (!this.isAttackPopupReady()) {
+      this.ensurePopupsReady().then(() => this.handleAttackAction());
+      return;
+    }
+
     // Check if we have a game and selected tile
     if (!this.currentGame || !this.selectedTile) {
       console.warn(
         "[MobileUI] Cannot show attack popup: no game or selected tile",
       );
+      return;
+    }
+
+    if (this.tryExpandOnEmptyTile()) {
       return;
     }
 
@@ -533,6 +637,30 @@ export class MobileUI {
     };
 
     this.attackPopup.openForTile(this.selectedTile, this.currentGame, position);
+  }
+
+  private tryExpandOnEmptyTile(): boolean {
+    if (!this.currentGame || !this.selectedTile) {
+      return false;
+    }
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) {
+      return false;
+    }
+
+    const owner = this.currentGame.owner(this.selectedTile);
+    if (owner === myPlayer) {
+      return false;
+    }
+
+    if (!this.currentGame.isLand(this.selectedTile)) {
+      return false;
+    }
+
+    const troops = this.attackRatio * myPlayer.troops();
+    this.eventBus.emit(new SendAttackIntentEvent(owner.id(), troops));
+    return true;
   }
 
   /**
@@ -879,10 +1007,11 @@ export class MobileUI {
    */
   private handleMapTap(position: { x: number; y: number }): void {
     console.log("[MobileUI] Map tap at:", position);
-
-    // TODO: Convert screen position to tile coordinates
-    // For now, just store the position
-    // This would typically be handled by the MapRenderer
+    const tile = this.screenToTile(position);
+    if (!tile) {
+      return;
+    }
+    this.selectedTile = tile;
   }
 
   /**
@@ -929,10 +1058,68 @@ export class MobileUI {
    * TODO: Implement actual conversion based on MapRenderer
    */
   private screenToTile(position: { x: number; y: number }): TileRef | null {
-    // Placeholder - this would need to be implemented based on the actual
-    // MapRenderer tile coordinate system
-    console.warn("[MobileUI] screenToTile not yet implemented");
-    return null;
+    if (!this.currentGame || !this.transformHandler) {
+      return null;
+    }
+
+    const cell = this.transformHandler.screenToWorldCoordinates(
+      position.x,
+      position.y,
+    );
+
+    if (!this.currentGame.isValidCoord(cell.x, cell.y)) {
+      return null;
+    }
+
+    return this.currentGame.ref(cell.x, cell.y);
+  }
+
+  private isBuildPopupReady(): boolean {
+    return typeof this.buildPopup.openForTile === "function";
+  }
+
+  private isAttackPopupReady(): boolean {
+    return typeof this.attackPopup.openForTile === "function";
+  }
+
+  private ensurePopupsReady(): Promise<void> {
+    if (this.popupReadyPromise) {
+      return this.popupReadyPromise;
+    }
+
+    this.popupReadyPromise = Promise.all([
+      customElements.whenDefined("mobile-build-popup"),
+      customElements.whenDefined("mobile-attack-popup"),
+    ]).then(() => {
+      // Replace popups if they were created before custom elements were defined
+      if (!this.isBuildPopupReady()) {
+        const replacement = document.createElement(
+          "mobile-build-popup",
+        ) as MobileBuildPopup;
+        if (this.buildPopup.isConnected) {
+          this.buildPopup.replaceWith(replacement);
+        }
+        this.buildPopup = replacement;
+        if (this.componentsAttached && !this.buildPopup.isConnected) {
+          document.body.appendChild(this.buildPopup);
+        }
+      }
+
+      if (!this.isAttackPopupReady()) {
+        const replacement = document.createElement(
+          "mobile-attack-popup",
+        ) as MobileAttackPopup;
+        if (this.attackPopup.isConnected) {
+          this.attackPopup.replaceWith(replacement);
+        }
+        this.attackPopup = replacement;
+        if (this.componentsAttached && !this.attackPopup.isConnected) {
+          document.body.appendChild(this.attackPopup);
+        }
+      }
+    });
+
+    return this.popupReadyPromise;
   }
 
   /**
@@ -1062,5 +1249,12 @@ export class MobileUI {
 
     // Remove injected styles
     document.getElementById("mobile-ui-styles")?.remove();
+
+    if (typeof window !== "undefined") {
+      const win = window as Window & { __MOBILE_UI__?: MobileUI };
+      if (win.__MOBILE_UI__ === this) {
+        delete win.__MOBILE_UI__;
+      }
+    }
   }
 }

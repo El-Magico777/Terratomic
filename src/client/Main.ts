@@ -38,7 +38,6 @@ import { OButton } from "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import "./graphics/layers/TutorialToast";
 import { isLoggedIn } from "./jwt";
-import { MobileDetector } from "./mobile/MobileDetector";
 import { MobileUI } from "./mobile/MobileUI";
 import "./styles.css";
 import { applyUiPalette, getUiPalette } from "./theme/UiPaletteLoader";
@@ -98,8 +97,8 @@ class Client {
   private menuMusic: HTMLAudioElement | null = null;
   // Track whether the UI is currently on the main menu (not in-game)
   private isOnMainMenu = true;
-  // Mobile UI system (initialized if on mobile device)
-  private mobileUI: MobileUI | null = null;
+  // Mobile UI system (always initialized, activates on mobile devices)
+  private mobileUI: MobileUI;
 
   constructor() {}
 
@@ -126,11 +125,11 @@ class Client {
       this.handleDarkModeChangedEvent,
     );
 
-    // Initialize mobile UI if on mobile device
-    if (MobileDetector.isMobile()) {
-      console.log("[Main] Mobile device detected, initializing mobile UI");
-      this.mobileUI = new MobileUI(this.eventBus);
-    }
+    // Always initialize mobile UI (it will auto-detect and activate when needed)
+    // This ensures it's available even if device emulation is enabled after page load
+    console.log("[Main] Initializing mobile UI system");
+    this.mobileUI = new MobileUI(this.eventBus);
+    this.mobileUI.setActive(false); // Hidden in lobby by default
 
     // Prepare main menu background music
     this.setupMenuMusic();
@@ -266,10 +265,8 @@ class Client {
 
     window.addEventListener("beforeunload", () => {
       console.log("Browser is closing");
-      // Clean up mobile UI if present
-      if (this.mobileUI) {
-        this.mobileUI.destroy();
-      }
+      // Clean up mobile UI
+      this.mobileUI.destroy();
       if (this.gameStop !== null) {
         this.gameStop();
       }
@@ -557,6 +554,7 @@ class Client {
         console.log("Closing modals");
         // We're leaving the main menu and entering the game
         this.isOnMainMenu = false;
+        this.mobileUI.setActive(true);
         // Pause menu music when the game is loading/starting
         this.menuMusic?.pause();
         document.getElementById("settings-button")?.classList.add("hidden");
@@ -623,6 +621,7 @@ class Client {
     this.publicLobby.leaveLobby();
     // We're back on the main menu; allow music again
     this.isOnMainMenu = true;
+    this.mobileUI.setActive(false);
     document
       .getElementById("quick-toggle-container")
       ?.classList.remove("hidden");
