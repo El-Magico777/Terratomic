@@ -9,6 +9,8 @@ import { customElement, property, query } from "lit/decorators.js";
 import type { EventBus } from "../../../core/EventBus";
 import type { GameView } from "../../../core/game/GameView";
 import type { ResearchTreeModal } from "../../ResearchTreeModal";
+import { HapticFeedback } from "../utils/HapticFeedback";
+import "../utils/SkeletonLoader";
 
 @customElement("mobile-research-sidebar")
 export class MobileResearchSidebar extends LitElement {
@@ -147,8 +149,8 @@ export class MobileResearchSidebar extends LitElement {
   private renderResearchModal() {
     if (!this.game || !this.eventBus) {
       return html`
-        <div style="color: white; padding: 16px; text-align: center;">
-          Loading research tree...
+        <div style="padding: 16px;">
+          <skeleton-loader type="grid" count="8"></skeleton-loader>
         </div>
       `;
     }
@@ -184,6 +186,7 @@ export class MobileResearchSidebar extends LitElement {
 
   open(): void {
     this.visible = true;
+    HapticFeedback.tap();
   }
 
   close(): void {

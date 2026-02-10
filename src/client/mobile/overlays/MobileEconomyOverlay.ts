@@ -54,7 +54,7 @@ export class MobileEconomyOverlay extends LitElement {
       bottom: 0;
       background: rgba(0, 0, 0, 0.5);
       opacity: 0;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.25s ease-out;
     }
 
     :host([visible]) .backdrop {
@@ -74,7 +74,7 @@ export class MobileEconomyOverlay extends LitElement {
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
       padding-bottom: env(safe-area-inset-bottom, 0);
       transform: translateY(100%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.25s ease-out;
       max-height: 80vh;
       overflow-y: auto;
     }

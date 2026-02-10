@@ -27,8 +27,8 @@ export class MobilePlayerToast extends LitElement {
       pointer-events: none;
       opacity: 0;
       transition:
-        transform 0.3s ease,
-        opacity 0.3s ease;
+        transform 0.25s ease-out,
+        opacity 0.25s ease-out;
     }
 
     :host([visible]) {

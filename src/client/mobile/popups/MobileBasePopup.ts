@@ -5,6 +5,7 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { HapticFeedback } from "../utils/HapticFeedback";
 
 export interface PopupMenuItem {
   icon: string;
@@ -23,6 +24,11 @@ export class MobileBasePopup extends LitElement {
   @property({ type: Boolean }) visible: boolean = false;
   @property({ type: Array }) items: PopupMenuItem[] = [];
   @property({ type: Object }) position: { x: number; y: number } | null = null;
+
+  // Swipe gesture tracking
+  private touchStartY: number = 0;
+  private touchStartTime: number = 0;
+  private isDragging: boolean = false;
 
   static styles = css`
     :host {
@@ -48,7 +54,7 @@ export class MobileBasePopup extends LitElement {
       bottom: 0;
       background: rgba(0, 0, 0, 0.5);
       opacity: 0;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.25s ease-out;
     }
 
     :host([visible]) .backdrop {
@@ -71,8 +77,8 @@ export class MobileBasePopup extends LitElement {
       transform: scale(0.8) translateY(20px);
       opacity: 0;
       transition:
-        transform 0.2s ease,
-        opacity 0.2s ease;
+        transform 0.25s ease-out,
+        opacity 0.25s ease-out;
     }
 
     :host([visible]) .popup {
@@ -207,7 +213,13 @@ export class MobileBasePopup extends LitElement {
 
     return html`
       <div class="backdrop" @click="${this.handleBackdropClick}"></div>
-      <div class="popup" style="${this.getPopupStyle()}">
+      <div
+        class="popup"
+        style="${this.getPopupStyle()}"
+        @touchstart="${this.handleTouchStart}"
+        @touchmove="${this.handleTouchMove}"
+        @touchend="${this.handleTouchEnd}"
+      >
         ${this.title ? html`<div class="header">${this.title}</div>` : null}
         <div class="menu">
           ${this.items.map((item) => this.renderMenuItem(item))}
@@ -294,7 +306,14 @@ export class MobileBasePopup extends LitElement {
   }
 
   protected handleItemClick(item: PopupMenuItem): void {
-    if (item.locked || item.disabled) return;
+    if (item.locked || item.disabled) {
+      // Error haptic for locked/disabled items
+      HapticFeedback.error();
+      return;
+    }
+
+    // Tap haptic for successful action
+    HapticFeedback.tap();
 
     this.dispatchEvent(
       new CustomEvent("item-selected", {
@@ -303,11 +322,43 @@ export class MobileBasePopup extends LitElement {
         composed: true,
       }),
     );
+  }
 
-    // Light haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
+  protected handleTouchStart(e: TouchEvent): void {
+    this.touchStartY = e.touches[0].clientY;
+    this.touchStartTime = Date.now();
+    this.isDragging = false;
+  }
+
+  protected handleTouchMove(e: TouchEvent): void {
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - this.touchStartY;
+
+    // Only count as drag if moving down significantly
+    if (deltaY > 10) {
+      this.isDragging = true;
     }
+  }
+
+  protected handleTouchEnd(e: TouchEvent): void {
+    if (!this.isDragging) {
+      return;
+    }
+
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaY = touchEndY - this.touchStartY;
+    const duration = Date.now() - this.touchStartTime;
+
+    // Swipe down to dismiss: > 100px movement downward, < 300ms duration
+    const SWIPE_THRESHOLD = 100;
+    const TIME_THRESHOLD = 300;
+
+    if (deltaY > SWIPE_THRESHOLD && duration < TIME_THRESHOLD) {
+      HapticFeedback.tap();
+      this.close();
+    }
+
+    this.isDragging = false;
   }
 
   open(position?: { x: number; y: number }): void {
@@ -315,6 +366,8 @@ export class MobileBasePopup extends LitElement {
       this.position = position;
     }
     this.visible = true;
+    // Tap haptic when popup opens
+    HapticFeedback.tap();
   }
 
   close(): void {

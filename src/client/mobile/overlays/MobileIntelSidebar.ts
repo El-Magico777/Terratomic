@@ -7,6 +7,8 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { GameView, PlayerView } from "../../../core/game/GameView";
+import { HapticFeedback } from "../utils/HapticFeedback";
+import "../utils/SkeletonLoader";
 
 export type IntelTab = "players" | "events";
 
@@ -262,7 +264,8 @@ export class MobileIntelSidebar extends LitElement {
 
   private renderPlayersTab() {
     if (!this.game) {
-      return html`<div class="empty-state">No game data available</div>`;
+      // Show skeleton loader while game data loads
+      return html`<skeleton-loader type="list" count="5"></skeleton-loader>`;
     }
 
     const players = this.getPlayerList();
@@ -365,6 +368,7 @@ export class MobileIntelSidebar extends LitElement {
 
   private switchTab(tab: IntelTab): void {
     this.activeTab = tab;
+    HapticFeedback.tap();
   }
 
   private handleBackdropClick(): void {
@@ -372,6 +376,7 @@ export class MobileIntelSidebar extends LitElement {
   }
 
   private handlePlayerClick(player: PlayerView): void {
+    HapticFeedback.tap();
     // Emit event for player click - can open diplomacy actions
     this.dispatchEvent(
       new CustomEvent("player-selected", {
@@ -384,6 +389,7 @@ export class MobileIntelSidebar extends LitElement {
 
   open(): void {
     this.visible = true;
+    HapticFeedback.tap();
   }
 
   close(): void {

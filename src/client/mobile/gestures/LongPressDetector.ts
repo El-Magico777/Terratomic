@@ -3,6 +3,8 @@
  * Detects when user holds finger on screen for extended period
  */
 
+import { HapticFeedback } from "../utils/HapticFeedback";
+
 export interface LongPressOptions {
   duration?: number; // milliseconds to hold before triggering (default: 600)
   movementThreshold?: number; // max pixels of movement allowed (default: 10)
@@ -33,11 +35,9 @@ export class LongPressDetector {
 
     this.timer = setTimeout(() => {
       if (this.callback && this.startPosition) {
+        // Trigger haptic feedback for long-press
+        HapticFeedback.longPress();
         this.callback(this.startPosition);
-        // Trigger haptic feedback
-        if (navigator.vibrate) {
-          navigator.vibrate(50);
-        }
       }
       this.cleanup();
     }, this.duration);

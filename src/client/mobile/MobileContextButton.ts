@@ -5,6 +5,7 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { HapticFeedback } from "./utils/HapticFeedback";
 
 export type ButtonState =
   | "build"
@@ -144,6 +145,9 @@ export class MobileContextButton extends LitElement {
   private handleClick(): void {
     if (this.state === "hidden") return;
 
+    // Haptic feedback for button tap
+    HapticFeedback.tap();
+
     this.dispatchEvent(
       new CustomEvent("button-click", {
         detail: { state: this.state },
@@ -151,11 +155,6 @@ export class MobileContextButton extends LitElement {
         composed: true,
       }),
     );
-
-    // Light haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
   }
 
   /**

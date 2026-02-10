@@ -37,7 +37,7 @@ export class MobileAttackRatioSlider extends LitElement {
       bottom: 0;
       background: rgba(0, 0, 0, 0.5);
       opacity: 0;
-      transition: opacity 0.2s ease;
+      transition: opacity 0.25s ease-out;
     }
 
     :host([visible]) .backdrop {
@@ -58,8 +58,8 @@ export class MobileAttackRatioSlider extends LitElement {
       transform: translateY(20px);
       opacity: 0;
       transition:
-        transform 0.25s ease,
-        opacity 0.25s ease;
+        transform 0.25s ease-out,
+        opacity 0.25s ease-out;
     }
 
     :host([visible]) .panel {
