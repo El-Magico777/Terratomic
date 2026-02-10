@@ -20,6 +20,7 @@ import {
   SendSpawnIntentEvent,
 } from "../Transport";
 import type { TransformHandler } from "../graphics/TransformHandler";
+import { MobileActionGrid } from "./MobileActionGrid";
 import { ButtonState, MobileContextButton } from "./MobileContextButton";
 import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
@@ -36,6 +37,7 @@ import { MobileDiplomacyPopup } from "./popups/MobileDiplomacyPopup";
 import { MobileUnitActionPopup } from "./popups/MobileUnitActionPopup";
 
 export class MobileUI {
+  private actionGrid: MobileActionGrid;
   private contextButton: MobileContextButton;
   private topBar: MobileTopBar;
   private gestureDetector: GestureDetector | null = null;
@@ -80,6 +82,9 @@ export class MobileUI {
     this.setupCustomElements();
 
     // Create UI components
+    this.actionGrid = document.createElement(
+      "mobile-action-grid",
+    ) as MobileActionGrid;
     this.contextButton = document.createElement(
       "mobile-context-button",
     ) as MobileContextButton;
@@ -140,6 +145,7 @@ export class MobileUI {
    */
   private setupCustomElements(): void {
     // Import components to ensure they're registered
+    import("./MobileActionGrid");
     import("./MobileContextButton");
     import("./MobileTopBar");
 
@@ -160,6 +166,9 @@ export class MobileUI {
 
     // Phase 5 components
     import("./overlays/MobileResearchSidebar");
+
+    // Action grid
+    import("./MobileActionGrid");
   }
 
   /**
@@ -167,6 +176,7 @@ export class MobileUI {
    */
   private attachComponents(): void {
     document.body.appendChild(this.topBar);
+    document.body.appendChild(this.actionGrid);
     document.body.appendChild(this.contextButton);
 
     // Attach Phase 2 components
@@ -209,7 +219,8 @@ export class MobileUI {
         this.contextButton.updateState("attack");
         this.componentsAttached = true;
       }
-      this.contextButton.style.display = "";
+      // Hide context button - using action grid instead
+      this.contextButton.style.display = "none";
       this.topBar.style.display = "";
       document.body.classList.add("mobile-ui-enabled");
       this.injectMobileStyles();
@@ -269,6 +280,7 @@ export class MobileUI {
   }
 
   private closeAllOverlays(): void {
+    this.actionGrid.close();
     this.buildPopup.close();
     this.attackPopup.close();
     this.unitActionPopup.close();
@@ -567,6 +579,17 @@ export class MobileUI {
       console.log("[MobileUI] Player toast clicked:", event.detail.player);
       // Open intel sidebar when toast is tapped
       this.intelSidebar.open();
+    });
+
+    // Action grid: Action selected
+    this.actionGrid.addEventListener("action-selected", (e: Event) => {
+      const event = e as CustomEvent<{ action: string }>;
+      this.handleActionSelected(event.detail.action);
+    });
+
+    // Action grid: Grid closed
+    this.actionGrid.addEventListener("grid-closed", () => {
+      console.log("[MobileUI] Action grid closed");
     });
 
     // Phase 5: Research sidebar closed
@@ -1215,16 +1238,80 @@ export class MobileUI {
   }
 
   /**
+   * Handle action selected from action grid
+   * Routes to appropriate handlers based on action prefix
+   */
+  private async handleActionSelected(action: string): Promise<void> {
+    console.log("[MobileUI] Action selected:", action);
+
+    // Close the action grid
+    this.actionGrid.close();
+
+    if (!this.currentGame || !this.selectedTile) {
+      console.warn("[MobileUI] No game or selected tile");
+      return;
+    }
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) {
+      console.warn("[MobileUI] No player");
+      return;
+    }
+
+    // Spawn action
+    if (action === "spawn") {
+      if (
+        this.currentGame.isLand(this.selectedTile) &&
+        !this.currentGame.hasOwner(this.selectedTile)
+      ) {
+        this.eventBus.emit(new SendSpawnIntentEvent(this.selectedTile));
+      }
+      return;
+    }
+
+    // Build actions
+    if (action.startsWith("build:")) {
+      this.handleBuildItemSelected(action);
+      return;
+    }
+
+    // Attack actions
+    if (action.startsWith("attack:")) {
+      this.handleAttackItemSelected(action);
+      return;
+    }
+
+    // Diplomacy actions
+    if (action.startsWith("diplomacy:")) {
+      this.handleDiplomacyItemSelected(action);
+      return;
+    }
+
+    console.warn("[MobileUI] Unknown action type:", action);
+  }
+
+  /**
    * Handle map tap (for tile selection)
    */
   private handleMapTap(position: { x: number; y: number }): void {
-    console.log("[MobileUI] Map tap at:", position);
     const tile = this.screenToTile(position);
     if (!tile) {
       return;
     }
     this.selectedTile = tile;
-    this.updateContextButtonForTile(tile);
+
+    if (!this.currentGame) return;
+
+    // Handle spawn phase directly - emit spawn event immediately
+    if (this.currentGame.inSpawnPhase()) {
+      if (this.currentGame.isLand(tile) && !this.currentGame.hasOwner(tile)) {
+        this.eventBus.emit(new SendSpawnIntentEvent(tile));
+      }
+      return;
+    }
+
+    // For normal gameplay, show action grid
+    this.actionGrid.showForTile(tile, this.currentGame, this.attackRatio);
   }
 
   /**
