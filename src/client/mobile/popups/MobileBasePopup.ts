@@ -4,7 +4,8 @@
  */
 
 import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, eventOptions, property } from "lit/decorators.js";
+import { renderNumber } from "../../Utils";
 import { HapticFeedback } from "../utils/HapticFeedback";
 
 export interface PopupMenuItem {
@@ -21,7 +22,7 @@ export interface PopupMenuItem {
 @customElement("mobile-base-popup")
 export class MobileBasePopup extends LitElement {
   @property({ type: String }) title: string = "";
-  @property({ type: Boolean }) visible: boolean = false;
+  @property({ type: Boolean, reflect: true }) visible: boolean = false;
   @property({ type: Array }) items: PopupMenuItem[] = [];
   @property({ type: Object }) position: { x: number; y: number } | null = null;
 
@@ -263,10 +264,7 @@ export class MobileBasePopup extends LitElement {
   }
 
   protected formatCost(cost: number): string {
-    if (cost >= 1000) {
-      return `${(cost / 1000).toFixed(1)}k`;
-    }
-    return cost.toString();
+    return renderNumber(cost);
   }
 
   protected getPopupStyle(): string {
@@ -324,12 +322,14 @@ export class MobileBasePopup extends LitElement {
     );
   }
 
+  @eventOptions({ passive: true })
   protected handleTouchStart(e: TouchEvent): void {
     this.touchStartY = e.touches[0].clientY;
     this.touchStartTime = Date.now();
     this.isDragging = false;
   }
 
+  @eventOptions({ passive: true })
   protected handleTouchMove(e: TouchEvent): void {
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - this.touchStartY;
@@ -340,6 +340,7 @@ export class MobileBasePopup extends LitElement {
     }
   }
 
+  @eventOptions({ passive: true })
   protected handleTouchEnd(e: TouchEvent): void {
     if (!this.isDragging) {
       return;

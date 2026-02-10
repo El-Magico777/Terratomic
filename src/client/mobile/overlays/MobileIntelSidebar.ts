@@ -14,7 +14,7 @@ export type IntelTab = "players" | "events";
 
 @customElement("mobile-intel-sidebar")
 export class MobileIntelSidebar extends LitElement {
-  @property({ type: Boolean }) visible: boolean = false;
+  @property({ type: Boolean, reflect: true }) visible: boolean = false;
   @property({ type: Object }) game: GameView | null = null;
   @state() private activeTab: IntelTab = "players";
 

@@ -4,9 +4,18 @@
  */
 
 import { customElement, property } from "lit/decorators.js";
+import {
+  aggregateStructureBuildCost,
+  computeBomberUpgradeCost,
+} from "../../../core/game/Costs";
 import { UnitType, UpgradeType } from "../../../core/game/Game";
 import type { TileRef } from "../../../core/game/GameMap";
 import type { GameView } from "../../../core/game/GameView";
+import {
+  isStackableStructure,
+  isUpgradeableUnit,
+  playerMaxUnitLevel,
+} from "../../../core/game/Upgradeables";
 import { MobileBasePopup, type PopupMenuItem } from "./MobileBasePopup";
 
 export type BuildCategory = "land" | "shore" | "water";
@@ -79,93 +88,96 @@ export class MobileBuildPopup extends MobileBasePopup {
       {
         icon: "🏙️",
         label: "City",
-        cost: 50,
+        cost: this.getUnitCost(UnitType.City, myPlayer),
         action: `build:${UnitType.City}`,
-        disabled: gold < 50,
-        disabledReason: gold < 50 ? "Insufficient gold" : undefined,
+        disabled: gold < this.getUnitCost(UnitType.City, myPlayer),
+        disabledReason:
+          gold < this.getUnitCost(UnitType.City, myPlayer)
+            ? "Insufficient gold"
+            : undefined,
       },
       {
         icon: "🏥",
         label: "Hospital",
-        cost: 80,
+        cost: this.getUnitCost(UnitType.Hospital, myPlayer),
         action: `build:${UnitType.Hospital}`,
         locked: !myPlayer.hasUpgrade(UpgradeType.HospitalResearch),
         lockedReason: !myPlayer.hasUpgrade(UpgradeType.HospitalResearch)
           ? "Unlock: Hospital Research"
           : undefined,
-        disabled: gold < 80,
+        disabled: gold < this.getUnitCost(UnitType.Hospital, myPlayer),
       },
       {
         icon: "🏭",
         label: "Factory",
-        cost: 120,
+        cost: this.getUnitCost(UnitType.Factory, myPlayer),
         action: `build:${UnitType.Factory}`,
-        disabled: gold < 120,
+        disabled: gold < this.getUnitCost(UnitType.Factory, myPlayer),
       },
       {
         icon: "🛡️",
         label: "Defense Post",
-        cost: 200,
+        cost: this.getUnitCost(UnitType.DefensePost, myPlayer),
         action: `build:${UnitType.DefensePost}`,
-        disabled: gold < 200,
+        disabled: gold < this.getUnitCost(UnitType.DefensePost, myPlayer),
       },
       {
         icon: "⚛️",
         label: "Missile Silo",
-        cost: 500,
+        cost: this.getUnitCost(UnitType.MissileSilo, myPlayer),
         action: `build:${UnitType.MissileSilo}`,
         locked: !myPlayer.hasUpgrade(UpgradeType.NuclearFission),
         lockedReason: !myPlayer.hasUpgrade(UpgradeType.NuclearFission)
           ? "Unlock: Nuclear Fission"
           : undefined,
-        disabled: gold < 500,
+        disabled: gold < this.getUnitCost(UnitType.MissileSilo, myPlayer),
       },
       {
         icon: "✈️",
         label: "Airfield",
-        cost: 350,
+        cost: this.getUnitCost(UnitType.Airfield, myPlayer),
         action: `build:${UnitType.Airfield}`,
-        disabled: gold < 350,
+        disabled: gold < this.getUnitCost(UnitType.Airfield, myPlayer),
       },
       {
         icon: "🔬",
         label: "Research Lab",
-        cost: 300,
+        cost: this.getUnitCost(UnitType.ResearchLab, myPlayer),
         action: `build:${UnitType.ResearchLab}`,
         locked: !myPlayer.hasUpgrade(UpgradeType.ResearchLabResearch),
         lockedReason: !myPlayer.hasUpgrade(UpgradeType.ResearchLabResearch)
           ? "Unlock: Research Lab"
           : undefined,
-        disabled: gold < 300,
+        disabled: gold < this.getUnitCost(UnitType.ResearchLab, myPlayer),
       },
       {
         icon: "🏛️",
         label: "Academy",
-        cost: 400,
+        cost: this.getUnitCost(UnitType.Academy, myPlayer),
         action: `build:${UnitType.Academy}`,
-        disabled: gold < 400,
+        disabled: gold < this.getUnitCost(UnitType.Academy, myPlayer),
       },
       {
         icon: "🎯",
         label: "SAM Launcher",
-        cost: 280,
+        cost: this.getUnitCost(UnitType.SAMLauncher, myPlayer),
         action: `build:${UnitType.SAMLauncher}`,
         locked: !myPlayer.hasUpgrade(UpgradeType.SAMLevel1),
         lockedReason: !myPlayer.hasUpgrade(UpgradeType.SAMLevel1)
           ? "Unlock: Surface-to-Air Missiles"
           : undefined,
-        disabled: gold < 280,
+        disabled: gold < this.getUnitCost(UnitType.SAMLauncher, myPlayer),
       },
       {
         icon: "💀",
         label: "Doomsday Device",
-        cost: 2000,
+        cost: this.getUnitCost(UnitType.DoomsdayDevice, myPlayer),
         action: `build:${UnitType.DoomsdayDevice}`,
         locked: !myPlayer.hasUpgrade(UpgradeType.DoomsdayDeviceResearch),
         lockedReason: !myPlayer.hasUpgrade(UpgradeType.DoomsdayDeviceResearch)
           ? "Unlock: Doomsday Device"
           : undefined,
-        disabled: gold < 2000,
+        disabled: gold < this.getUnitCost(UnitType.DoomsdayDevice, myPlayer),
       },
     ];
 
@@ -178,10 +190,13 @@ export class MobileBuildPopup extends MobileBasePopup {
       {
         icon: "⚓",
         label: "Port",
-        cost: 180,
+        cost: this.getUnitCost(UnitType.Port, myPlayer),
         action: `build:${UnitType.Port}`,
-        disabled: gold < 180,
-        disabledReason: gold < 180 ? "Insufficient gold" : undefined,
+        disabled: gold < this.getUnitCost(UnitType.Port, myPlayer),
+        disabledReason:
+          gold < this.getUnitCost(UnitType.Port, myPlayer)
+            ? "Insufficient gold"
+            : undefined,
       },
     ];
 
@@ -204,16 +219,16 @@ export class MobileBuildPopup extends MobileBasePopup {
       {
         icon: "⛵",
         label: "Warship",
-        cost: 100,
+        cost: this.getUnitCost(UnitType.Warship, myPlayer),
         action: `build:${UnitType.Warship}`,
         locked: !hasPort,
         lockedReason: !hasPort ? "Need active Port" : undefined,
-        disabled: gold < 100,
+        disabled: gold < this.getUnitCost(UnitType.Warship, myPlayer),
       },
       {
         icon: "🚢",
         label: "Submarine",
-        cost: 150,
+        cost: this.getUnitCost(UnitType.Submarine, myPlayer),
         action: `build:${UnitType.Submarine}`,
         locked: !hasPort || !myPlayer.hasUpgrade(UpgradeType.SubmarineResearch),
         lockedReason: !hasPort
@@ -221,12 +236,12 @@ export class MobileBuildPopup extends MobileBasePopup {
           : !myPlayer.hasUpgrade(UpgradeType.SubmarineResearch)
             ? "Unlock: Submarine Research"
             : undefined,
-        disabled: gold < 150,
+        disabled: gold < this.getUnitCost(UnitType.Submarine, myPlayer),
       },
       {
         icon: "✈️",
         label: "Fighter Jet",
-        cost: 40,
+        cost: this.getUnitCost(UnitType.FighterJet, myPlayer),
         action: `build:${UnitType.FighterJet}`,
         locked: !hasAirfield || !myPlayer.hasUpgrade(UpgradeType.JetEngines),
         lockedReason: !hasAirfield
@@ -234,11 +249,60 @@ export class MobileBuildPopup extends MobileBasePopup {
           : !myPlayer.hasUpgrade(UpgradeType.JetEngines)
             ? "Unlock: Jet Engines"
             : undefined,
-        disabled: gold < 40,
+        disabled: gold < this.getUnitCost(UnitType.FighterJet, myPlayer),
       },
     ];
 
     return items;
+  }
+
+  private getUnitCost(unitType: UnitType, player: any): number {
+    if (!this.game) return 0;
+
+    const base = this.game.config().unitInfo(unitType).cost(player);
+
+    if (isStackableStructure(unitType)) {
+      const stackCount =
+        typeof player.unitsOwned === "function"
+          ? player.unitsOwned(unitType) + 1
+          : 1;
+      let structureCost =
+        stackCount <= 1
+          ? base
+          : aggregateStructureBuildCost(
+              this.game.config(),
+              player,
+              unitType,
+              stackCount,
+              this.game.config().structureUpgradeCostMultiplier(unitType),
+            );
+      if (unitType === UnitType.Airfield) {
+        const bomberLevel = playerMaxUnitLevel(player, UnitType.Bomber);
+        structureCost += computeBomberUpgradeCost(
+          this.game.config(),
+          player,
+          bomberLevel,
+          stackCount,
+        );
+      }
+      return Number(structureCost);
+    }
+
+    if (isUpgradeableUnit(unitType)) {
+      const techLevel = playerMaxUnitLevel(player, unitType);
+      if (techLevel <= 1) return Number(base);
+      return Number(
+        aggregateStructureBuildCost(
+          this.game.config(),
+          player,
+          unitType,
+          techLevel,
+          0,
+        ),
+      );
+    }
+
+    return Number(base);
   }
 }
 

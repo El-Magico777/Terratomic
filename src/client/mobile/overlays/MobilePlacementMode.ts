@@ -9,7 +9,7 @@ import { UnitType } from "../../../core/game/Game";
 
 @customElement("mobile-placement-mode")
 export class MobilePlacementMode extends LitElement {
-  @property({ type: Boolean }) active: boolean = false;
+  @property({ type: Boolean, reflect: true }) active: boolean = false;
   @property({ type: String }) unitType: UnitType | null = null;
   @property({ type: Number }) cost: number = 0;
   @property({ type: String }) unitIcon: string = "";

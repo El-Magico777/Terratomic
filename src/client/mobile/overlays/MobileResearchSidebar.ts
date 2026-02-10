@@ -14,7 +14,7 @@ import "../utils/SkeletonLoader";
 
 @customElement("mobile-research-sidebar")
 export class MobileResearchSidebar extends LitElement {
-  @property({ type: Boolean }) visible: boolean = false;
+  @property({ type: Boolean, reflect: true }) visible: boolean = false;
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) eventBus: EventBus | null = null;
 

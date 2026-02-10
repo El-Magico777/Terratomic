@@ -5,6 +5,7 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { renderNumber } from "../Utils";
 
 export interface TopBarStats {
   population: number;
@@ -246,8 +247,7 @@ export class MobileTopBar extends LitElement {
   }
 
   private formatNumber(value: number): string {
-    // Format with commas for thousands
-    return Math.floor(value).toLocaleString();
+    return renderNumber(value);
   }
 
   private handleMenuClick(): void {

@@ -67,6 +67,7 @@ export class MobileUI {
   private attackRatio: number = 0.3; // Default 30%
   private active: boolean | null = null;
   private componentsAttached: boolean = false;
+  private statsLoopId: number | null = null;
 
   constructor(private eventBus: EventBus) {
     console.log("[MobileUI] Initializing mobile UI system");
@@ -141,6 +142,24 @@ export class MobileUI {
     // Import components to ensure they're registered
     import("./MobileContextButton");
     import("./MobileTopBar");
+
+    // Phase 2 components
+    import("./popups/MobileBuildPopup");
+    import("./overlays/MobilePlacementMode");
+    import("./overlays/MobileEconomyOverlay");
+
+    // Phase 3 components
+    import("./popups/MobileAttackPopup");
+    import("./overlays/MobileAttackRatioSlider");
+    import("./popups/MobileUnitActionPopup");
+
+    // Phase 4 components
+    import("./popups/MobileDiplomacyPopup");
+    import("./overlays/MobileIntelSidebar");
+    import("./overlays/MobilePlayerToast");
+
+    // Phase 5 components
+    import("./overlays/MobileResearchSidebar");
   }
 
   /**
@@ -187,13 +206,14 @@ export class MobileUI {
         this.setupEventListeners();
         // Initialize button state and size after custom elements are attached
         this.contextButton.size = MobileDetector.getContextButtonSize();
-        this.contextButton.updateState("build");
+        this.contextButton.updateState("attack");
         this.componentsAttached = true;
       }
       this.contextButton.style.display = "";
       this.topBar.style.display = "";
       document.body.classList.add("mobile-ui-enabled");
       this.injectMobileStyles();
+      this.startStatsLoop();
     } else {
       // Only manipulate components if they've been attached
       if (this.componentsAttached) {
@@ -203,7 +223,49 @@ export class MobileUI {
       }
       document.body.classList.remove("mobile-ui-enabled");
       document.getElementById("mobile-ui-styles")?.remove();
+      this.stopStatsLoop();
     }
+  }
+
+  /**
+   * Start the stats update loop
+   */
+  private startStatsLoop(): void {
+    if (this.statsLoopId !== null) return;
+
+    const updateStats = () => {
+      this.updateStatsFromGame();
+      this.statsLoopId = requestAnimationFrame(updateStats);
+    };
+    this.statsLoopId = requestAnimationFrame(updateStats);
+  }
+
+  /**
+   * Stop the stats update loop
+   */
+  private stopStatsLoop(): void {
+    if (this.statsLoopId !== null) {
+      cancelAnimationFrame(this.statsLoopId);
+      this.statsLoopId = null;
+    }
+  }
+
+  /**
+   * Update stats from current game state
+   */
+  private updateStatsFromGame(): void {
+    if (!this.currentGame) return;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    const gold = Number(myPlayer.gold());
+    const population = myPlayer.population();
+
+    this.topBar.updateStats({
+      population,
+      gold,
+    });
   }
 
   private closeAllOverlays(): void {
@@ -286,6 +348,39 @@ export class MobileUI {
       body.mobile-ui-enabled game-left-sidebar,
       body.mobile-ui-enabled .desktop-hud {
         display: none !important;
+      }
+
+      /* Compact tutorial and tech notifications on mobile */
+      body.mobile-ui-enabled tutorial-toast .tutorial-toast,
+      body.mobile-ui-enabled tech-unlock-notification .tech-toast {
+        left: 50% !important;
+        right: auto !important;
+        top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+        bottom: auto !important;
+        width: min(92vw, 320px) !important;
+        max-height: 28vh !important;
+        padding: 10px 32px 10px 12px !important;
+        border-radius: 10px !important;
+        font-size: 13px !important;
+        overflow: hidden !important;
+        transform: translate(-50%, -8px) !important;
+      }
+
+      body.mobile-ui-enabled tutorial-toast .tutorial-toast.visible,
+      body.mobile-ui-enabled tech-unlock-notification .tech-toast.visible {
+        transform: translate(-50%, 0) !important;
+      }
+
+      body.mobile-ui-enabled tutorial-toast .tutorial-toast__title,
+      body.mobile-ui-enabled tech-unlock-notification .tech-toast__title {
+        font-size: 14px !important;
+      }
+
+      body.mobile-ui-enabled tutorial-toast .tutorial-toast__body,
+      body.mobile-ui-enabled tech-unlock-notification .tech-toast__body {
+        max-height: 10vh !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
       
       /* Game canvas touch optimization */
@@ -540,6 +635,11 @@ export class MobileUI {
   private handleContextButtonClick(state: ButtonState): void {
     console.log(`[MobileUI] Context button clicked: ${state}`);
 
+    if (this.currentGame?.inSpawnPhase()) {
+      this.handleBuildAction();
+      return;
+    }
+
     switch (state) {
       case "build":
         this.handleBuildAction();
@@ -757,15 +857,31 @@ export class MobileUI {
     // Close the build popup
     this.buildPopup.close();
 
-    // Get unit type and cost
-    const unitType = action as UnitType;
+    const unitType = this.parseBuildAction(action);
+    if (!unitType) {
+      console.warn("[MobileUI] Invalid build action:", action);
+      return;
+    }
 
     // TODO: Get actual cost from game data
+    if (this.selectedTile) {
+      this.eventBus.emit(new BuildUnitIntentEvent(unitType, this.selectedTile));
+      return;
+    }
+
     const cost = this.getUnitCost(unitType);
     const icon = this.getUnitIcon(unitType);
 
     // Enter placement mode
     this.placementMode.enter(unitType, cost, icon);
+  }
+
+  private parseBuildAction(action: string): UnitType | null {
+    if (!action.startsWith("build:")) {
+      return action as UnitType;
+    }
+    const unitType = action.slice("build:".length) as UnitType;
+    return unitType || null;
   }
 
   /**
@@ -1012,6 +1128,49 @@ export class MobileUI {
       return;
     }
     this.selectedTile = tile;
+    this.updateContextButtonForTile(tile);
+  }
+
+  /**
+   * Update context button state based on selected tile
+   */
+  private updateContextButtonForTile(tile: TileRef): void {
+    if (!this.currentGame) {
+      this.contextButton.updateState("build");
+      return;
+    }
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) {
+      this.contextButton.updateState("build");
+      return;
+    }
+
+    // Spawn phase - show attack icon for spawn selection
+    if (this.currentGame.inSpawnPhase()) {
+      this.contextButton.updateState("attack");
+      return;
+    }
+
+    const owner = this.currentGame.owner(tile);
+    const isMyTile = owner === myPlayer;
+    const isWater = !this.currentGame.isLand(tile);
+    const isNeutral = !owner.isPlayer();
+
+    if (isMyTile) {
+      // Own territory - show build options
+      if (isWater) {
+        this.contextButton.updateState("water");
+      } else {
+        this.contextButton.updateState("build");
+      }
+    } else if (isNeutral) {
+      // Neutral territory - attack to expand
+      this.contextButton.updateState("attack");
+    } else {
+      // Enemy territory - show attack or diplomacy
+      this.contextButton.updateState("attack");
+    }
   }
 
   /**
@@ -1050,6 +1209,7 @@ export class MobileUI {
    * Exit placement mode
    */
   private exitPlacementMode(): void {
+    if (!this.placementMode.active) return;
     this.placementMode.exit();
   }
 
@@ -1187,7 +1347,14 @@ export class MobileUI {
    */
   private handleSettingsClick(): void {
     console.log("[MobileUI] Settings clicked");
-    // TODO: Open settings modal (reuse existing OptionsMenu)
+    const settingsModal = document.querySelector(
+      "user-setting",
+    ) as HTMLElement & { open: () => void };
+    if (settingsModal && typeof settingsModal.open === "function") {
+      settingsModal.open();
+    } else {
+      console.warn("[MobileUI] Settings modal not found or not ready");
+    }
   }
 
   /**
