@@ -229,14 +229,14 @@ export class MobileBasePopup extends LitElement {
       <button
         class="${classes}"
         @click="${() => this.handleItemClick(item)}"
-        ?disabled="${item.locked || item.disabled}"
+        ?disabled="${item.locked ?? item.disabled}"
       >
         <div class="menu-icon">${item.icon}</div>
         <div class="menu-content">
           <div class="menu-label">${item.label}</div>
-          ${item.lockedReason || item.disabledReason
+          ${(item.lockedReason ?? item.disabledReason)
             ? html`<div class="menu-sublabel">
-                ${item.lockedReason || item.disabledReason}
+                ${item.lockedReason ?? item.disabledReason}
               </div>`
             : null}
         </div>

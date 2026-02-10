@@ -7,14 +7,24 @@ import { EventBus } from "../../core/EventBus";
 import { UnitType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
 import type { GameView } from "../../core/game/GameView";
-import { BuildUnitIntentEvent } from "../Transport";
+import {
+  BuildUnitIntentEvent,
+  SendAttackIntentEvent,
+  SendBoatAttackIntentEvent,
+  SendBomberIntentEvent,
+  SendDeclareWarIntentEvent,
+  SendParatrooperAttackIntentEvent,
+} from "../Transport";
 import { ButtonState, MobileContextButton } from "./MobileContextButton";
 import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
+import { MobileAttackRatioSlider } from "./overlays/MobileAttackRatioSlider";
 import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
 import { MobilePlacementMode } from "./overlays/MobilePlacementMode";
+import { MobileAttackPopup } from "./popups/MobileAttackPopup";
 import { MobileBuildPopup } from "./popups/MobileBuildPopup";
+import { MobileUnitActionPopup } from "./popups/MobileUnitActionPopup";
 
 export class MobileUI {
   private contextButton: MobileContextButton;
@@ -27,9 +37,15 @@ export class MobileUI {
   private placementMode: MobilePlacementMode;
   private economyOverlay: MobileEconomyOverlay;
 
+  // Phase 3 components
+  private attackPopup: MobileAttackPopup;
+  private attackRatioSlider: MobileAttackRatioSlider;
+  private unitActionPopup: MobileUnitActionPopup;
+
   // Game state
   private currentGame: GameView | null = null;
   private selectedTile: TileRef | null = null;
+  private attackRatio: number = 0.3; // Default 30%
 
   constructor(private eventBus: EventBus) {
     console.log("[MobileUI] Initializing mobile UI system");
@@ -53,6 +69,17 @@ export class MobileUI {
     this.economyOverlay = document.createElement(
       "mobile-economy-overlay",
     ) as MobileEconomyOverlay;
+
+    // Create Phase 3 components
+    this.attackPopup = document.createElement(
+      "mobile-attack-popup",
+    ) as MobileAttackPopup;
+    this.attackRatioSlider = document.createElement(
+      "mobile-attack-ratio-slider",
+    ) as MobileAttackRatioSlider;
+    this.unitActionPopup = document.createElement(
+      "mobile-unit-action-popup",
+    ) as MobileUnitActionPopup;
 
     // Set initial button size based on device
     this.contextButton.size = MobileDetector.getContextButtonSize();
@@ -89,6 +116,11 @@ export class MobileUI {
     document.body.appendChild(this.buildPopup);
     document.body.appendChild(this.placementMode);
     document.body.appendChild(this.economyOverlay);
+
+    // Attach Phase 3 components
+    document.body.appendChild(this.attackPopup);
+    document.body.appendChild(this.attackRatioSlider);
+    document.body.appendChild(this.unitActionPopup);
 
     // Apply mobile-specific CSS to body
     document.body.classList.add("mobile-ui-enabled");
@@ -209,6 +241,40 @@ export class MobileUI {
     // Economy overlay closed
     this.economyOverlay.addEventListener("overlay-closed", () => {
       console.log("[MobileUI] Economy overlay closed");
+    });
+
+    // Phase 3: Attack popup item selected
+    this.attackPopup.addEventListener("item-selected", (e: Event) => {
+      const event = e as CustomEvent<{ action: string }>;
+      this.handleAttackItemSelected(event.detail.action);
+    });
+
+    // Phase 3: Attack popup closed
+    this.attackPopup.addEventListener("popup-closed", () => {
+      console.log("[MobileUI] Attack popup closed");
+    });
+
+    // Phase 3: Attack ratio changed
+    this.attackRatioSlider.addEventListener("ratio-changed", (e: Event) => {
+      const event = e as CustomEvent<{ ratio: number }>;
+      this.attackRatio = event.detail.ratio;
+      console.log("[MobileUI] Attack ratio changed to:", this.attackRatio);
+    });
+
+    // Phase 3: Attack ratio slider closed
+    this.attackRatioSlider.addEventListener("slider-closed", () => {
+      console.log("[MobileUI] Attack ratio slider closed");
+    });
+
+    // Phase 3: Unit action selected
+    this.unitActionPopup.addEventListener("item-selected", (e: Event) => {
+      const event = e as CustomEvent<{ action: string }>;
+      this.handleUnitActionSelected(event.detail.action);
+    });
+
+    // Phase 3: Unit action popup closed
+    this.unitActionPopup.addEventListener("popup-closed", () => {
+      console.log("[MobileUI] Unit action popup closed");
     });
 
     // Handle orientation changes
@@ -364,7 +430,23 @@ export class MobileUI {
    */
   private handleAttackAction(): void {
     console.log("[MobileUI] Attack action triggered");
-    // TODO: Show attack popup (Phase 3)
+
+    // Check if we have a game and selected tile
+    if (!this.currentGame || !this.selectedTile) {
+      console.warn(
+        "[MobileUI] Cannot show attack popup: no game or selected tile",
+      );
+      return;
+    }
+
+    // Show attack popup at context button position
+    const buttonRect = this.contextButton.getBoundingClientRect();
+    const position = {
+      x: buttonRect.left + buttonRect.width / 2,
+      y: buttonRect.top,
+    };
+
+    this.attackPopup.openForTile(this.selectedTile, this.currentGame, position);
   }
 
   /**
@@ -372,7 +454,15 @@ export class MobileUI {
    */
   private handleManageAction(): void {
     console.log("[MobileUI] Manage action triggered");
-    // TODO: Show manage popup (Phase 2)
+
+    // On long-press of attack button, show attack ratio slider
+    if (!this.currentGame) return;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    const totalTroops = Number(myPlayer.troops());
+    this.attackRatioSlider.open(totalTroops, this.attackRatio);
   }
 
   /**
@@ -388,7 +478,26 @@ export class MobileUI {
    */
   private handleDeployAction(): void {
     console.log("[MobileUI] Deploy action triggered");
-    // TODO: Implement unit deployment (Phase 3)
+
+    // Check if we have a game and selected tile
+    if (!this.currentGame || !this.selectedTile) {
+      console.warn(
+        "[MobileUI] Cannot show unit action popup: no game or selected tile",
+      );
+      return;
+    }
+
+    // Get the unit at selected tile (if any)
+    // TODO: Get actual unit from game state
+    // For now, just show the popup
+    const buttonRect = this.contextButton.getBoundingClientRect();
+    const position = {
+      x: buttonRect.left + buttonRect.width / 2,
+      y: buttonRect.top,
+    };
+
+    // this.unitActionPopup.openForUnit(unit, this.currentGame, position);
+    console.log("[MobileUI] Unit action popup - implementation pending");
   }
 
   /**
@@ -418,6 +527,174 @@ export class MobileUI {
 
     // Enter placement mode
     this.placementMode.enter(unitType, cost, icon);
+  }
+
+  /**
+   * Handle attack item selected from popup
+   */
+  private handleAttackItemSelected(action: string): void {
+    console.log("[MobileUI] Attack item selected:", action);
+
+    // Close the attack popup
+    this.attackPopup.close();
+
+    if (!this.currentGame || !this.selectedTile) return;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    const owner = this.currentGame.owner(this.selectedTile);
+    const troops = Math.floor(Number(myPlayer.troops()) * this.attackRatio);
+
+    switch (action) {
+      case "attack:ground":
+        // Ground attack
+        this.eventBus.emit(
+          new SendAttackIntentEvent(
+            owner && owner.isPlayer() ? owner.id() : null,
+            troops,
+          ),
+        );
+        console.log("[MobileUI] Ground attack launched with", troops, "troops");
+        break;
+
+      case "attack:naval":
+        // Naval assault
+        this.eventBus.emit(
+          new SendBoatAttackIntentEvent(
+            owner && owner.isPlayer() ? owner.id() : null,
+            this.selectedTile,
+            troops,
+            null,
+          ),
+        );
+        console.log("[MobileUI] Naval assault launched");
+        break;
+
+      case "attack:airstrike":
+        // Air strike (paratrooper)
+        this.eventBus.emit(
+          new SendParatrooperAttackIntentEvent(
+            owner && owner.isPlayer() ? owner.id() : null,
+            this.selectedTile,
+            troops,
+          ),
+        );
+        console.log("[MobileUI] Air strike launched");
+        break;
+
+      case "attack:bomber":
+        // Bomber run - target all structures
+        const allStructures = [
+          UnitType.City,
+          UnitType.DefensePost,
+          UnitType.SAMLauncher,
+          UnitType.MissileSilo,
+          UnitType.Port,
+          UnitType.Airfield,
+          UnitType.Hospital,
+          UnitType.Academy,
+          UnitType.ResearchLab,
+          UnitType.Factory,
+          UnitType.DoomsdayDevice,
+        ];
+        this.eventBus.emit(
+          new SendBomberIntentEvent(
+            owner && owner.isPlayer() ? owner.id() : null,
+            allStructures,
+            true, // closestFirst
+          ),
+        );
+        console.log("[MobileUI] Bomber run launched");
+        break;
+
+      case "attack:declare-war":
+        // Declare war
+        if (owner && owner.isPlayer()) {
+          this.eventBus.emit(
+            new SendDeclareWarIntentEvent(myPlayer, owner as any),
+          );
+          console.log("[MobileUI] War declared");
+        }
+        break;
+
+      case "attack:nuke-atom":
+        // Launch atom bomb
+        this.eventBus.emit(
+          new BuildUnitIntentEvent(UnitType.AtomBomb, this.selectedTile),
+        );
+        console.log("[MobileUI] Atom bomb launched");
+        break;
+
+      case "attack:nuke-hbomb":
+        // Launch H-bomb
+        this.eventBus.emit(
+          new BuildUnitIntentEvent(UnitType.HydrogenBomb, this.selectedTile),
+        );
+        console.log("[MobileUI] H-bomb launched");
+        break;
+
+      case "attack:nuke-mirv":
+        // Launch MIRV
+        this.eventBus.emit(
+          new BuildUnitIntentEvent(UnitType.MIRV, this.selectedTile),
+        );
+        console.log("[MobileUI] MIRV launched");
+        break;
+
+      case "attack:mark-target":
+        // TODO: Mark target for bomber priority
+        console.log("[MobileUI] Mark target - implementation pending");
+        break;
+
+      case "attack:view-intel":
+        // TODO: Open Intel sidebar
+        console.log("[MobileUI] View intel - implementation pending (Phase 4)");
+        break;
+
+      default:
+        console.warn("[MobileUI] Unknown attack action:", action);
+    }
+  }
+
+  /**
+   * Handle unit action selected from popup
+   */
+  private handleUnitActionSelected(action: string): void {
+    console.log("[MobileUI] Unit action selected:", action);
+
+    // Close the unit action popup
+    this.unitActionPopup.close();
+
+    switch (action) {
+      case "unit:select-target":
+        // TODO: Enter target selection mode
+        console.log("[MobileUI] Select target mode - implementation pending");
+        break;
+
+      case "unit:show-range":
+        // TODO: Show range overlay
+        console.log("[MobileUI] Show range - implementation pending");
+        break;
+
+      case "unit:upgrade":
+        // TODO: Show upgrade options
+        console.log("[MobileUI] Unit upgrade - implementation pending");
+        break;
+
+      case "unit:patrol":
+        // TODO: Set patrol waypoint
+        console.log("[MobileUI] Set patrol - implementation pending");
+        break;
+
+      case "unit:disband":
+        // TODO: Confirm and disband unit
+        console.log("[MobileUI] Disband unit - implementation pending");
+        break;
+
+      default:
+        console.warn("[MobileUI] Unknown unit action:", action);
+    }
   }
 
   /**
@@ -590,6 +867,9 @@ export class MobileUI {
     this.buildPopup.remove();
     this.placementMode.remove();
     this.economyOverlay.remove();
+    this.attackPopup.remove();
+    this.attackRatioSlider.remove();
+    this.unitActionPopup.remove();
 
     // Clean up gesture detector
     if (this.gestureDetector) {
