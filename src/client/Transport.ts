@@ -775,14 +775,14 @@ export class Transport {
     }
 
     console.log(
-      `[Transport] Sending build_unit intent for ${event.unit} at tile ${event.tile}, stackCount=${stackCount}`,
+      `[Transport] Sending build_unit intent for ${event.unit} at tile ${event.tile}, stackCount=${stackCount ?? 1}`,
     );
     this.sendIntent({
       type: "build_unit",
       clientID: this.lobbyConfig.clientID,
       unit: event.unit,
       tile: event.tile,
-      targetLevel: stackCount, // Renamed semantically but keeping wire format for now
+      targetLevel: stackCount ?? undefined, // Renamed semantically but keeping wire format for now
       bomberLevel,
     });
   }

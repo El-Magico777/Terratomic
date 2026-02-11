@@ -61,3 +61,36 @@ This repo is a TypeScript, ESM-first mono-app: a browser client built with Webpa
 - Code: AGPLv3 (see `LICENSE`).
 - Assets in `resources/`: CC BY-SA 4.0; keep attribution; do not relicense.
 - `proprietary/` has separate terms; see `CLA.md` and `proprietary/LICENSE`.
+
+## Work tracking and validation requirements
+
+### Progress file maintenance
+
+- Update `PROGRESS.md` after completing each significant step
+- Add entries under "Recent Work" section with date, status, summary, files modified, and type check result
+- Update "Last Updated" timestamp and "Current Session" status
+- Keep progress file current during multi-step tasks (not just at the end)
+
+### Type checking requirements
+
+- Run `npx tsc --noEmit` after any TypeScript file changes
+- Run type check before marking implementation tasks as complete
+- Run type check before committing or finalizing work
+- Document type check results in PROGRESS.md entries
+- If type errors are found, fix them before proceeding to next task
+- Documentation-only changes (`.md` files) can skip type checks
+
+### Validation workflow
+
+1. Complete a work step (file edits, new files, etc.)
+2. Run `npx tsc --noEmit` if any `.ts` files were modified
+3. Fix any type errors that appear
+4. Update PROGRESS.md with step completion and type check result
+5. Proceed to next step only after validation passes
+
+### When to skip type checks
+
+- Documentation-only changes (markdown files)
+- Configuration file changes (unless they affect TypeScript compilation)
+- Asset or resource file changes
+- Always document skip reason in PROGRESS.md as "⏭️ Skipped (reason)"
