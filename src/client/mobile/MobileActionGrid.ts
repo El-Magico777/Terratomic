@@ -672,6 +672,41 @@ export class MobileActionGrid extends LitElement {
       }
     }
 
+    // Nuclear options (if player has missile silo)
+    const gold = Number(myPlayer.gold());
+    if (this.canLaunchNuke(myPlayer, "atom")) {
+      actions.push({
+        id: "attack:nuke-atom",
+        icon: "☢️",
+        label: "Atom Bomb",
+        cost: 5000,
+        disabled: gold < 5000,
+        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
+      });
+    }
+
+    if (this.canLaunchNuke(myPlayer, "hbomb")) {
+      actions.push({
+        id: "attack:nuke-hbomb",
+        icon: "💥",
+        label: "H-Bomb",
+        cost: 15000,
+        disabled: gold < 15000,
+        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
+      });
+    }
+
+    if (this.canLaunchNuke(myPlayer, "mirv")) {
+      actions.push({
+        id: "attack:nuke-mirv",
+        icon: "🚀",
+        label: "MIRV",
+        cost: 50000,
+        disabled: gold < 50000,
+        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
+      });
+    }
+
     return actions;
   }
 
@@ -729,6 +764,41 @@ export class MobileActionGrid extends LitElement {
       }
     }
 
+    // Nuclear options (if player has missile silo)
+    const gold = Number(myPlayer.gold());
+    if (this.canLaunchNuke(myPlayer, "atom")) {
+      actions.push({
+        id: "attack:nuke-atom",
+        icon: "☢️",
+        label: "Atom Bomb",
+        cost: 5000,
+        disabled: gold < 5000,
+        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
+      });
+    }
+
+    if (this.canLaunchNuke(myPlayer, "hbomb")) {
+      actions.push({
+        id: "attack:nuke-hbomb",
+        icon: "💥",
+        label: "H-Bomb",
+        cost: 15000,
+        disabled: gold < 15000,
+        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
+      });
+    }
+
+    if (this.canLaunchNuke(myPlayer, "mirv")) {
+      actions.push({
+        id: "attack:nuke-mirv",
+        icon: "🚀",
+        label: "MIRV",
+        cost: 50000,
+        disabled: gold < 50000,
+        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
+      });
+    }
+
     return actions;
   }
 
@@ -775,7 +845,40 @@ export class MobileActionGrid extends LitElement {
         });
       }
     }
+    // Nuclear options (if player has missile silo)
+    const gold = Number(myPlayer.gold());
+    if (this.canLaunchNuke(myPlayer, "atom")) {
+      actions.push({
+        id: "attack:nuke-atom",
+        icon: "☢️",
+        label: "Atom Bomb",
+        cost: 5000,
+        disabled: gold < 5000,
+        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
+      });
+    }
 
+    if (this.canLaunchNuke(myPlayer, "hbomb")) {
+      actions.push({
+        id: "attack:nuke-hbomb",
+        icon: "💥",
+        label: "H-Bomb",
+        cost: 15000,
+        disabled: gold < 15000,
+        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
+      });
+    }
+
+    if (this.canLaunchNuke(myPlayer, "mirv")) {
+      actions.push({
+        id: "attack:nuke-mirv",
+        icon: "🚀",
+        label: "MIRV",
+        cost: 50000,
+        disabled: gold < 50000,
+        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
+      });
+    }
     return actions;
   }
 
@@ -885,5 +988,31 @@ export class MobileActionGrid extends LitElement {
 
   private playerHasAirfield(myPlayer: PlayerView): boolean {
     return myPlayer.unitsOwned(UnitType.Airfield) > 0;
+  }
+
+  private canLaunchNuke(
+    myPlayer: PlayerView,
+    nukeType: "atom" | "hbomb" | "mirv",
+  ): boolean {
+    if (!this.game) return false;
+
+    const silos = myPlayer.unitsOwned(UnitType.MissileSilo);
+    if (silos === 0) return false; // No silos
+
+    const gold = Number(myPlayer.gold());
+    const cost =
+      nukeType === "atom" ? 5000 : nukeType === "hbomb" ? 15000 : 50000;
+    if (gold < cost) return false; // Can't afford
+
+    // Check research requirements
+    if (nukeType === "atom") {
+      if (!myPlayer.hasUpgrade(UpgradeType.NuclearFission)) return false;
+    } else if (nukeType === "hbomb") {
+      if (!myPlayer.hasUpgrade(UpgradeType.ThermonuclearStaging)) return false;
+    } else if (nukeType === "mirv") {
+      if (!myPlayer.hasUpgrade(UpgradeType.MIRVTechnology)) return false;
+    }
+
+    return true;
   }
 }
