@@ -5,11 +5,17 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import type { EventBus } from "../../../core/EventBus";
+import { UpgradeType } from "../../../core/game/Game";
+import type { GameView } from "../../../core/game/GameView";
 import {
   INVESTMENT_REQUEST_EVENT,
+  INVESTMENT_SYNC_EVENT,
   type InvestmentRequestDetail,
   type InvestmentSlider,
+  type InvestmentSyncDetail,
 } from "../../events/InvestmentEvents";
+import { SendSetTargetTroopRatioEvent } from "../../Transport";
 
 export interface EconomyStats {
   production: number; // 0-100
@@ -22,13 +28,20 @@ export interface EconomyStats {
 
 @customElement("mobile-economy-overlay")
 export class MobileEconomyOverlay extends LitElement {
-  @property({ type: Boolean }) visible: boolean = false;
-  @property({ type: Number }) production: number = 50;
+  @property({ type: Boolean, reflect: true }) visible: boolean = false;
+  @property({ type: Object }) game: GameView | null = null;
+  @property({ type: Object }) eventBus: EventBus | null = null;
+  @property({ type: Number }) production: number = 0;
   @property({ type: Number }) road: number = 0;
   @property({ type: Number }) research: number = 0;
   @property({ type: Boolean }) productionLocked: boolean = false;
   @property({ type: Boolean }) roadLocked: boolean = false;
   @property({ type: Boolean }) researchLocked: boolean = false;
+  @property({ type: Number }) troopRatio: number = 0.6;
+  @property({ type: Number }) attackRatio: number = 0.3;
+  @property({ type: Boolean }) roadEnabled: boolean = false;
+
+  private defaultsInitialized = false;
 
   static styles = css`
     :host {
@@ -63,36 +76,39 @@ export class MobileEconomyOverlay extends LitElement {
 
     .panel {
       position: absolute;
-      bottom: 0;
       left: 0;
-      right: 0;
+      top: 0;
+      bottom: 0;
+      width: min(78vw, 360px);
+      max-width: 360px;
       background: rgba(20, 20, 30, 0.98);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border-top-left-radius: 24px;
       border-top-right-radius: 24px;
+      border-bottom-right-radius: 24px;
       box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+      padding-top: max(16px, env(safe-area-inset-top, 0));
       padding-bottom: env(safe-area-inset-bottom, 0);
-      transform: translateY(100%);
+      transform: translateX(-100%);
       transition: transform 0.25s ease-out;
-      max-height: 80vh;
+      height: 100%;
       overflow-y: auto;
     }
 
     :host([visible]) .panel {
-      transform: translateY(0);
+      transform: translateX(0);
     }
 
     .handle {
-      width: 48px;
-      height: 4px;
+      width: 4px;
+      height: 48px;
       background: rgba(255, 255, 255, 0.3);
       border-radius: 2px;
-      margin: 12px auto;
+      margin: 12px 16px 8px;
     }
 
     .header {
-      padding: 16px 24px 8px;
+      padding: 8px 24px 8px;
       color: white;
       font-family:
         system-ui,
@@ -111,12 +127,35 @@ export class MobileEconomyOverlay extends LitElement {
       color: rgba(255, 255, 255, 0.6);
     }
 
+    .section-title {
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin: 16px 0 8px;
+    }
+
     .content {
       padding: 0 24px 24px;
     }
 
     .slider-group {
       margin-bottom: 32px;
+    }
+
+    .slider-group.disabled {
+      opacity: 0.55;
+    }
+
+    .slider-group.disabled .slider {
+      cursor: not-allowed;
+    }
+
+    .lock-note {
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .slider-header {
@@ -254,6 +293,11 @@ export class MobileEconomyOverlay extends LitElement {
   render() {
     const total = this.production + this.road + this.research;
     const exceeds = total > 100;
+    const troopPercent = Math.round(this.troopRatio * 100);
+    const workerPercent = 100 - troopPercent;
+    const attackPercent = Math.round(this.attackRatio * 100);
+    const productionMax = this.productionMaxPercent();
+    const roadEnabled = this.isRoadsUnlocked();
 
     return html`
       <div class="backdrop" @click="${this.close}"></div>
@@ -261,17 +305,66 @@ export class MobileEconomyOverlay extends LitElement {
         <div class="handle"></div>
 
         <div class="header">
-          <div class="title">💰 Economy Settings</div>
-          <div class="subtitle">Manage production and investments</div>
+          <div class="title">💰 Economy</div>
+          <div class="subtitle">Production and investments</div>
         </div>
 
         <div class="content">
+          <div class="section-title">Controls</div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <div class="slider-label">
+                <span class="slider-icon">🪖</span>
+                <span>Troop / Worker Ratio</span>
+              </div>
+              <div class="slider-value">${troopPercent}%</div>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                class="slider"
+                min="0"
+                max="100"
+                step="1"
+                .value="${troopPercent.toString()}"
+                @input="${this.handleTroopRatioChange}"
+              />
+            </div>
+            <div class="subtitle">
+              ${troopPercent}% troops • ${workerPercent}% workers
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <div class="slider-label">
+                <span class="slider-icon">⚔️</span>
+                <span>Attack Ratio</span>
+              </div>
+              <div class="slider-value">${attackPercent}%</div>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                class="slider"
+                min="1"
+                max="100"
+                step="1"
+                .value="${attackPercent.toString()}"
+                @input="${this.handleAttackRatioChange}"
+              />
+            </div>
+          </div>
+
+          <div class="section-title">Economy</div>
+
           <!-- Production Slider -->
           <div class="slider-group">
             <div class="slider-header">
               <div class="slider-label">
                 <span class="slider-icon">🏭</span>
-                <span>Production</span>
+                <span>Production Investment</span>
               </div>
               <div style="display: flex; align-items: center;">
                 <div class="slider-value">${this.production}%</div>
@@ -288,40 +381,10 @@ export class MobileEconomyOverlay extends LitElement {
                 type="range"
                 class="slider"
                 min="0"
-                max="100"
+                max="${productionMax}"
                 step="1"
                 .value="${this.production.toString()}"
                 @input="${(e: Event) => this.handleSliderChange("prod", e)}"
-              />
-            </div>
-          </div>
-
-          <!-- Road Slider -->
-          <div class="slider-group">
-            <div class="slider-header">
-              <div class="slider-label">
-                <span class="slider-icon">🛣️</span>
-                <span>Road Investment</span>
-              </div>
-              <div style="display: flex; align-items: center;">
-                <div class="slider-value">${this.road}%</div>
-                <button
-                  class="lock-button ${this.roadLocked ? "locked" : ""}"
-                  @click="${() => this.toggleLock("road")}"
-                >
-                  ${this.roadLocked ? "🔒" : "🔓"}
-                </button>
-              </div>
-            </div>
-            <div class="slider-container">
-              <input
-                type="range"
-                class="slider"
-                min="0"
-                max="100"
-                step="1"
-                .value="${this.road.toString()}"
-                @input="${(e: Event) => this.handleSliderChange("road", e)}"
               />
             </div>
           </div>
@@ -348,12 +411,51 @@ export class MobileEconomyOverlay extends LitElement {
                 type="range"
                 class="slider"
                 min="0"
-                max="100"
+                max="50"
                 step="1"
                 .value="${this.research.toString()}"
                 @input="${(e: Event) => this.handleSliderChange("research", e)}"
               />
             </div>
+          </div>
+
+          <!-- Road Slider -->
+          <div class="slider-group ${roadEnabled ? "" : "disabled"}">
+            <div class="slider-header">
+              <div class="slider-label">
+                <span class="slider-icon">🛣️</span>
+                <span>Road Investment</span>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <div class="slider-value">${roadEnabled ? this.road : 0}%</div>
+                <button
+                  class="lock-button ${this.roadLocked || !roadEnabled
+                    ? "locked"
+                    : ""}"
+                  ?disabled=${!roadEnabled}
+                  @click="${() => this.toggleLock("road")}"
+                >
+                  ${this.roadLocked || !roadEnabled ? "🔒" : "🔓"}
+                </button>
+              </div>
+            </div>
+            <div class="slider-container">
+              <input
+                type="range"
+                class="slider"
+                min="0"
+                max="50"
+                step="1"
+                .value="${(roadEnabled ? this.road : 0).toString()}"
+                ?disabled=${!roadEnabled}
+                @input="${(e: Event) => this.handleSliderChange("road", e)}"
+              />
+            </div>
+            ${!roadEnabled
+              ? html`<div class="lock-note">
+                  Locked: Research Roads to unlock
+                </div>`
+              : null}
           </div>
 
           <!-- Constraint Warning -->
@@ -376,20 +478,28 @@ export class MobileEconomyOverlay extends LitElement {
 
   private handleSliderChange(slider: InvestmentSlider, event: Event): void {
     const target = event.target as HTMLInputElement;
-    const value = parseInt(target.value);
+    if (slider === "road" && !this.isRoadsUnlocked()) {
+      target.value = "0";
+      return;
+    }
+    const value = parseInt(target.value, 10);
+    const max = slider === "prod" ? this.productionMaxPercent() : 50;
+    const clamped = Math.max(0, Math.min(max, value));
 
     // Update local state
     switch (slider) {
       case "prod":
-        this.production = value;
+        this.production = clamped;
         break;
       case "road":
-        this.road = value;
+        this.road = clamped;
         break;
       case "research":
-        this.research = value;
+        this.research = clamped;
         break;
     }
+
+    this.persistInvestmentDefaults();
 
     // Emit DOM CustomEvent (desktop compatibility)
     window.dispatchEvent(
@@ -397,13 +507,16 @@ export class MobileEconomyOverlay extends LitElement {
         detail: {
           type: "set",
           slider,
-          value,
+          value: clamped / 100,
         } as InvestmentRequestDetail,
       }),
     );
   }
 
   private toggleLock(slider: InvestmentSlider): void {
+    if (slider === "road" && !this.isRoadsUnlocked()) {
+      return;
+    }
     // Update local state
     switch (slider) {
       case "prod":
@@ -434,6 +547,7 @@ export class MobileEconomyOverlay extends LitElement {
   }
 
   open(): void {
+    this.ensureDefaults();
     this.visible = true;
   }
 
@@ -466,6 +580,139 @@ export class MobileEconomyOverlay extends LitElement {
     this.productionLocked = stats.productionLocked;
     this.roadLocked = stats.roadLocked;
     this.researchLocked = stats.researchLocked;
+  }
+
+  resetInvestmentDefaults(): void {
+    const defaultResearch =
+      this.game?.config()?.defaultResearchInvestment?.() ?? 0;
+    this.production = 0;
+    this.road = 0;
+    this.research = Math.round(defaultResearch * 100);
+    this.persistInvestmentDefaults();
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener(
+      INVESTMENT_SYNC_EVENT,
+      this.handleInvestmentSync as EventListener,
+    );
+    this.ensureDefaults();
+  }
+
+  disconnectedCallback(): void {
+    window.removeEventListener(
+      INVESTMENT_SYNC_EVENT,
+      this.handleInvestmentSync as EventListener,
+    );
+    super.disconnectedCallback();
+  }
+
+  private handleInvestmentSync = (event: Event): void => {
+    const detail = (event as CustomEvent<InvestmentSyncDetail>).detail;
+    if (!detail) return;
+    this.production = Math.round(detail.prod * 100);
+    this.roadEnabled = detail.roadEnabled;
+    this.road = Math.round((detail.roadEnabled ? detail.road : 0) * 100);
+    this.research = Math.round(detail.research * 100);
+    this.productionLocked = detail.lockProd;
+    this.roadLocked = detail.lockRoad;
+    this.researchLocked = detail.lockResearch;
+  };
+
+  private handleTroopRatioChange = (event: Event): void => {
+    const target = event.target as HTMLInputElement;
+    const ratio = Math.max(0, Math.min(1, parseInt(target.value, 10) / 100));
+    this.troopRatio = ratio;
+    localStorage.setItem("settings.troopRatio", ratio.toString());
+    if (this.eventBus) {
+      this.eventBus.emit(new SendSetTargetTroopRatioEvent(ratio));
+    }
+  };
+
+  private handleAttackRatioChange = (event: Event): void => {
+    const target = event.target as HTMLInputElement;
+    let ratio = Math.max(0.01, Math.min(1, parseInt(target.value, 10) / 100));
+    if (ratio === 0.11 && this.attackRatio === 0.01) {
+      ratio = 0.1;
+    }
+    this.attackRatio = ratio;
+    localStorage.setItem("settings.attackRatio", ratio.toString());
+    this.dispatchEvent(
+      new CustomEvent("attack-ratio-changed", {
+        detail: { ratio },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  };
+
+  private ensureDefaults(): void {
+    if (this.defaultsInitialized) return;
+    this.defaultsInitialized = true;
+
+    const storedProd = this.parseStoredRate("settings.investmentRate");
+    const storedRoad = this.parseStoredRate("settings.roadInvestmentRate");
+    const storedResearch = this.parseStoredRate(
+      "settings.researchInvestmentRate",
+    );
+    const storedAttack = this.parseStoredRate("settings.attackRatio", 0.3);
+    const storedTroop = this.parseStoredRate("settings.troopRatio", 0.6);
+
+    const defaultResearch =
+      this.game?.config()?.defaultResearchInvestment?.() ?? 0;
+    const productionRate = storedProd ?? 0;
+    const roadRate = storedRoad ?? 0;
+    const researchRate = storedResearch ?? defaultResearch;
+
+    this.production = Math.round(productionRate * 100);
+    if (!this.isRoadsUnlocked()) {
+      this.road = 0;
+    } else {
+      this.road = Math.round(roadRate * 100);
+    }
+    this.research = Math.round(researchRate * 100);
+    this.attackRatio = storedAttack ?? 0.3;
+    this.troopRatio = storedTroop ?? 0.6;
+
+    this.persistInvestmentDefaults();
+    localStorage.setItem("settings.attackRatio", this.attackRatio.toString());
+    localStorage.setItem("settings.troopRatio", this.troopRatio.toString());
+  }
+
+  private persistInvestmentDefaults(): void {
+    localStorage.setItem(
+      "settings.investmentRate",
+      (this.production / 100).toString(),
+    );
+    localStorage.setItem(
+      "settings.roadInvestmentRate",
+      ((this.isRoadsUnlocked() ? this.road : 0) / 100).toString(),
+    );
+    localStorage.setItem(
+      "settings.researchInvestmentRate",
+      (this.research / 100).toString(),
+    );
+  }
+
+  private parseStoredRate(key: string, fallback?: number): number | null {
+    const raw = localStorage.getItem(key);
+    if (raw === null || raw === undefined) {
+      return fallback ?? null;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return fallback ?? null;
+    return Math.max(0, Math.min(1, parsed));
+  }
+
+  private productionMaxPercent(): number {
+    const maxRate = this.game?.config()?.maxInvestmentRate?.() ?? 0.5;
+    return Math.round(Math.max(0, Math.min(1, maxRate)) * 100);
+  }
+
+  private isRoadsUnlocked(): boolean {
+    if (this.roadEnabled) return true;
+    return Boolean(this.game?.myPlayer?.()?.hasUpgrade?.(UpgradeType.Roads));
   }
 }
 

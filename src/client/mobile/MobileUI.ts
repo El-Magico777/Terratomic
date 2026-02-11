@@ -72,6 +72,7 @@ export class MobileUI {
   private active: boolean | null = null;
   private componentsAttached: boolean = false;
   private statsLoopId: number | null = null;
+  private economyTab: HTMLButtonElement;
 
   constructor(private eventBus: EventBus) {
     console.log("[MobileUI] Initializing mobile UI system");
@@ -132,6 +133,11 @@ export class MobileUI {
     this.settingsSidebar = document.createElement(
       "mobile-settings-sidebar",
     ) as MobileSettingsSidebar;
+
+    this.economyTab = document.createElement("button");
+    this.economyTab.className = "mobile-economy-tab";
+    this.economyTab.textContent = "Economy";
+    this.economyTab.setAttribute("aria-label", "Open economy panel");
 
     // Don't attach to DOM yet - wait for setActive(true)
     // Don't call any custom element methods yet - they're not registered until imports complete
@@ -203,6 +209,7 @@ export class MobileUI {
     // Attach Phase 5 components
     document.body.appendChild(this.researchSidebar);
     document.body.appendChild(this.settingsSidebar);
+    document.body.appendChild(this.economyTab);
 
     // Add viewport meta tag if not present
     this.ensureViewportMeta();
@@ -229,6 +236,7 @@ export class MobileUI {
       // Hide context button - using action grid instead
       this.contextButton.style.display = "none";
       this.topBar.style.display = "";
+      this.economyTab.style.display = "";
       document.body.classList.add("mobile-ui-enabled");
       this.injectMobileStyles();
       this.startStatsLoop();
@@ -237,6 +245,7 @@ export class MobileUI {
       if (this.componentsAttached) {
         this.contextButton.style.display = "none";
         this.topBar.style.display = "none";
+        this.economyTab.style.display = "none";
         this.closeAllOverlays();
       }
       document.body.classList.remove("mobile-ui-enabled");
@@ -485,6 +494,34 @@ export class MobileUI {
       body.mobile-ui-enabled .research-priority-confirmation-toast.show {
         transform: translateX(-50%) translateY(0) !important;
       }
+
+      body.mobile-ui-enabled .mobile-economy-tab {
+        position: fixed;
+        left: 0;
+        top: 50%;
+        transform: translate(-4px, -50%);
+        padding: 12px 10px;
+        min-height: 96px;
+        border-radius: 0 12px 12px 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-left: none;
+        background: rgba(20, 20, 30, 0.9);
+        color: #fbbf24;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        z-index: 1700;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      body.mobile-ui-enabled .mobile-economy-tab:active {
+        transform: translate(0, -50%);
+      }
       
       /* Support for notched devices */
       @supports (padding: env(safe-area-inset-top)) {
@@ -525,6 +562,15 @@ export class MobileUI {
       this.handleSettingsClick();
     });
 
+    this.economyTab.addEventListener("click", () => {
+      this.economyOverlay.open();
+    });
+
+    this.economyTab.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      this.economyOverlay.open();
+    });
+
     // Build popup item selected
     this.buildPopup.addEventListener("item-selected", (e: Event) => {
       const event = e as CustomEvent<{ action: string }>;
@@ -544,6 +590,11 @@ export class MobileUI {
     // Economy overlay closed
     this.economyOverlay.addEventListener("overlay-closed", () => {
       console.log("[MobileUI] Economy overlay closed");
+    });
+
+    this.economyOverlay.addEventListener("attack-ratio-changed", (e: Event) => {
+      const event = e as CustomEvent<{ ratio: number }>;
+      this.attackRatio = event.detail.ratio;
     });
 
     // Phase 3: Attack popup item selected
@@ -723,6 +774,7 @@ export class MobileUI {
    * Update game state
    */
   updateGameState(game: GameView): void {
+    const isNewGame = this.currentGame !== game;
     this.currentGame = game;
 
     // Update Phase 4 components with game state
@@ -734,6 +786,12 @@ export class MobileUI {
     this.researchSidebar.eventBus = this.eventBus;
     this.settingsSidebar.game = game;
     this.settingsSidebar.eventBus = this.eventBus;
+    this.economyOverlay.game = game;
+    this.economyOverlay.eventBus = this.eventBus;
+
+    if (isNewGame) {
+      this.economyOverlay.resetInvestmentDefaults();
+    }
   }
 
   /**
