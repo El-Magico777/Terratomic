@@ -414,10 +414,11 @@ export class MobileUI {
 
       /* Compact research priority modal on mobile */
       body.mobile-ui-enabled .research-priority-banner {
-        top: calc(env(safe-area-inset-top, 0px) + 38px) !important;
-        width: 96vw !important;
-        max-width: 420px !important;
-        border-radius: 10px !important;
+        top: calc(env(safe-area-inset-top, 0px) + 56px) !important;
+        width: min(92vw, 460px) !important;
+        max-width: 460px !important;
+        max-height: calc(100vh - (env(safe-area-inset-top, 0px) + 72px)) !important;
+        border-radius: 12px !important;
         font-size: 13px !important;
         z-index: 1700 !important;
       }
@@ -428,34 +429,43 @@ export class MobileUI {
         font-size: 15px !important;
       }
       body.mobile-ui-enabled .banner-content {
-        padding: 0.8rem !important;
+        padding: 0.75rem 0.9rem !important;
+        overflow-y: auto !important;
       }
       body.mobile-ui-enabled .banner-intro {
-        font-size: 0.82em !important;
-        margin-bottom: 0.6rem !important;
+        font-size: 0.85em !important;
+        margin-bottom: 0.7rem !important;
+        text-align: left !important;
       }
       body.mobile-ui-enabled .categories-row {
-        grid-template-columns: repeat(2, 1fr) !important;
+        grid-template-columns: 1fr !important;
         gap: 8px !important;
       }
       body.mobile-ui-enabled .category-tile {
-        min-height: 60px !important;
-        padding: 8px !important;
-        gap: 4px !important;
+        min-height: 68px !important;
+        padding: 10px 12px !important;
+        gap: 10px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        text-align: left !important;
       }
       body.mobile-ui-enabled .category-tile-icon {
-        width: 24px !important;
-        height: 24px !important;
+        width: 28px !important;
+        height: 28px !important;
       }
       body.mobile-ui-enabled .category-tile-name {
-        font-size: 0.9em !important;
+        font-size: 0.95em !important;
       }
       body.mobile-ui-enabled .category-tile-desc {
-        font-size: 0.65em !important;
+        font-size: 0.7em !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 2 !important;
         -webkit-box-orient: vertical !important;
         overflow: hidden !important;
+      }
+      body.mobile-ui-enabled .category-tile-badge {
+        margin-left: auto !important;
+        font-size: 0.65em !important;
       }
       body.mobile-ui-enabled .banner-footer {
         font-size: 0.75em !important;
