@@ -496,19 +496,9 @@ export class MobileActionGrid extends LitElement {
         label: "Missile Silo",
         upgrade: UpgradeType.NuclearFission,
       },
-      {
-        type: UnitType.ResearchLab,
-        icon: "🔬",
-        label: "Research Lab",
-        upgrade: UpgradeType.ResearchLabResearch,
-      },
+      { type: UnitType.ResearchLab, icon: "🔬", label: "Research Lab" },
       { type: UnitType.Academy, icon: "🏛️", label: "Academy" },
-      {
-        type: UnitType.SAMLauncher,
-        icon: "🎯",
-        label: "SAM Launcher",
-        upgrade: UpgradeType.SAMLevel1,
-      },
+      { type: UnitType.SAMLauncher, icon: "🎯", label: "SAM Launcher" },
       {
         type: UnitType.DoomsdayDevice,
         icon: "💀",
