@@ -207,12 +207,6 @@ export class MobileActionGrid extends LitElement {
   `;
 
   render() {
-    console.log(
-      "[DEBUG RENDER] visible=",
-      this.visible,
-      "items.length=",
-      this.items.length,
-    );
     return html`
       <div class="backdrop" @click=${this.handleBackdropClick}></div>
       <div class="grid-container">
@@ -287,11 +281,6 @@ export class MobileActionGrid extends LitElement {
     // Prevent immediate closure if grid just opened (within 300ms)
     const timeSinceOpen = Date.now() - this.lastOpenedTime;
     if (timeSinceOpen < 300) {
-      console.log(
-        "[DEBUG] Ignoring backdrop click, grid just opened",
-        timeSinceOpen,
-        "ms ago",
-      );
       return;
     }
     HapticFeedback.trigger(HapticPattern.TAP);
@@ -323,28 +312,16 @@ export class MobileActionGrid extends LitElement {
     }
 
     const category = await this.determineTileCategory(tile, game);
-    console.log("[DEBUG] Category:", category);
     this.items = await this.getActionsForCategory(category, tile, game);
-    console.log("[DEBUG] Items generated:", this.items.length);
     this.visible = true;
     this.lastOpenedTime = Date.now();
-    console.log(
-      "[DEBUG] visible set to:",
-      this.visible,
-      "at",
-      this.lastOpenedTime,
-    );
-    console.log("[DEBUG] Calling requestUpdate()");
     this.requestUpdate();
-    console.log("[DEBUG] After requestUpdate, visible is:", this.visible);
   }
 
   /**
    * Close the action grid
    */
   close(): void {
-    console.log("[DEBUG] close() called, stack trace:");
-    console.trace();
     this.visible = false;
     this.dispatchEvent(
       new CustomEvent("grid-closed", {
@@ -913,14 +890,10 @@ export class MobileActionGrid extends LitElement {
   }
 
   private playerHasPort(myPlayer: PlayerView): boolean {
-    // Check if player has any port structures
-    // This is a simplified check - in real implementation, we'd query the game state
-    return true; // TODO: Implement proper check
+    return myPlayer.unitsOwned(UnitType.Port) > 0;
   }
 
   private playerHasAirfield(myPlayer: PlayerView): boolean {
-    // Check if player has any airfield structures
-    // This is a simplified check - in real implementation, we'd query the game state
-    return true; // TODO: Implement proper check
+    return myPlayer.unitsOwned(UnitType.Airfield) > 0;
   }
 }

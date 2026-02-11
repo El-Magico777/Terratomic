@@ -271,10 +271,12 @@ export class MobileUI {
     if (!myPlayer) return;
 
     const gold = Number(myPlayer.gold());
-    const population = myPlayer.totalPopulation(); // Actual population, not cap
+    const population = myPlayer.population(); // Current population
+    const maxPopulation = this.currentGame.config().maxPopulation(myPlayer); // Max population cap
 
     this.topBar.updateStats({
       population,
+      maxPopulation,
       gold,
     });
   }

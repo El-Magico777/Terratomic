@@ -5,10 +5,11 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { renderNumber } from "../Utils";
+import { renderNumber, renderTroops } from "../Utils";
 
 export interface TopBarStats {
   population: number;
+  maxPopulation: number;
   gold: number;
   populationGrowth?: number;
   goldIncome?: number;
@@ -18,6 +19,7 @@ export interface TopBarStats {
 export class MobileTopBar extends LitElement {
   @property({ type: Object }) stats: TopBarStats = {
     population: 0,
+    maxPopulation: 0,
     gold: 0,
   };
 
@@ -183,7 +185,9 @@ export class MobileTopBar extends LitElement {
           <div class="stat" title="Population">
             <span class="icon">🏠</span>
             <span class="value"
-              >${this.formatNumber(this.stats.population)}</span
+              >${renderTroops(this.stats.population)}/${renderTroops(
+                this.stats.maxPopulation,
+              )}</span
             >
           </div>
           <div class="stat" title="Gold">
@@ -219,6 +223,7 @@ export class MobileTopBar extends LitElement {
 
     const {
       population,
+      maxPopulation,
       gold,
       populationGrowth = 0,
       goldIncome = 0,
@@ -228,7 +233,9 @@ export class MobileTopBar extends LitElement {
       <div class="details-tooltip visible">
         <div class="detail-row">
           <span class="detail-label">Population:</span>
-          <span class="detail-value">${this.formatNumber(population)}</span>
+          <span class="detail-value"
+            >${renderTroops(population)} / ${renderTroops(maxPopulation)}</span
+          >
         </div>
         <div class="detail-row">
           <span class="detail-label">Growth:</span>
