@@ -474,11 +474,16 @@ export class MobileUI {
 
       /* Compact research priority confirmation toast on mobile */
       body.mobile-ui-enabled .research-priority-confirmation-toast {
+        top: calc(env(safe-area-inset-top, 0px) + 56px) !important;
         width: min(92vw, 300px) !important;
+        min-width: 0 !important;
         left: 50% !important;
-        transform: translateX(-50%) !important;
+        transform: translateX(-50%) translateY(-10px) !important;
         font-size: 13px !important;
         z-index: 1700 !important;
+      }
+      body.mobile-ui-enabled .research-priority-confirmation-toast.show {
+        transform: translateX(-50%) translateY(0) !important;
       }
       
       /* Support for notched devices */
