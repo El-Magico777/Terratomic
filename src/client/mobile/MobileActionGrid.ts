@@ -361,10 +361,15 @@ export class MobileActionGrid extends LitElement {
 
       if (isNeutral) {
         // Neutral territory
+        // For ocean tiles, always show ship building options
+        if (isWater) {
+          return "neutral-can-attack";
+        }
+
         if (actions.canAttack) {
           return "neutral-can-attack";
         } else {
-          // Check if boat attack is possible
+          // Check if boat attack is possible (for land tiles only)
           const transportShipBuildable = actions.buildableUnits.find(
             (bu) => bu.type === UnitType.TransportShip,
           );
@@ -508,11 +513,12 @@ export class MobileActionGrid extends LitElement {
     ];
 
     for (const structure of landStructures) {
-      const cost = this.getUnitCost(structure.type, myPlayer);
-      const locked = structure.upgrade
-        ? !myPlayer.hasUpgrade(structure.upgrade)
-        : false;
+      // Skip if locked (requires upgrade)
+      if (structure.upgrade && !myPlayer.hasUpgrade(structure.upgrade)) {
+        continue;
+      }
 
+      const cost = this.getUnitCost(structure.type, myPlayer);
       actions.push({
         id: `build:${structure.type}`,
         icon: structure.icon,
@@ -520,12 +526,25 @@ export class MobileActionGrid extends LitElement {
         cost,
         disabled: gold < cost,
         disabledReason: gold < cost ? "Not enough gold" : undefined,
-        locked,
-        lockedReason: locked
-          ? this.getUpgradeRequirementText(structure.upgrade!)
-          : undefined,
         priority: structure.priority,
       });
+    }
+
+    // Fighter Jet (only if airfield and jet engines)
+    const hasAirfield = this.playerHasAirfield(myPlayer);
+    if (hasAirfield) {
+      const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
+      if (hasJetEngines) {
+        const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
+        actions.push({
+          id: `build:${UnitType.FighterJet}`,
+          icon: "🛩️",
+          label: "Fighter Jet",
+          cost: jetCost,
+          disabled: gold < jetCost,
+          disabledReason: gold < jetCost ? "Not enough gold" : undefined,
+        });
+      }
     }
 
     return actions;
@@ -565,54 +584,51 @@ export class MobileActionGrid extends LitElement {
     // Check if player has a port (required for water units)
     const hasPort = this.playerHasPort(myPlayer);
 
-    // Warship
-    const warshipCost = this.getUnitCost(UnitType.Warship, myPlayer);
-    actions.push({
-      id: `build:${UnitType.Warship}`,
-      icon: "🚢",
-      label: "Warship",
-      cost: warshipCost,
-      disabled: gold < warshipCost,
-      disabledReason: gold < warshipCost ? "Not enough gold" : undefined,
-      locked: !hasPort,
-      lockedReason: !hasPort ? "Requires Port" : undefined,
-      priority: "high",
-    });
-
-    // Submarine
-    const submarineCost = this.getUnitCost(UnitType.Submarine, myPlayer);
-    const hasSubResearch = myPlayer.hasUpgrade(UpgradeType.SubmarineResearch);
-    actions.push({
-      id: `build:${UnitType.Submarine}`,
-      icon: "🔱",
-      label: "Submarine",
-      cost: submarineCost,
-      disabled: gold < submarineCost,
-      disabledReason: gold < submarineCost ? "Not enough gold" : undefined,
-      locked: !hasPort || !hasSubResearch,
-      lockedReason: !hasPort
-        ? "Requires Port"
-        : !hasSubResearch
-          ? "Requires Submarine Research"
-          : undefined,
-      priority: "high",
-    });
-
-    // Fighter Jet (if airfield exists)
-    const hasAirfield = this.playerHasAirfield(myPlayer);
-    const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
-    if (hasAirfield) {
-      const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
+    // Only show water units if port exists
+    if (hasPort) {
+      // Warship
+      const warshipCost = this.getUnitCost(UnitType.Warship, myPlayer);
       actions.push({
-        id: `build:${UnitType.FighterJet}`,
-        icon: "🛩️",
-        label: "Fighter Jet",
-        cost: jetCost,
-        disabled: gold < jetCost,
-        disabledReason: gold < jetCost ? "Not enough gold" : undefined,
-        locked: !hasJetEngines,
-        lockedReason: !hasJetEngines ? "Requires Jet Engines" : undefined,
+        id: `build:${UnitType.Warship}`,
+        icon: "🚢",
+        label: "Warship",
+        cost: warshipCost,
+        disabled: gold < warshipCost,
+        disabledReason: gold < warshipCost ? "Not enough gold" : undefined,
+        priority: "high",
       });
+
+      // Submarine (only if research unlocked)
+      const hasSubResearch = myPlayer.hasUpgrade(UpgradeType.SubmarineResearch);
+      if (hasSubResearch) {
+        const submarineCost = this.getUnitCost(UnitType.Submarine, myPlayer);
+        actions.push({
+          id: `build:${UnitType.Submarine}`,
+          icon: "🔱",
+          label: "Submarine",
+          cost: submarineCost,
+          disabled: gold < submarineCost,
+          disabledReason: gold < submarineCost ? "Not enough gold" : undefined,
+          priority: "high",
+        });
+      }
+    }
+
+    // Fighter Jet (only if airfield and jet engines)
+    const hasAirfield = this.playerHasAirfield(myPlayer);
+    if (hasAirfield) {
+      const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
+      if (hasJetEngines) {
+        const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
+        actions.push({
+          id: `build:${UnitType.FighterJet}`,
+          icon: "🛩️",
+          label: "Fighter Jet",
+          cost: jetCost,
+          disabled: gold < jetCost,
+          disabledReason: gold < jetCost ? "Not enough gold" : undefined,
+        });
+      }
     }
 
     return actions;
@@ -705,6 +721,23 @@ export class MobileActionGrid extends LitElement {
         disabled: gold < 50000,
         disabledReason: gold < 50000 ? "Not enough gold" : undefined,
       });
+    }
+
+    // Fighter Jet air attack (if airfield exists)
+    const hasAirfield = this.playerHasAirfield(myPlayer);
+    if (hasAirfield) {
+      const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
+      if (hasJetEngines) {
+        const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
+        actions.push({
+          id: `build:${UnitType.FighterJet}`,
+          icon: "🛩️",
+          label: "Fighter Jet",
+          cost: jetCost,
+          disabled: gold < jetCost,
+          disabledReason: gold < jetCost ? "Not enough gold" : undefined,
+        });
+      }
     }
 
     return actions;
@@ -887,18 +920,78 @@ export class MobileActionGrid extends LitElement {
     game: GameView,
     myPlayer: PlayerView,
   ): ActionGridItem[] {
+    const actions: ActionGridItem[] = [];
     const troops = Number(myPlayer.troops());
+    const gold = Number(myPlayer.gold());
+    const isOcean = !game.isLand(tile);
 
-    return [
-      {
+    // Ground attack (for land tiles only - can't attack empty ocean)
+    if (!isOcean) {
+      actions.push({
         id: "attack:ground",
         icon: "🪖",
         label: "Attack",
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
         priority: "high",
-      },
-    ];
+      });
+    }
+
+    // If ocean tile, show water unit build options (only if port exists)
+    if (isOcean) {
+      const hasPort = this.playerHasPort(myPlayer);
+
+      if (hasPort) {
+        // Warship
+        const warshipCost = this.getUnitCost(UnitType.Warship, myPlayer);
+        actions.push({
+          id: `build:${UnitType.Warship}`,
+          icon: "🚢",
+          label: "Warship",
+          cost: warshipCost,
+          disabled: gold < warshipCost,
+          disabledReason: gold < warshipCost ? "Not enough gold" : undefined,
+          priority: "high",
+        });
+
+        // Submarine (only if SubmarineResearch unlocked)
+        const hasSubResearch = myPlayer.hasUpgrade(
+          UpgradeType.SubmarineResearch,
+        );
+        if (hasSubResearch) {
+          const submarineCost = this.getUnitCost(UnitType.Submarine, myPlayer);
+          actions.push({
+            id: `build:${UnitType.Submarine}`,
+            icon: "🔱",
+            label: "Submarine",
+            cost: submarineCost,
+            disabled: gold < submarineCost,
+            disabledReason:
+              gold < submarineCost ? "Not enough gold" : undefined,
+            priority: "high",
+          });
+        }
+      }
+
+      // Fighter Jet (only if airfield and jet engines)
+      const hasAirfield = this.playerHasAirfield(myPlayer);
+      if (hasAirfield) {
+        const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
+        if (hasJetEngines) {
+          const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
+          actions.push({
+            id: `build:${UnitType.FighterJet}`,
+            icon: "🛩️",
+            label: "Fighter Jet",
+            cost: jetCost,
+            disabled: gold < jetCost,
+            disabledReason: gold < jetCost ? "Not enough gold" : undefined,
+          });
+        }
+      }
+    }
+
+    return actions;
   }
 
   private getNeutralCanBoatAttackActions(
