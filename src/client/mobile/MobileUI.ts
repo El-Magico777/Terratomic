@@ -31,6 +31,7 @@ import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
 import { MobilePlacementMode } from "./overlays/MobilePlacementMode";
 import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
 import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
+import { MobileSettingsSidebar } from "./overlays/MobileSettingsSidebar";
 import { MobileAttackPopup } from "./popups/MobileAttackPopup";
 import { MobileBuildPopup } from "./popups/MobileBuildPopup";
 import { MobileDiplomacyPopup } from "./popups/MobileDiplomacyPopup";
@@ -62,6 +63,7 @@ export class MobileUI {
 
   // Phase 5 components
   private researchSidebar: MobileResearchSidebar;
+  private settingsSidebar: MobileSettingsSidebar;
 
   // Game state
   private currentGame: GameView | null = null;
@@ -127,6 +129,9 @@ export class MobileUI {
     this.researchSidebar = document.createElement(
       "mobile-research-sidebar",
     ) as MobileResearchSidebar;
+    this.settingsSidebar = document.createElement(
+      "mobile-settings-sidebar",
+    ) as MobileSettingsSidebar;
 
     // Don't attach to DOM yet - wait for setActive(true)
     // Don't call any custom element methods yet - they're not registered until imports complete
@@ -166,6 +171,7 @@ export class MobileUI {
 
     // Phase 5 components
     import("./overlays/MobileResearchSidebar");
+    import("./overlays/MobileSettingsSidebar");
 
     // Action grid
     import("./MobileActionGrid");
@@ -196,6 +202,7 @@ export class MobileUI {
 
     // Attach Phase 5 components
     document.body.appendChild(this.researchSidebar);
+    document.body.appendChild(this.settingsSidebar);
 
     // Add viewport meta tag if not present
     this.ensureViewportMeta();
@@ -291,6 +298,7 @@ export class MobileUI {
     this.attackRatioSlider.close();
     this.intelSidebar.close();
     this.researchSidebar.close();
+    this.settingsSidebar.close();
     this.placementMode.exit();
     this.playerToast.hide();
   }
@@ -607,6 +615,11 @@ export class MobileUI {
       console.log("[MobileUI] Research sidebar closed");
     });
 
+    // Phase 5: Settings sidebar closed
+    this.settingsSidebar.addEventListener("sidebar-closed", () => {
+      console.log("[MobileUI] Settings sidebar closed");
+    });
+
     // Handle orientation changes
     window.addEventListener("orientationchange", () => {
       this.handleOrientationChange();
@@ -704,6 +717,8 @@ export class MobileUI {
     // Update Phase 5 components with game state
     this.researchSidebar.game = game;
     this.researchSidebar.eventBus = this.eventBus;
+    this.settingsSidebar.game = game;
+    this.settingsSidebar.eventBus = this.eventBus;
   }
 
   /**
@@ -1549,14 +1564,7 @@ export class MobileUI {
    */
   private handleSettingsClick(): void {
     console.log("[MobileUI] Settings clicked");
-    const settingsModal = document.querySelector(
-      "user-setting",
-    ) as HTMLElement & { open: () => void };
-    if (settingsModal && typeof settingsModal.open === "function") {
-      settingsModal.open();
-    } else {
-      console.warn("[MobileUI] Settings modal not found or not ready");
-    }
+    this.settingsSidebar.toggle();
   }
 
   /**
