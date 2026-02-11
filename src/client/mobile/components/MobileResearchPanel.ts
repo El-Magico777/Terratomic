@@ -228,12 +228,39 @@ export class MobileResearchPanel extends LitElement {
     .category-header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
       margin-bottom: 12px;
       padding: 8px 12px;
       background: rgba(255, 255, 255, 0.05);
       border-radius: 8px;
       border-left: 4px solid;
+    }
+
+    .category-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .category-priority-button {
+      border: 1px solid currentColor;
+      background: rgba(0, 0, 0, 0.25);
+      color: currentColor;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .category-priority-button.active {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
     }
 
     .category-header.land {
@@ -520,6 +547,35 @@ export class MobileResearchPanel extends LitElement {
     HapticFeedback.tap();
   }
 
+  private handleCategoryPrioritize(
+    category: Category,
+    researched: Set<string>,
+    priorities: Set<string>,
+  ): void {
+    if (!this.game || !this.eventBus) return;
+
+    const categoryTechs = this.techs.filter((t) => t.category === category);
+    const nonResearched = categoryTechs.filter((t) => !researched.has(t.id));
+    if (nonResearched.length === 0) return;
+
+    const alreadyPrioritized = nonResearched.every((t) => priorities.has(t.id));
+    if (alreadyPrioritized) return;
+
+    for (const tech of this.techs) {
+      if (tech.category !== category && priorities.has(tech.id)) {
+        this.eventBus.emit(new SendResearchTreeSelectIntentEvent(tech.id));
+      }
+    }
+
+    for (const tech of nonResearched) {
+      if (!priorities.has(tech.id)) {
+        this.eventBus.emit(new SendResearchTreeSelectIntentEvent(tech.id));
+      }
+    }
+
+    HapticFeedback.tap();
+  }
+
   render() {
     const me = this.game?.myPlayer?.();
     if (!me) {
@@ -621,17 +677,46 @@ export class MobileResearchPanel extends LitElement {
     return html`
       <div class="category-section">
         <div class="category-header ${category.toLowerCase()}">
-          <div
-            class="category-icon"
-            style="--icon-url: url('${categoryIconSources[category]}')"
-          ></div>
-          <div class="category-title">${category}</div>
+          <div class="category-header-left">
+            <div
+              class="category-icon"
+              style="--icon-url: url('${categoryIconSources[category]}')"
+            ></div>
+            <div class="category-title">${category}</div>
+          </div>
+          <button
+            class="category-priority-button ${this.isCategoryPrioritized(
+              category,
+              researched,
+              priorities,
+            )
+              ? "active"
+              : ""}"
+            @click=${() =>
+              this.handleCategoryPrioritize(category, researched, priorities)}
+            aria-label="Prioritize ${category} research"
+          >
+            ★ Prioritize
+          </button>
         </div>
         ${categoryTechs.map((tech) =>
           this.renderTechCard(tech, researched, priorities, percentByTechId),
         )}
       </div>
     `;
+  }
+
+  private isCategoryPrioritized(
+    category: Category,
+    researched: Set<string>,
+    priorities: Set<string>,
+  ): boolean {
+    const categoryTechs = this.techs.filter((t) => t.category === category);
+    const nonResearched = categoryTechs.filter((t) => !researched.has(t.id));
+    return (
+      nonResearched.length > 0 &&
+      nonResearched.every((t) => priorities.has(t.id))
+    );
   }
 
   private renderTechCard(
