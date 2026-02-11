@@ -54,8 +54,9 @@ export class MobileTopBar extends LitElement {
     }
 
     .menu-button,
+    .research-button,
     .settings-button {
-      width: 44px;
+      width: 40px;
       height: 32px;
       display: flex;
       align-items: center;
@@ -70,8 +71,14 @@ export class MobileTopBar extends LitElement {
     }
 
     .menu-button:active,
+    .research-button:active,
     .settings-button:active {
       opacity: 0.6;
+    }
+
+    .buttons-right {
+      display: flex;
+      gap: 4px;
     }
 
     .stats {
@@ -154,6 +161,7 @@ export class MobileTopBar extends LitElement {
 
     /* Accessibility */
     .settings-button:focus-visible,
+    .research-button:focus-visible,
     .menu-button:focus-visible {
       outline: 2px solid white;
       outline-offset: 2px;
@@ -184,13 +192,22 @@ export class MobileTopBar extends LitElement {
           </div>
         </div>
 
-        <button
-          class="settings-button"
-          aria-label="Settings"
-          @click="${this.handleSettingsClick}"
-        >
-          ⚙️
-        </button>
+        <div class="buttons-right">
+          <button
+            class="research-button"
+            aria-label="Research"
+            @click="${this.handleResearchClick}"
+          >
+            🔬
+          </button>
+          <button
+            class="settings-button"
+            aria-label="Settings"
+            @click="${this.handleSettingsClick}"
+          >
+            ⚙️
+          </button>
+        </div>
       </div>
 
       ${this.renderDetailsTooltip()}
@@ -253,6 +270,20 @@ export class MobileTopBar extends LitElement {
   private handleMenuClick(): void {
     this.dispatchEvent(
       new CustomEvent("menu-click", {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    // Light haptic feedback
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+  }
+
+  private handleResearchClick(): void {
+    this.dispatchEvent(
+      new CustomEvent("research-click", {
         bubbles: true,
         composed: true,
       }),

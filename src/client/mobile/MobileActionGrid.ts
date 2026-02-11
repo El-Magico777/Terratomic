@@ -98,8 +98,8 @@ export class MobileActionGrid extends LitElement {
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+      gap: 8px;
       max-height: 60vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
@@ -108,25 +108,25 @@ export class MobileActionGrid extends LitElement {
     .action-tile {
       background: rgba(59, 130, 246, 0.15);
       border: 1px solid rgba(59, 130, 246, 0.3);
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
       cursor: pointer;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       transition: all 0.15s ease;
-      min-height: 80px;
+      min-height: 70px;
     }
 
     .action-tile.high-priority {
       grid-column: span 2;
       background: rgba(59, 130, 246, 0.25);
       border-color: rgba(59, 130, 246, 0.5);
-      min-height: 100px;
+      min-height: 85px;
     }
 
     .action-tile:active {
@@ -153,35 +153,35 @@ export class MobileActionGrid extends LitElement {
     }
 
     .action-icon {
-      font-size: 28px;
+      font-size: 24px;
       line-height: 1;
     }
 
     .action-tile.high-priority .action-icon {
-      font-size: 36px;
+      font-size: 32px;
     }
 
     .action-label {
       color: rgba(255, 255, 255, 0.95);
-      font-size: 12px;
+      font-size: 11px;
       text-align: center;
       font-weight: 500;
       line-height: 1.2;
     }
 
     .action-tile.high-priority .action-label {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
     }
 
     .action-cost {
       color: rgba(251, 191, 36, 0.9);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
     }
 
     .action-tile.high-priority .action-cost {
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .action-disabled-reason,

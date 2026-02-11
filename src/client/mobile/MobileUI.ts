@@ -271,7 +271,7 @@ export class MobileUI {
     if (!myPlayer) return;
 
     const gold = Number(myPlayer.gold());
-    const population = myPlayer.population();
+    const population = myPlayer.totalPopulation(); // Actual population, not cap
 
     this.topBar.updateStats({
       population,
@@ -403,11 +403,12 @@ export class MobileUI {
 
       /* Compact research priority modal on mobile */
       body.mobile-ui-enabled .research-priority-banner {
-        top: calc(env(safe-area-inset-top, 0px) + 6px) !important;
+        top: calc(env(safe-area-inset-top, 0px) + 38px) !important;
         width: 96vw !important;
         max-width: 420px !important;
         border-radius: 10px !important;
         font-size: 13px !important;
+        z-index: 1700 !important;
       }
       body.mobile-ui-enabled .banner-header {
         padding: 0.6rem 0.9rem !important;
@@ -456,6 +457,7 @@ export class MobileUI {
         left: 50% !important;
         transform: translateX(-50%) !important;
         font-size: 13px !important;
+        z-index: 1700 !important;
       }
       
       /* Support for notched devices */
@@ -485,6 +487,11 @@ export class MobileUI {
     // Top bar menu click
     this.topBar.addEventListener("menu-click", () => {
       this.handleMenuClick();
+    });
+
+    // Top bar research click
+    this.topBar.addEventListener("research-click", () => {
+      this.handleOpenResearchSidebar();
     });
 
     // Top bar settings click
@@ -977,17 +984,26 @@ export class MobileUI {
     this.buildPopup.close();
 
     const unitType = this.parseBuildAction(action);
+    console.log("[MobileUI] Parsed unit type:", unitType);
+
     if (!unitType) {
       console.warn("[MobileUI] Invalid build action:", action);
       return;
     }
 
-    // TODO: Get actual cost from game data
+    // Build directly on selected tile if we have one
     if (this.selectedTile) {
+      console.log(
+        "[MobileUI] Emitting BuildUnitIntentEvent for:",
+        unitType,
+        "at tile:",
+        this.selectedTile,
+      );
       this.eventBus.emit(new BuildUnitIntentEvent(unitType, this.selectedTile));
       return;
     }
 
+    console.warn("[MobileUI] No selected tile for build action");
     const cost = this.getUnitCost(unitType);
     const icon = this.getUnitIcon(unitType);
 
