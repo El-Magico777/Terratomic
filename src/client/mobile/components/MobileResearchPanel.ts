@@ -5,6 +5,10 @@
 
 import { LitElement, css, html, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import airIcon from "../../../../resources/icons/research/air.svg";
+import landIcon from "../../../../resources/icons/research/land.svg";
+import nuclearIcon from "../../../../resources/icons/research/nuclear.svg";
+import seaIcon from "../../../../resources/icons/research/sea.svg";
 import type { EventBus } from "../../../core/EventBus";
 import type { GameView } from "../../../core/game/GameView";
 import {
@@ -23,6 +27,13 @@ import {
 } from "../../events/InvestmentEvents";
 import { SendResearchTreeSelectIntentEvent } from "../../Transport";
 import { HapticFeedback } from "../utils/HapticFeedback";
+
+const categoryIconSources: Record<Category, string> = {
+  Land: landIcon,
+  Sea: seaIcon,
+  Air: airIcon,
+  Nuclear: nuclearIcon,
+};
 
 @customElement("mobile-research-panel")
 export class MobileResearchPanel extends LitElement {
@@ -140,10 +151,51 @@ export class MobileResearchPanel extends LitElement {
       font-size: 13px;
       font-weight: 600;
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
       cursor: pointer;
       transition: all 0.2s;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+    }
+
+    .category-tab.cat-land {
+      color: #2ecc71;
+    }
+
+    .category-tab.cat-sea {
+      color: #3498db;
+    }
+
+    .category-tab.cat-air {
+      color: #9b59b6;
+    }
+
+    .category-tab.cat-nuclear {
+      color: #e74c3c;
+    }
+
+    .category-tab-icon,
+    .category-icon {
+      width: 18px;
+      height: 18px;
+      background-color: currentColor;
+      -webkit-mask-image: var(--icon-url);
+      mask-image: var(--icon-url);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .category-tab-icon {
+      width: 16px;
+      height: 16px;
     }
 
     .category-tab.active {
@@ -186,22 +238,22 @@ export class MobileResearchPanel extends LitElement {
 
     .category-header.land {
       border-color: #2ecc71;
+      color: #2ecc71;
     }
 
     .category-header.sea {
       border-color: #3498db;
+      color: #3498db;
     }
 
     .category-header.air {
       border-color: #9b59b6;
+      color: #9b59b6;
     }
 
     .category-header.nuclear {
       border-color: #e74c3c;
-    }
-
-    .category-icon {
-      font-size: 18px;
+      color: #e74c3c;
     }
 
     .category-title {
@@ -493,13 +545,6 @@ export class MobileResearchPanel extends LitElement {
       percentByTechId.set(tech.id, pct);
     }
 
-    const categoryIcons = {
-      Land: "🏗️",
-      Sea: "⚓",
-      Air: "✈️",
-      Nuclear: "☢️",
-    };
-
     return html`
       <!-- Investment slider -->
       <div class="investment-section">
@@ -533,12 +578,17 @@ export class MobileResearchPanel extends LitElement {
         ${this.categories.map(
           (cat) => html`
             <button
-              class="category-tab ${this.activeCategory === cat
+              class="category-tab cat-${cat.toLowerCase()} ${this
+                .activeCategory === cat
                 ? "active"
                 : ""}"
               @click="${() => this.handleCategoryClick(cat)}"
             >
-              ${categoryIcons[cat]} ${cat}
+              <span
+                class="category-tab-icon"
+                style="--icon-url: url('${categoryIconSources[cat]}')"
+              ></span>
+              ${cat}
             </button>
           `,
         )}
@@ -568,17 +618,13 @@ export class MobileResearchPanel extends LitElement {
   ) {
     const categoryTechs = this.techs.filter((t) => t.category === category);
 
-    const categoryIcons: Record<Category, string> = {
-      Land: "🏗️",
-      Sea: "⚓",
-      Air: "✈️",
-      Nuclear: "☢️",
-    };
-
     return html`
       <div class="category-section">
         <div class="category-header ${category.toLowerCase()}">
-          <div class="category-icon">${categoryIcons[category]}</div>
+          <div
+            class="category-icon"
+            style="--icon-url: url('${categoryIconSources[category]}')"
+          ></div>
           <div class="category-title">${category}</div>
         </div>
         ${categoryTechs.map((tech) =>
