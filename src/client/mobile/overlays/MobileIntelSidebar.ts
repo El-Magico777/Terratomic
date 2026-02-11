@@ -20,7 +20,7 @@ export class MobileIntelSidebar extends LitElement {
 
   static styles = css`
     :host {
-      display: block;
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
@@ -31,6 +31,7 @@ export class MobileIntelSidebar extends LitElement {
     }
 
     :host([visible]) {
+      display: block;
       pointer-events: all;
     }
 

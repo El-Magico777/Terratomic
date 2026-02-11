@@ -32,11 +32,11 @@ export class MobileTopBar extends LitElement {
       top: 0;
       left: 0;
       right: 0;
-      z-index: 1600;
+      z-index: 1650;
     }
 
     .top-bar {
-      height: 32px;
+      min-height: 44px;
       padding-top: env(safe-area-inset-top, 0);
       padding-left: max(16px, env(safe-area-inset-left, 0));
       padding-right: max(16px, env(safe-area-inset-right, 0));
@@ -58,18 +58,19 @@ export class MobileTopBar extends LitElement {
     .menu-button,
     .research-button,
     .settings-button {
-      width: 40px;
-      height: 32px;
+      min-width: 44px;
+      min-height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: transparent;
+      background: none;
       border: none;
       color: white;
       font-size: 18px;
       cursor: pointer;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .menu-button:active,
@@ -90,7 +91,7 @@ export class MobileTopBar extends LitElement {
       flex: 1;
       justify-content: center;
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 12px 8px;
       border-radius: 4px;
       transition: background 0.2s;
     }
@@ -117,7 +118,7 @@ export class MobileTopBar extends LitElement {
     /* Details tooltip */
     .details-tooltip {
       position: absolute;
-      top: calc(32px + env(safe-area-inset-top, 0) + 8px);
+      top: calc(44px + env(safe-area-inset-top, 0) + 8px);
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.9);

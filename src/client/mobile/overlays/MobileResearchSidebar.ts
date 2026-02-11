@@ -1,16 +1,15 @@
 /**
  * MobileResearchSidebar - Research tech tree sidebar for mobile
- * Wraps the existing ResearchTreeModal in a slide-from-right container
+ * Uses native mobile research panel designed for touch
  * Part of Phase 5: Research & Progression System
  */
 
 import { LitElement, css, html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property } from "lit/decorators.js";
 import type { EventBus } from "../../../core/EventBus";
 import type { GameView } from "../../../core/game/GameView";
-import type { ResearchTreeModal } from "../../ResearchTreeModal";
+import "../components/MobileResearchPanel";
 import { HapticFeedback } from "../utils/HapticFeedback";
-import "../utils/SkeletonLoader";
 
 @customElement("mobile-research-sidebar")
 export class MobileResearchSidebar extends LitElement {
@@ -18,11 +17,9 @@ export class MobileResearchSidebar extends LitElement {
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) eventBus: EventBus | null = null;
 
-  @query("research-tree-modal") private researchModal!: ResearchTreeModal;
-
   static styles = css`
     :host {
-      display: block;
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
@@ -33,6 +30,7 @@ export class MobileResearchSidebar extends LitElement {
     }
 
     :host([visible]) {
+      display: block;
       pointer-events: all;
     }
 
@@ -109,25 +107,11 @@ export class MobileResearchSidebar extends LitElement {
       position: relative;
     }
 
-    /* Make research modal fill the sidebar */
-    research-tree-modal {
+    /* Mobile research panel fills the content area */
+    mobile-research-panel {
       width: 100%;
       height: 100%;
-    }
-
-    /* Override modal styles for sidebar embedding */
-    research-tree-modal::part(modal) {
-      position: static;
-      width: 100%;
-      height: 100%;
-      max-width: none;
-      max-height: none;
-      border-radius: 0;
-      box-shadow: none;
-    }
-
-    research-tree-modal::part(backdrop) {
-      display: none;
+      display: block;
     }
   `;
 
@@ -141,43 +125,14 @@ export class MobileResearchSidebar extends LitElement {
           <div class="title">🔬 Research</div>
           <button class="close-btn" @click="${this.close}">✕</button>
         </div>
-        <div class="content">${this.renderResearchModal()}</div>
+        <div class="content">
+          <mobile-research-panel
+            .game="${this.game}"
+            .eventBus="${this.eventBus}"
+          ></mobile-research-panel>
+        </div>
       </div>
     `;
-  }
-
-  private renderResearchModal() {
-    if (!this.game || !this.eventBus) {
-      return html`
-        <div style="padding: 16px;">
-          <skeleton-loader type="grid" count="8"></skeleton-loader>
-        </div>
-      `;
-    }
-
-    return html`
-      <research-tree-modal
-        .visible="${this.visible}"
-        .game="${this.game}"
-        .eventBus="${this.eventBus}"
-      ></research-tree-modal>
-    `;
-  }
-
-  updated(changedProperties: Map<string, any>) {
-    super.updated(changedProperties);
-
-    // When sidebar opens, open the modal
-    if (changedProperties.has("visible")) {
-      if (this.visible && this.researchModal) {
-        // Give the DOM a chance to render first
-        setTimeout(() => {
-          this.researchModal?.open?.();
-        }, 50);
-      } else if (!this.visible && this.researchModal) {
-        this.researchModal?.close?.();
-      }
-    }
   }
 
   private handleBackdropClick(): void {

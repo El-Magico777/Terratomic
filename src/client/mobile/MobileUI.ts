@@ -358,6 +358,7 @@ export class MobileUI {
       body.mobile-ui-enabled options-menu,
       body.mobile-ui-enabled replay-panel,
       body.mobile-ui-enabled player-info-overlay,
+      /* Hide desktop research button on mobile */
       body.mobile-ui-enabled research-toggle-button,
       body.mobile-ui-enabled game-left-sidebar,
       body.mobile-ui-enabled top-bar,
@@ -370,7 +371,7 @@ export class MobileUI {
       body.mobile-ui-enabled tech-unlock-notification .tech-toast {
         left: 50% !important;
         right: auto !important;
-        top: calc(env(safe-area-inset-top, 0px) + 12px) !important;
+        top: calc(env(safe-area-inset-top, 0px) + 56px) !important;
         bottom: auto !important;
         width: min(92vw, 320px) !important;
         max-height: 28vh !important;
