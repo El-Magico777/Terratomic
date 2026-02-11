@@ -105,10 +105,15 @@ export class MobileResearchSidebar extends LitElement {
       flex: 1;
       overflow: hidden;
       position: relative;
+      min-height: 0;
+      display: flex;
+      touch-action: pan-y;
     }
 
     /* Mobile research panel fills the content area */
     mobile-research-panel {
+      flex: 1;
+      min-height: 0;
       width: 100%;
       height: 100%;
       display: block;

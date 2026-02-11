@@ -39,9 +39,11 @@ export class MobileResearchPanel extends LitElement {
 
   static styles = css`
     :host {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
       height: 100%;
+      min-height: 0;
+      overflow: hidden;
       background: linear-gradient(to bottom, #1a2332, #0f1419);
       color: white;
       font-family:
@@ -155,10 +157,15 @@ export class MobileResearchPanel extends LitElement {
     }
 
     /* Tech grid */
-    .tech-grid {
-      flex: 1;
+    .tech-scroll {
+      height: 100%;
+      min-height: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    .tech-grid {
       padding: 16px;
     }
 
@@ -234,7 +241,6 @@ export class MobileResearchPanel extends LitElement {
       cursor: pointer;
       transition: all 0.2s;
       -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
       position: relative;
       overflow: hidden;
     }
@@ -539,15 +545,17 @@ export class MobileResearchPanel extends LitElement {
       </div>
 
       <!-- Tech grid -->
-      <div class="tech-grid">
-        ${this.categories
-          .filter(
-            (cat) =>
-              this.activeCategory === "all" || this.activeCategory === cat,
-          )
-          .map((cat) =>
-            this.renderCategory(cat, researched, priorities, percentByTechId),
-          )}
+      <div class="tech-scroll">
+        <div class="tech-grid">
+          ${this.categories
+            .filter(
+              (cat) =>
+                this.activeCategory === "all" || this.activeCategory === cat,
+            )
+            .map((cat) =>
+              this.renderCategory(cat, researched, priorities, percentByTechId),
+            )}
+        </div>
       </div>
     `;
   }
