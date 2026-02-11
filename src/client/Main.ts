@@ -38,6 +38,7 @@ import { OButton } from "./components/baseComponents/Button";
 import "./components/baseComponents/Modal";
 import "./graphics/layers/TutorialToast";
 import { isLoggedIn } from "./jwt";
+import { MobileDetector } from "./mobile/MobileDetector";
 import { MobileUI } from "./mobile/MobileUI";
 import "./styles.css";
 import { applyUiPalette, getUiPalette } from "./theme/UiPaletteLoader";
@@ -554,7 +555,11 @@ class Client {
         console.log("Closing modals");
         // We're leaving the main menu and entering the game
         this.isOnMainMenu = false;
-        this.mobileUI.setActive(true);
+        if (MobileDetector.isMobile()) {
+          this.mobileUI.setActive(true);
+        } else {
+          this.mobileUI.setActive(false);
+        }
         // Pause menu music when the game is loading/starting
         this.menuMusic?.pause();
         document.getElementById("settings-button")?.classList.add("hidden");

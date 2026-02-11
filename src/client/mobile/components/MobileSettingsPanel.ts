@@ -10,6 +10,7 @@ import type { GameView } from "../../../core/game/GameView";
 import { UserSettings } from "../../../core/game/UserSettings";
 import { RefreshGraphicsEvent } from "../../InputHandler";
 import { SaveReplayRequestEvent } from "../../Transport";
+import { translateText } from "../../Utils";
 import { HapticFeedback } from "../utils/HapticFeedback";
 
 @customElement("mobile-settings-panel")
@@ -149,6 +150,15 @@ export class MobileSettingsPanel extends LitElement {
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4) inset;
     }
 
+    .action-button.danger {
+      border-color: rgba(248, 113, 113, 0.6);
+      background: linear-gradient(
+        135deg,
+        rgba(220, 38, 38, 0.7),
+        rgba(248, 113, 113, 0.85)
+      );
+    }
+
     .muted-note {
       font-size: 12px;
       color: rgba(255, 255, 255, 0.5);
@@ -187,6 +197,17 @@ export class MobileSettingsPanel extends LitElement {
     if (!this.eventBus) return;
     this.eventBus.emit(new SaveReplayRequestEvent());
     HapticFeedback.success();
+  }
+
+  private handleExitGame(): void {
+    const isAlive = this.game?.myPlayer()?.isAlive();
+    if (isAlive) {
+      const isConfirmed = confirm(
+        translateText("help_modal.exit_confirmation"),
+      );
+      if (!isConfirmed) return;
+    }
+    window.location.href = "/";
   }
 
   private renderToggle(
@@ -245,17 +266,21 @@ export class MobileSettingsPanel extends LitElement {
           )}
         </div>
 
-        ${!isReplay
-          ? html`
-              <div class="actions">
+        <div class="actions">
+          ${!isReplay
+            ? html`
                 <button class="action-button" @click="${this.handleSaveReplay}">
                   💾 Save Replay
                 </button>
-              </div>
-            `
-          : html`<div class="muted-note">
-              Replay mode: saving is disabled.
-            </div>`}
+              `
+            : ""}
+          <button class="action-button danger" @click="${this.handleExitGame}">
+            🚪 Exit Game
+          </button>
+        </div>
+        ${isReplay
+          ? html`<div class="muted-note">Replay mode: saving is disabled.</div>`
+          : ""}
       </div>
     `;
   }
