@@ -58,8 +58,6 @@ export class MobileUI {
   private economyTab: HTMLButtonElement;
 
   constructor(private eventBus: EventBus) {
-    console.log("[MobileUI] Initializing mobile UI system");
-
     if (typeof window !== "undefined") {
       (window as Window & { __MOBILE_UI__?: MobileUI }).__MOBILE_UI__ = this;
     }
@@ -105,10 +103,6 @@ export class MobileUI {
 
     // Set up event listeners (will be called after first activation)
     // this.setupEventListeners(); // Deferred until activation
-
-    console.log(
-      "[MobileUI] Mobile UI system initialized (components not attached yet)",
-    );
   }
 
   /**
@@ -164,7 +158,6 @@ export class MobileUI {
     if (active) {
       // Attach components to DOM on first activation
       if (!this.componentsAttached) {
-        console.log("[MobileUI] Attaching components to DOM");
         this.attachComponents();
         this.setupEventListeners();
         this.componentsAttached = true;
@@ -494,7 +487,7 @@ export class MobileUI {
 
     // Economy overlay closed
     this.economyOverlay.addEventListener("overlay-closed", () => {
-      console.log("[MobileUI] Economy overlay closed");
+      // Economy overlay closed
     });
 
     this.economyOverlay.addEventListener("attack-ratio-changed", (e: Event) => {
@@ -504,22 +497,18 @@ export class MobileUI {
 
     // Phase 4: Intel sidebar closed
     this.intelSidebar.addEventListener("sidebar-closed", () => {
-      console.log("[MobileUI] Intel sidebar closed");
+      // Intel sidebar closed
     });
 
     // Phase 4: Player selected from sidebar
     this.intelSidebar.addEventListener("player-selected", (e: Event) => {
       const event = e as CustomEvent<{ player: any }>;
-      console.log(
-        "[MobileUI] Player selected from sidebar:",
-        event.detail.player,
-      );
+      // Player selected from sidebar
     });
 
     // Phase 4: Player toast clicked
     this.playerToast.addEventListener("toast-clicked", (e: Event) => {
       const event = e as CustomEvent<{ player: any }>;
-      console.log("[MobileUI] Player toast clicked:", event.detail.player);
       // Open intel sidebar when toast is tapped
       this.intelSidebar.open();
     });
@@ -532,17 +521,17 @@ export class MobileUI {
 
     // Action grid: Grid closed
     this.actionGrid.addEventListener("grid-closed", () => {
-      console.log("[MobileUI] Action grid closed");
+      // Action grid closed
     });
 
     // Phase 5: Research sidebar closed
     this.researchSidebar.addEventListener("sidebar-closed", () => {
-      console.log("[MobileUI] Research sidebar closed");
+      // Research sidebar closed
     });
 
     // Phase 5: Settings sidebar closed
     this.settingsSidebar.addEventListener("sidebar-closed", () => {
-      console.log("[MobileUI] Settings sidebar closed");
+      // Settings sidebar closed
     });
 
     // Handle orientation changes
@@ -560,38 +549,30 @@ export class MobileUI {
 
     // Register gesture callbacks
     this.gestureDetector.on("tap", (gesture) => {
-      console.log("[MobileUI] Tap detected:", gesture.position);
       this.handleMapTap(gesture.position);
     });
 
     this.gestureDetector.on("long-press", (gesture) => {
-      console.log("[MobileUI] Long-press detected:", gesture.position);
       this.economyOverlay.open();
     });
 
     this.gestureDetector.on("edge-swipe-left", (gesture) => {
-      console.log("[MobileUI] Edge swipe from left detected");
       // TODO: Open Intel sidebar
       this.handleOpenIntelSidebar();
     });
 
     this.gestureDetector.on("edge-swipe-right", (gesture) => {
-      console.log("[MobileUI] Edge swipe from right detected");
       // TODO: Open Research sidebar
       this.handleOpenResearchSidebar();
     });
 
     this.gestureDetector.on("pinch", (gesture) => {
-      console.log("[MobileUI] Pinch detected, scale:", gesture.scale);
       // TODO: Handle map zoom
     });
 
     this.gestureDetector.on("drag", (gesture) => {
-      console.log("[MobileUI] Drag detected, delta:", gesture.delta);
       // TODO: Handle map pan
     });
-
-    console.log("[MobileUI] Gesture detection initialized");
   }
 
   /**
@@ -686,7 +667,6 @@ export class MobileUI {
           spawn === false ? null : spawn,
         ),
       );
-      console.log("[MobileUI] Boat attack sent for water crossing");
       return true;
     }
 
@@ -698,22 +678,15 @@ export class MobileUI {
    * Handle build item selected from action grid
    */
   private handleBuildItemSelected(action: string): void {
-    console.log("[MobileUI] Build item selected:", action);
-
     const unitType = this.parseBuildAction(action);
 
     if (!unitType) {
-      console.warn("[MobileUI] Invalid build action:", action);
       return;
     }
 
     // Build directly on selected tile (always available since ActionGrid requires tile tap)
     if (this.selectedTile) {
       this.eventBus.emit(new BuildUnitIntentEvent(unitType, this.selectedTile));
-    } else {
-      console.warn(
-        "[MobileUI] Build action selected but no tile selected (should not happen)",
-      );
     }
   }
 
@@ -729,8 +702,6 @@ export class MobileUI {
    * Handle attack item selected from action grid
    */
   private handleAttackItemSelected(action: string): void {
-    console.log("[MobileUI] Attack item selected:", action);
-
     if (!this.currentGame || !this.selectedTile) return;
 
     const myPlayer = this.currentGame.myPlayer();
@@ -748,7 +719,6 @@ export class MobileUI {
             troops,
           ),
         );
-        console.log("[MobileUI] Ground attack launched with", troops, "troops");
         break;
 
       case "attack:naval":
@@ -761,7 +731,6 @@ export class MobileUI {
             null,
           ),
         );
-        console.log("[MobileUI] Naval assault launched");
         break;
 
       case "attack:airstrike":
@@ -773,7 +742,6 @@ export class MobileUI {
             troops,
           ),
         );
-        console.log("[MobileUI] Air strike launched");
         break;
 
       case "attack:bomber":
@@ -798,7 +766,6 @@ export class MobileUI {
             true, // closestFirst
           ),
         );
-        console.log("[MobileUI] Bomber run launched");
         break;
 
       case "attack:declare-war":
@@ -807,7 +774,6 @@ export class MobileUI {
           this.eventBus.emit(
             new SendDeclareWarIntentEvent(myPlayer, owner as any),
           );
-          console.log("[MobileUI] War declared");
         }
         break;
 
@@ -816,7 +782,6 @@ export class MobileUI {
         this.eventBus.emit(
           new BuildUnitIntentEvent(UnitType.AtomBomb, this.selectedTile),
         );
-        console.log("[MobileUI] Atom bomb launched");
         break;
 
       case "attack:nuke-hbomb":
@@ -824,7 +789,6 @@ export class MobileUI {
         this.eventBus.emit(
           new BuildUnitIntentEvent(UnitType.HydrogenBomb, this.selectedTile),
         );
-        console.log("[MobileUI] H-bomb launched");
         break;
 
       case "attack:nuke-mirv":
@@ -832,21 +796,18 @@ export class MobileUI {
         this.eventBus.emit(
           new BuildUnitIntentEvent(UnitType.MIRV, this.selectedTile),
         );
-        console.log("[MobileUI] MIRV launched");
         break;
 
       case "attack:mark-target":
         // TODO: Mark target for bomber priority
-        console.log("[MobileUI] Mark target - implementation pending");
         break;
 
       case "attack:view-intel":
         // TODO: Open Intel sidebar
-        console.log("[MobileUI] View intel - implementation pending (Phase 4)");
         break;
 
       default:
-        console.warn("[MobileUI] Unknown attack action:", action);
+      // Unknown attack action
     }
   }
 
@@ -854,8 +815,6 @@ export class MobileUI {
    * Handle diplomacy item selected from action grid
    */
   private handleDiplomacyItemSelected(action: string): void {
-    console.log("[MobileUI] Diplomacy action selected:", action);
-
     if (!this.currentGame || !this.selectedTile) return;
 
     const owner = this.currentGame.owner(this.selectedTile);
@@ -873,7 +832,6 @@ export class MobileUI {
         this.eventBus.emit(
           new SendAllianceRequestIntentEvent(myPlayer, targetPlayer),
         );
-        console.log("[MobileUI] Alliance request sent");
         break;
 
       case "diplomacy:break-alliance":
@@ -881,7 +839,6 @@ export class MobileUI {
         this.eventBus.emit(
           new SendBreakAllianceIntentEvent(myPlayer, targetPlayer),
         );
-        console.log("[MobileUI] Alliance broken");
         break;
 
       case "diplomacy:request-peace":
@@ -889,27 +846,23 @@ export class MobileUI {
         this.eventBus.emit(
           new SendPeaceRequestIntentEvent(myPlayer, targetPlayer),
         );
-        console.log("[MobileUI] Peace request sent");
         break;
 
       case "diplomacy:send-emoji":
         // TODO: Show emoji picker
-        console.log("[MobileUI] Send emoji - implementation pending");
         break;
 
       case "diplomacy:donate-troops":
         // TODO: Show troop donation picker
-        console.log("[MobileUI] Donate troops - implementation pending");
         break;
 
       case "diplomacy:view-player":
         // Open Intel sidebar
         this.intelSidebar.open();
-        console.log("[MobileUI] Opening Intel sidebar");
         break;
 
       default:
-        console.warn("[MobileUI] Unknown diplomacy action:", action);
+      // Unknown diplomacy action
     }
   }
 
@@ -918,19 +871,15 @@ export class MobileUI {
    * Routes to appropriate handlers based on action prefix
    */
   private async handleActionSelected(action: string): Promise<void> {
-    console.log("[MobileUI] Action selected:", action);
-
     // Close the action grid
     this.actionGrid.close();
 
     if (!this.currentGame || !this.selectedTile) {
-      console.warn("[MobileUI] No game or selected tile");
       return;
     }
 
     const myPlayer = this.currentGame.myPlayer();
     if (!myPlayer) {
-      console.warn("[MobileUI] No player");
       return;
     }
 
@@ -962,8 +911,6 @@ export class MobileUI {
       this.handleDiplomacyItemSelected(action);
       return;
     }
-
-    console.warn("[MobileUI] Unknown action type:", action);
   }
 
   /**
@@ -1015,7 +962,6 @@ export class MobileUI {
    * Handle menu button click (open Intel sidebar)
    */
   private handleMenuClick(): void {
-    console.log("[MobileUI] Menu clicked");
     this.handleOpenIntelSidebar();
   }
 
@@ -1023,7 +969,6 @@ export class MobileUI {
    * Handle settings button click
    */
   private handleSettingsClick(): void {
-    console.log("[MobileUI] Settings clicked");
     this.settingsSidebar.toggle();
   }
 
@@ -1031,7 +976,6 @@ export class MobileUI {
    * Handle opening Intel sidebar
    */
   private handleOpenIntelSidebar(): void {
-    console.log("[MobileUI] Opening Intel sidebar");
     this.intelSidebar.toggle();
   }
 
@@ -1039,7 +983,6 @@ export class MobileUI {
    * Handle opening Research sidebar
    */
   private handleOpenResearchSidebar(): void {
-    console.log("[MobileUI] Opening Research sidebar");
     this.researchSidebar.toggle();
   }
 
@@ -1048,15 +991,13 @@ export class MobileUI {
    */
   private handleOrientationChange(): void {
     const orientation = MobileDetector.getOrientation();
-    console.log(`[MobileUI] Orientation changed to: ${orientation}`);
+    // Orientation changed
   }
 
   /**
    * Clean up mobile UI
    */
   destroy(): void {
-    console.log("[MobileUI] Destroying mobile UI");
-
     // Remove components from DOM
     this.topBar.remove();
     this.actionGrid.remove();
