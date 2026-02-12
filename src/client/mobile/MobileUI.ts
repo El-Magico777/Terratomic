@@ -30,6 +30,7 @@ import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
 import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
 import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
 import { MobileSettingsSidebar } from "./overlays/MobileSettingsSidebar";
+import { HapticFeedback } from "./utils/HapticFeedback";
 
 export class MobileUI {
   private actionGrid: MobileActionGrid;
@@ -697,6 +698,7 @@ export class MobileUI {
     // Build directly on selected tile (always available since ActionGrid requires tile tap)
     if (this.selectedTile) {
       this.eventBus.emit(new BuildUnitIntentEvent(unitType, this.selectedTile));
+      HapticFeedback.success();
     }
   }
 
@@ -729,6 +731,7 @@ export class MobileUI {
             troops,
           ),
         );
+        HapticFeedback.success();
         break;
 
       case "attack:naval":
@@ -741,6 +744,7 @@ export class MobileUI {
             null,
           ),
         );
+        HapticFeedback.success();
         break;
 
       case "attack:airstrike":
@@ -752,6 +756,7 @@ export class MobileUI {
             troops,
           ),
         );
+        HapticFeedback.success();
         break;
 
       case "attack:bomber":
@@ -776,6 +781,7 @@ export class MobileUI {
             true, // closestFirst
           ),
         );
+        HapticFeedback.success();
         break;
 
       case "attack:declare-war":
@@ -784,6 +790,7 @@ export class MobileUI {
           this.eventBus.emit(
             new SendDeclareWarIntentEvent(myPlayer, owner as any),
           );
+          HapticFeedback.success();
         }
         break;
 
@@ -792,6 +799,7 @@ export class MobileUI {
         this.eventBus.emit(
           new BuildUnitIntentEvent(UnitType.AtomBomb, this.selectedTile),
         );
+        HapticFeedback.success();
         break;
 
       case "attack:nuke-hbomb":
@@ -799,6 +807,7 @@ export class MobileUI {
         this.eventBus.emit(
           new BuildUnitIntentEvent(UnitType.HydrogenBomb, this.selectedTile),
         );
+        HapticFeedback.success();
         break;
 
       case "attack:nuke-mirv":
@@ -806,6 +815,7 @@ export class MobileUI {
         this.eventBus.emit(
           new BuildUnitIntentEvent(UnitType.MIRV, this.selectedTile),
         );
+        HapticFeedback.success();
         break;
 
       case "attack:mark-target":
@@ -815,6 +825,7 @@ export class MobileUI {
       case "attack:view-intel":
         // Open Intel sidebar
         this.intelSidebar.open();
+        HapticFeedback.tap();
         break;
 
       default:
@@ -843,6 +854,7 @@ export class MobileUI {
         this.eventBus.emit(
           new SendAllianceRequestIntentEvent(myPlayer, targetPlayer),
         );
+        HapticFeedback.success();
         break;
 
       case "diplomacy:break-alliance":
@@ -850,6 +862,7 @@ export class MobileUI {
         this.eventBus.emit(
           new SendBreakAllianceIntentEvent(myPlayer, targetPlayer),
         );
+        HapticFeedback.success();
         break;
 
       case "diplomacy:request-peace":
@@ -857,6 +870,7 @@ export class MobileUI {
         this.eventBus.emit(
           new SendPeaceRequestIntentEvent(myPlayer, targetPlayer),
         );
+        HapticFeedback.success();
         break;
 
       case "diplomacy:send-emoji":
@@ -870,6 +884,7 @@ export class MobileUI {
       case "diplomacy:view-player":
         // Open Intel sidebar
         this.intelSidebar.open();
+        HapticFeedback.tap();
         break;
 
       default:
@@ -901,6 +916,7 @@ export class MobileUI {
         !this.currentGame.hasOwner(this.selectedTile)
       ) {
         this.eventBus.emit(new SendSpawnIntentEvent(this.selectedTile));
+        HapticFeedback.success();
       }
       return;
     }

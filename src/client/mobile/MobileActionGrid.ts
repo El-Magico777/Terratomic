@@ -530,6 +530,25 @@ export class MobileActionGrid extends LitElement {
       });
     }
 
+    // Artillery (only if factory and artillery research)
+    const hasFactory = this.playerHasFactory(myPlayer);
+    if (hasFactory) {
+      const hasArtilleryResearch = myPlayer.hasUpgrade(
+        UpgradeType.ArtilleryResearch,
+      );
+      if (hasArtilleryResearch) {
+        const artilleryCost = this.getUnitCost(UnitType.Artillery, myPlayer);
+        actions.push({
+          id: `build:${UnitType.Artillery}`,
+          icon: "🎯",
+          label: "Artillery",
+          cost: artilleryCost,
+          disabled: gold < artilleryCost,
+          disabledReason: gold < artilleryCost ? "Not enough gold" : undefined,
+        });
+      }
+    }
+
     // Fighter Jet (only if airfield and jet engines)
     const hasAirfield = this.playerHasAirfield(myPlayer);
     if (hasAirfield) {
@@ -1087,6 +1106,10 @@ export class MobileActionGrid extends LitElement {
 
   private playerHasAirfield(myPlayer: PlayerView): boolean {
     return myPlayer.unitsOwned(UnitType.Airfield) > 0;
+  }
+
+  private playerHasFactory(myPlayer: PlayerView): boolean {
+    return myPlayer.unitsOwned(UnitType.Factory) > 0;
   }
 
   private canLaunchNuke(
