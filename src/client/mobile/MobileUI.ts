@@ -694,7 +694,8 @@ export class MobileUI {
       if (!gesture.scale || !this.canvas) return;
 
       // Calculate zoom delta from scale (scale > 1 = zoom in, scale < 1 = zoom out)
-      const delta = (1 - gesture.scale) * 600;
+      // Reduced multiplier from 600 to 100 for less aggressive zoom
+      const delta = (1 - gesture.scale) * 100;
 
       // Use center of canvas as zoom point
       const rect = this.canvas.getBoundingClientRect();

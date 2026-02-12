@@ -3,13 +3,21 @@
  * Focused on core in-game toggles and replay actions
  */
 
-import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { css, html, LitElement } from "lit";
+import { customElement, property, state } from "lit/decorators.js";
 import { EventBus } from "../../../core/EventBus";
+import { GameType } from "../../../core/game/Game";
 import type { GameView } from "../../../core/game/GameView";
 import { UserSettings } from "../../../core/game/UserSettings";
-import { RefreshGraphicsEvent } from "../../InputHandler";
+import {
+  RefreshGraphicsEvent,
+  ReplaySpeedChangeEvent,
+} from "../../InputHandler";
 import { SaveReplayRequestEvent } from "../../Transport";
+import {
+  defaultReplaySpeedMultiplier,
+  ReplaySpeedMultiplier,
+} from "../../utilities/ReplaySpeedMultiplier";
 import { translateText } from "../../Utils";
 import { HapticFeedback } from "../utils/HapticFeedback";
 
@@ -17,6 +25,9 @@ import { HapticFeedback } from "../utils/HapticFeedback";
 export class MobileSettingsPanel extends LitElement {
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) eventBus: EventBus | null = null;
+
+  @state()
+  private replaySpeedMultiplier: number = defaultReplaySpeedMultiplier;
 
   private userSettings = new UserSettings();
 
@@ -164,6 +175,38 @@ export class MobileSettingsPanel extends LitElement {
       color: rgba(255, 255, 255, 0.5);
       padding: 0 16px 12px;
     }
+
+    .speed-controls {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .speed-button {
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(15, 23, 42, 0.6);
+      color: #e5e7eb;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease;
+    }
+
+    .speed-button:active {
+      transform: scale(0.95);
+    }
+
+    .speed-button.active {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: rgba(56, 189, 248, 0.6);
+      color: #38bdf8;
+    }
   `;
 
   private handleToggleDarkMode(): void {
@@ -197,6 +240,14 @@ export class MobileSettingsPanel extends LitElement {
     if (!this.eventBus) return;
     this.eventBus.emit(new SaveReplayRequestEvent());
     HapticFeedback.success();
+  }
+
+  private handleReplaySpeedChange(speed: ReplaySpeedMultiplier): void {
+    this.replaySpeedMultiplier = speed;
+    if (this.eventBus) {
+      this.eventBus.emit(new ReplaySpeedChangeEvent(speed));
+    }
+    HapticFeedback.tap();
   }
 
   private handleExitGame(): void {
@@ -233,11 +284,52 @@ export class MobileSettingsPanel extends LitElement {
     `;
   }
 
+  private renderReplaySpeedControls(isSinglePlayer: boolean) {
+    const speedOptions: Array<{
+      label: string;
+      value: ReplaySpeedMultiplier;
+    }> = [
+      { label: "×0.5", value: ReplaySpeedMultiplier.slow },
+      { label: "×1", value: ReplaySpeedMultiplier.normal },
+      { label: "×2", value: ReplaySpeedMultiplier.fast },
+      { label: "max", value: ReplaySpeedMultiplier.fastest },
+    ];
+
+    return html`
+      <div class="section">
+        <div class="section-title">
+          ${isSinglePlayer ? "Game Speed" : "Replay Speed"}
+        </div>
+        <div class="speed-controls">
+          ${speedOptions.map(
+            ({ label, value }) => html`
+              <button
+                class="speed-button ${this.replaySpeedMultiplier === value
+                  ? "active"
+                  : ""}"
+                @click="${() => this.handleReplaySpeedChange(value)}"
+              >
+                ${label}
+              </button>
+            `,
+          )}
+        </div>
+      </div>
+    `;
+  }
+
   render() {
     const isReplay = this.game?.config().isReplay() ?? false;
+    const isSinglePlayer =
+      this.game?.config().gameConfig().gameType === GameType.Singleplayer;
+    const showSpeedControls = isReplay || isSinglePlayer;
 
     return html`
       <div class="panel">
+        ${showSpeedControls
+          ? this.renderReplaySpeedControls(isSinglePlayer)
+          : ""}
+
         <div class="section">
           <div class="section-title">Preferences</div>
           ${this.renderToggle(

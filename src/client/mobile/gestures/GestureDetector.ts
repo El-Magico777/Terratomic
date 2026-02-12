@@ -28,6 +28,7 @@ export class GestureDetector {
   private lastTapTime: number = 0;
   private callbacks: Map<GestureType, GestureCallback[]> = new Map();
   private initialPinchDistance: number = 0;
+  private lastPinchScale: number = 1;
   private isPinching: boolean = false;
   private isDragging: boolean = false;
   private lastTouchPos: { x: number; y: number } | null = null;
@@ -90,6 +91,7 @@ export class GestureDetector {
         validTouches[0],
         validTouches[1],
       );
+      this.lastPinchScale = 1;
       this.clearLongPressTimer();
       return;
     }
@@ -141,11 +143,15 @@ export class GestureDetector {
       );
       const scale = currentDistance / this.initialPinchDistance;
 
+      // Only emit if scale changed significantly from last scale
+      // This gives us incremental zoom instead of cumulative
       this.emit({
         type: "pinch",
         position: { x: touch.clientX, y: touch.clientY },
         scale,
       });
+
+      this.lastPinchScale = scale;
       e.preventDefault();
       return;
     }
@@ -175,6 +181,7 @@ export class GestureDetector {
     // Reset pinch state if no more touches
     if (e.touches.length === 0) {
       this.isPinching = false;
+      this.lastPinchScale = 1;
     }
 
     // Don't emit tap if we were dragging or pinching
