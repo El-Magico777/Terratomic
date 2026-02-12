@@ -656,8 +656,11 @@ export class MobileActionGrid extends LitElement {
 
     // Air attacks (if airfield exists)
     const hasAirfield = this.playerHasAirfield(myPlayer);
-    if (hasAirfield) {
-      // Paratroopers
+    const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
+    const isAtWar = targetPlayer ? myPlayer.isAtWarWith(targetPlayer) : false;
+
+    if (hasAirfield && hasJetEngines) {
+      // Paratroopers (requires JetEngines)
       actions.push({
         id: "attack:airstrike",
         icon: "🪂",
@@ -665,28 +668,29 @@ export class MobileActionGrid extends LitElement {
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
       });
+    }
 
-      // Bomber run
+    if (hasAirfield && isAtWar) {
+      // Bomber run (requires war declaration)
       actions.push({
         id: "attack:bomber",
         icon: "💣",
         label: "Bomber Run",
       });
+    }
 
-      // Fighter Jet air attack (if jet engines researched)
-      const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
-      if (hasJetEngines) {
-        const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
-        const gold = Number(myPlayer.gold());
-        actions.push({
-          id: `build:${UnitType.FighterJet}`,
-          icon: "🛩️",
-          label: "Fighter Jet",
-          cost: jetCost,
-          disabled: gold < jetCost,
-          disabledReason: gold < jetCost ? "Not enough gold" : undefined,
-        });
-      }
+    // Fighter Jet air attack (if jet engines researched)
+    if (hasJetEngines) {
+      const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
+      const gold = Number(myPlayer.gold());
+      actions.push({
+        id: `build:${UnitType.FighterJet}`,
+        icon: "🛩️",
+        label: "Fighter Jet",
+        cost: jetCost,
+        disabled: gold < jetCost,
+        disabledReason: gold < jetCost ? "Not enough gold" : undefined,
+      });
     }
 
     return actions;
@@ -714,8 +718,11 @@ export class MobileActionGrid extends LitElement {
 
     // Air attacks (if airfield exists)
     const hasAirfield = this.playerHasAirfield(myPlayer);
-    if (hasAirfield) {
-      // Paratroopers
+    const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
+    const isAtWar = targetPlayer ? myPlayer.isAtWarWith(targetPlayer) : false;
+
+    if (hasAirfield && hasJetEngines) {
+      // Paratroopers (requires JetEngines)
       actions.push({
         id: "attack:airstrike",
         icon: "🪂",
@@ -723,8 +730,10 @@ export class MobileActionGrid extends LitElement {
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
       });
+    }
 
-      // Bomber run
+    if (hasAirfield && isAtWar) {
+      // Bomber run (requires war declaration)
       actions.push({
         id: "attack:bomber",
         icon: "💣",
@@ -816,8 +825,11 @@ export class MobileActionGrid extends LitElement {
 
     // Air attacks (if airfield exists)
     const hasAirfield = this.playerHasAirfield(myPlayer);
-    if (hasAirfield) {
-      // Paratroopers
+    const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
+    const isAtWar = targetPlayer ? myPlayer.isAtWarWith(targetPlayer) : false;
+
+    if (hasAirfield && hasJetEngines) {
+      // Paratroopers (requires JetEngines)
       actions.push({
         id: "attack:airstrike",
         icon: "🪂",
@@ -826,8 +838,10 @@ export class MobileActionGrid extends LitElement {
         disabledReason: troops === 0 ? "No troops" : undefined,
         priority: "high",
       });
+    }
 
-      // Bomber run
+    if (hasAirfield && isAtWar) {
+      // Bomber run (requires war declaration)
       actions.push({
         id: "attack:bomber",
         icon: "💣",
