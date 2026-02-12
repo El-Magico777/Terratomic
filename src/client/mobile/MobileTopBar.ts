@@ -13,6 +13,8 @@ export interface TopBarStats {
   gold: number;
   populationGrowth?: number;
   goldIncome?: number;
+  gameDurationSeconds?: number; // Game time in seconds (only counts after spawn phase)
+  inSpawnPhase?: boolean; // Whether game is still in spawn phase
 }
 
 @customElement("mobile-top-bar")
@@ -77,6 +79,17 @@ export class MobileTopBar extends LitElement {
     .research-button:active,
     .settings-button:active {
       opacity: 0.6;
+    }
+
+    .game-clock {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.3px;
     }
 
     .buttons-right {
@@ -172,15 +185,25 @@ export class MobileTopBar extends LitElement {
   `;
 
   render() {
+    const { gameDurationSeconds = 0, inSpawnPhase = true } = this.stats;
+
+    // Format time like desktop: "1h2m3s", "2m3s", "3s"
+    let timeDisplay = "";
+    if (!inSpawnPhase && gameDurationSeconds > 0) {
+      const hours = Math.floor(gameDurationSeconds / 3600);
+      const minutes = Math.floor((gameDurationSeconds % 3600) / 60);
+      const seconds = gameDurationSeconds % 60;
+
+      if (hours > 0) timeDisplay = `${hours}h`;
+      if (minutes > 0) timeDisplay += `${minutes}m`;
+      timeDisplay += `${seconds}s`;
+    }
+
     return html`
       <div class="top-bar">
-        <button
-          class="menu-button"
-          aria-label="Open menu"
-          @click="${this.handleMenuClick}"
-        >
-          ≡
-        </button>
+        ${timeDisplay
+          ? html`<div class="game-clock" title="Game Time">${timeDisplay}</div>`
+          : ""}
 
         <div class="stats" @click="${this.handleStatsClick}">
           <div class="stat" title="Population">
@@ -198,13 +221,6 @@ export class MobileTopBar extends LitElement {
         </div>
 
         <div class="buttons-right">
-          <button
-            class="research-button"
-            aria-label="Research"
-            @click="${this.handleResearchClick}"
-          >
-            🔬
-          </button>
           <button
             class="settings-button"
             aria-label="Settings"
@@ -273,34 +289,6 @@ export class MobileTopBar extends LitElement {
 
   private formatNumber(value: number): string {
     return renderNumber(value);
-  }
-
-  private handleMenuClick(): void {
-    this.dispatchEvent(
-      new CustomEvent("menu-click", {
-        bubbles: true,
-        composed: true,
-      }),
-    );
-
-    // Light haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
-  }
-
-  private handleResearchClick(): void {
-    this.dispatchEvent(
-      new CustomEvent("research-click", {
-        bubbles: true,
-        composed: true,
-      }),
-    );
-
-    // Light haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
   }
 
   private handleSettingsClick(): void {

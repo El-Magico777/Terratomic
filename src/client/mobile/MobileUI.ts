@@ -62,7 +62,10 @@ export class MobileUI {
   private componentsAttached: boolean = false;
   private statsLoopId: number | null = null;
   private economyTab: HTMLButtonElement;
+  private intelTab: HTMLButtonElement;
+  private researchTab: HTMLButtonElement;
   private lastGameTick: number = -1; // Track last processed game tick
+  private gameDurationSeconds: number = 0; // Track game time in seconds (only after spawn phase)
 
   constructor(private eventBus: EventBus) {
     if (typeof window !== "undefined") {
@@ -109,6 +112,16 @@ export class MobileUI {
     this.economyTab.className = "mobile-economy-tab";
     this.economyTab.textContent = "Economy";
     this.economyTab.setAttribute("aria-label", "Open economy panel");
+
+    this.intelTab = document.createElement("button");
+    this.intelTab.className = "mobile-intel-tab";
+    this.intelTab.textContent = "Intel";
+    this.intelTab.setAttribute("aria-label", "Open intel panel");
+
+    this.researchTab = document.createElement("button");
+    this.researchTab.className = "mobile-research-tab";
+    this.researchTab.textContent = "Research";
+    this.researchTab.setAttribute("aria-label", "Open research panel");
 
     // Don't attach to DOM yet - wait for setActive(true)
     // Don't call any custom element methods yet - they're not registered until imports complete
@@ -159,6 +172,8 @@ export class MobileUI {
     document.body.appendChild(this.researchSidebar);
     document.body.appendChild(this.settingsSidebar);
     document.body.appendChild(this.economyTab);
+    document.body.appendChild(this.intelTab);
+    document.body.appendChild(this.researchTab);
 
     // Add viewport meta tag if not present
     this.ensureViewportMeta();
@@ -180,6 +195,8 @@ export class MobileUI {
       }
       this.topBar.style.display = "";
       this.economyTab.style.display = "";
+      this.intelTab.style.display = "";
+      this.researchTab.style.display = "";
       document.body.classList.add("mobile-ui-enabled");
       this.injectMobileStyles();
       this.startStatsLoop();
@@ -188,6 +205,8 @@ export class MobileUI {
       if (this.componentsAttached) {
         this.topBar.style.display = "none";
         this.economyTab.style.display = "none";
+        this.intelTab.style.display = "none";
+        this.researchTab.style.display = "none";
         this.closeAllOverlays();
       }
       document.body.classList.remove("mobile-ui-enabled");
@@ -231,17 +250,29 @@ export class MobileUI {
     const gold = Number(myPlayer.gold());
     const population = myPlayer.population(); // Current population
     const maxPopulation = this.currentGame.config().maxPopulation(myPlayer); // Max population cap
+    const tick = this.currentGame.ticks();
+    const inSpawnPhase = this.currentGame.inSpawnPhase();
 
     this.topBar.updateStats({
       population,
       maxPopulation,
       gold,
+      gameDurationSeconds: this.gameDurationSeconds,
+      inSpawnPhase,
     });
 
     // Update events display and alliance notifications only when game tick changes (not every frame)
     const currentTick = this.currentGame.ticks();
     if (currentTick !== this.lastGameTick) {
       this.lastGameTick = currentTick;
+
+      // Update game timer: increment every 10 ticks (1 second), reset during spawn phase
+      if (inSpawnPhase) {
+        this.gameDurationSeconds = 0;
+      } else if (tick % 10 === 0) {
+        this.gameDurationSeconds++;
+      }
+
       if (this.eventsDisplay && typeof this.eventsDisplay.tick === "function") {
         this.eventsDisplay.tick();
       }
@@ -473,6 +504,62 @@ export class MobileUI {
       body.mobile-ui-enabled .mobile-economy-tab:active {
         transform: translate(0, -50%);
       }
+
+      body.mobile-ui-enabled .mobile-intel-tab {
+        position: fixed;
+        left: 0;
+        top: calc(50% - 116px);
+        transform: translate(-4px, -50%);
+        padding: 12px 10px;
+        min-height: 96px;
+        border-radius: 0 12px 12px 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-left: none;
+        background: rgba(20, 20, 30, 0.9);
+        color: #60a5fa;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        z-index: 1700;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      body.mobile-ui-enabled .mobile-intel-tab:active {
+        transform: translate(0, -50%);
+      }
+
+      body.mobile-ui-enabled .mobile-research-tab {
+        position: fixed;
+        right: 0;
+        top: 50%;
+        transform: translate(4px, -50%);
+        padding: 12px 10px;
+        min-height: 96px;
+        border-radius: 12px 0 0 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-right: none;
+        background: rgba(20, 20, 30, 0.9);
+        color: #a78bfa;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        z-index: 1700;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+
+      body.mobile-ui-enabled .mobile-research-tab:active {
+        transform: translate(0, -50%);
+      }
       
       /* Support for notched devices */
       @supports (padding: env(safe-area-inset-top)) {
@@ -492,16 +579,6 @@ export class MobileUI {
    * Set up event listeners for UI components
    */
   private setupEventListeners(): void {
-    // Top bar menu click
-    this.topBar.addEventListener("menu-click", () => {
-      this.handleMenuClick();
-    });
-
-    // Top bar research click
-    this.topBar.addEventListener("research-click", () => {
-      this.handleOpenResearchSidebar();
-    });
-
     // Top bar settings click
     this.topBar.addEventListener("settings-click", () => {
       this.handleSettingsClick();
@@ -514,6 +591,24 @@ export class MobileUI {
     this.economyTab.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       this.economyOverlay.open();
+    });
+
+    this.intelTab.addEventListener("click", () => {
+      this.intelSidebar.open();
+    });
+
+    this.intelTab.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      this.intelSidebar.open();
+    });
+
+    this.researchTab.addEventListener("click", () => {
+      this.researchSidebar.open();
+    });
+
+    this.researchTab.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      this.researchSidebar.open();
     });
 
     // Economy overlay closed
@@ -1049,13 +1144,6 @@ export class MobileUI {
   }
 
   /**
-   * Handle menu button click (open Intel sidebar)
-   */
-  private handleMenuClick(): void {
-    this.handleOpenIntelSidebar();
-  }
-
-  /**
    * Handle settings button click
    */
   private handleSettingsClick(): void {
@@ -1097,6 +1185,8 @@ export class MobileUI {
     this.researchSidebar.remove();
     this.settingsSidebar.remove();
     this.economyTab.remove();
+    this.intelTab.remove();
+    this.researchTab.remove();
 
     // Clean up gesture detector
     if (this.gestureDetector) {
