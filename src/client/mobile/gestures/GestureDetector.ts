@@ -31,6 +31,12 @@ export class GestureDetector {
   private isPinching: boolean = false;
   private isDragging: boolean = false;
 
+  // Bound event handler references for proper cleanup
+  private boundTouchStart: (e: TouchEvent) => void;
+  private boundTouchMove: (e: TouchEvent) => void;
+  private boundTouchEnd: (e: TouchEvent) => void;
+  private boundTouchCancel: (e: TouchEvent) => void;
+
   // Configuration
   private readonly LONG_PRESS_DURATION = 600; // ms
   private readonly MOVEMENT_THRESHOLD = 10; // px
@@ -40,24 +46,28 @@ export class GestureDetector {
   private readonly EDGE_SWIPE_MIN_VELOCITY = 150; // px/s
 
   constructor(private element: HTMLElement) {
+    // Bind event handlers once and store references
+    this.boundTouchStart = this.onTouchStart.bind(this);
+    this.boundTouchMove = this.onTouchMove.bind(this);
+    this.boundTouchEnd = this.onTouchEnd.bind(this);
+    this.boundTouchCancel = this.onTouchCancel.bind(this);
+
     this.attachListeners();
   }
 
   private attachListeners(): void {
-    this.element.addEventListener("touchstart", this.onTouchStart.bind(this), {
+    this.element.addEventListener("touchstart", this.boundTouchStart, {
       passive: false,
     });
-    this.element.addEventListener("touchmove", this.onTouchMove.bind(this), {
+    this.element.addEventListener("touchmove", this.boundTouchMove, {
       passive: false,
     });
-    this.element.addEventListener("touchend", this.onTouchEnd.bind(this), {
+    this.element.addEventListener("touchend", this.boundTouchEnd, {
       passive: false,
     });
-    this.element.addEventListener(
-      "touchcancel",
-      this.onTouchCancel.bind(this),
-      { passive: false },
-    );
+    this.element.addEventListener("touchcancel", this.boundTouchCancel, {
+      passive: false,
+    });
   }
 
   private onTouchStart(e: TouchEvent): void {
@@ -302,16 +312,10 @@ export class GestureDetector {
    * Clean up event listeners
    */
   destroy(): void {
-    this.element.removeEventListener(
-      "touchstart",
-      this.onTouchStart.bind(this),
-    );
-    this.element.removeEventListener("touchmove", this.onTouchMove.bind(this));
-    this.element.removeEventListener("touchend", this.onTouchEnd.bind(this));
-    this.element.removeEventListener(
-      "touchcancel",
-      this.onTouchCancel.bind(this),
-    );
+    this.element.removeEventListener("touchstart", this.boundTouchStart);
+    this.element.removeEventListener("touchmove", this.boundTouchMove);
+    this.element.removeEventListener("touchend", this.boundTouchEnd);
+    this.element.removeEventListener("touchcancel", this.boundTouchCancel);
     this.callbacks.clear();
     this.clearLongPressTimer();
   }
