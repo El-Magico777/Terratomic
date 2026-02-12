@@ -6,13 +6,20 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import type { EventBus } from "../../../core/EventBus";
 import type { GameView, PlayerView } from "../../../core/game/GameView";
+import {
+  SendDeclareWarIntentEvent,
+  SendPeaceRequestIntentEvent,
+} from "../../Transport";
+import { HapticFeedback } from "../utils/HapticFeedback";
 
 @customElement("mobile-player-toast")
 export class MobilePlayerToast extends LitElement {
-  @property({ type: Boolean }) visible: boolean = false;
+  @property({ type: Boolean, reflect: true }) visible: boolean = false;
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) player: PlayerView | null = null;
+  @property({ type: Object }) eventBus: EventBus | null = null;
 
   private autoHideTimeout: number | null = null;
 
@@ -99,6 +106,45 @@ export class MobilePlayerToast extends LitElement {
     .relation-text.enemy {
       color: #ef4444;
     }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      transition: all 0.15s;
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .action-btn.peace {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .action-btn.war {
+      background: #ef4444;
+      color: white;
+    }
+
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   `;
 
   render() {
@@ -130,13 +176,77 @@ export class MobilePlayerToast extends LitElement {
           <div class="stat">💰 ${gold}</div>
         </div>
         <div class="relation-text ${relation}">${relationText}</div>
+        ${this.renderActions()}
       </div>
     `;
   }
 
+  private renderActions() {
+    if (!this.player || !this.game || !this.eventBus) return null;
+
+    const myPlayer = this.game.myPlayer();
+    if (!myPlayer) return null;
+
+    const isAllied = myPlayer.isAlliedWith(this.player);
+    const isAtWar = myPlayer.isAtWarWith(this.player);
+
+    // Can't interact with yourself
+    if (this.player === myPlayer) return null;
+
+    return html`
+      <div class="actions" @click="${(e: Event) => e.stopPropagation()}">
+        ${isAtWar
+          ? html`
+              <button class="action-btn peace" @click="${this.handlePeace}">
+                ⚔️ Peace
+              </button>
+            `
+          : !isAllied
+            ? html`
+                <button class="action-btn peace" @click="${this.handlePeace}">
+                  🕊️ Peace
+                </button>
+              `
+            : null}
+        ${!isAtWar && !isAllied
+          ? html`
+              <button class="action-btn war" @click="${this.handleWar}">
+                ☠️ War
+              </button>
+            `
+          : null}
+      </div>
+    `;
+  }
+
+  private handlePeace = () => {
+    if (!this.player || !this.game || !this.eventBus) return;
+
+    const myPlayer = this.game.myPlayer();
+    if (!myPlayer) return;
+
+    this.eventBus.emit(new SendPeaceRequestIntentEvent(myPlayer, this.player));
+
+    HapticFeedback.success();
+    this.hide();
+  };
+
+  private handleWar = () => {
+    if (!this.player || !this.game || !this.eventBus) return;
+
+    const myPlayer = this.game.myPlayer();
+    if (!myPlayer) return;
+
+    this.eventBus.emit(new SendDeclareWarIntentEvent(myPlayer, this.player));
+
+    HapticFeedback.error();
+    this.hide();
+  };
+
   show(player: PlayerView, duration: number = 3000): void {
     this.player = player;
     this.visible = true;
+    this.requestUpdate(); // Force re-render
 
     // Auto-hide after duration
     if (this.autoHideTimeout !== null) {
@@ -149,6 +259,7 @@ export class MobilePlayerToast extends LitElement {
 
   hide(): void {
     this.visible = false;
+    this.requestUpdate(); // Force re-render
     if (this.autoHideTimeout !== null) {
       clearTimeout(this.autoHideTimeout);
       this.autoHideTimeout = null;

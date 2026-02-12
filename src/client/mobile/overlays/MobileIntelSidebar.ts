@@ -8,6 +8,7 @@ import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { GameView, PlayerView } from "../../../core/game/GameView";
 import { HapticFeedback } from "../utils/HapticFeedback";
+import type { MobileEventsDisplay } from "./MobileEventsDisplay";
 
 export type IntelTab = "players" | "events";
 
@@ -15,6 +16,7 @@ export type IntelTab = "players" | "events";
 export class MobileIntelSidebar extends LitElement {
   @property({ type: Boolean, reflect: true }) visible: boolean = false;
   @property({ type: Object }) game: GameView | null = null;
+  @property({ type: Object }) eventsDisplay: MobileEventsDisplay | null = null;
   @state() private activeTab: IntelTab = "players";
 
   static styles = css`
@@ -324,24 +326,17 @@ export class MobileIntelSidebar extends LitElement {
   }
 
   private renderEventsTab() {
-    // Events log is a desktop-only feature
-    // Mobile uses a simpler notification system via toasts and action confirmations
-    return html`
-      <div class="empty-state">
-        <div style="opacity: 0.6; margin-bottom: 16px;">📱</div>
-        Events log not available on mobile
-        <br /><br />
-        <div style="font-size: 13px; opacity: 0.7;">
-          Game notifications appear as:
-          <br />
-          • Player toasts (tap enemy tiles)
-          <br />
-          • Action confirmations
-          <br />
-          • Top bar updates
+    if (!this.eventsDisplay) {
+      return html`
+        <div class="empty-state">
+          <div style="opacity: 0.6; margin-bottom: 16px;">⏳</div>
+          Loading events...
         </div>
-      </div>
-    `;
+      `;
+    }
+
+    // Render the events display component
+    return html`${this.eventsDisplay}`;
   }
 
   private getPlayerList() {

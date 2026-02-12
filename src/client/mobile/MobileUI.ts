@@ -25,7 +25,9 @@ import { MobileActionGrid } from "./MobileActionGrid";
 import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
+import { MobileAllianceNotifications } from "./overlays/MobileAllianceNotifications";
 import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
+import { MobileEventsDisplay } from "./overlays/MobileEventsDisplay";
 import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
 import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
 import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
@@ -45,6 +47,8 @@ export class MobileUI {
   // Phase 4 components
   private intelSidebar: MobileIntelSidebar;
   private playerToast: MobilePlayerToast;
+  private eventsDisplay: MobileEventsDisplay;
+  private allianceNotifications: MobileAllianceNotifications;
 
   // Phase 5 components
   private researchSidebar: MobileResearchSidebar;
@@ -58,6 +62,7 @@ export class MobileUI {
   private componentsAttached: boolean = false;
   private statsLoopId: number | null = null;
   private economyTab: HTMLButtonElement;
+  private lastGameTick: number = -1; // Track last processed game tick
 
   constructor(private eventBus: EventBus) {
     if (typeof window !== "undefined") {
@@ -85,6 +90,12 @@ export class MobileUI {
     this.playerToast = document.createElement(
       "mobile-player-toast",
     ) as MobilePlayerToast;
+    this.eventsDisplay = document.createElement(
+      "mobile-events-display",
+    ) as MobileEventsDisplay;
+    this.allianceNotifications = document.createElement(
+      "mobile-alliance-notifications",
+    ) as MobileAllianceNotifications;
 
     // Create Phase 5 components
     this.researchSidebar = document.createElement(
@@ -119,6 +130,8 @@ export class MobileUI {
     import("./overlays/MobileEconomyOverlay");
 
     // Phase 4 components
+    import("./overlays/MobileAllianceNotifications");
+    import("./overlays/MobileEventsDisplay");
     import("./overlays/MobileIntelSidebar");
     import("./overlays/MobilePlayerToast");
 
@@ -140,6 +153,7 @@ export class MobileUI {
     // Attach Phase 4 components
     document.body.appendChild(this.intelSidebar);
     document.body.appendChild(this.playerToast);
+    document.body.appendChild(this.allianceNotifications);
 
     // Attach Phase 5 components
     document.body.appendChild(this.researchSidebar);
@@ -223,6 +237,21 @@ export class MobileUI {
       maxPopulation,
       gold,
     });
+
+    // Update events display and alliance notifications only when game tick changes (not every frame)
+    const currentTick = this.currentGame.ticks();
+    if (currentTick !== this.lastGameTick) {
+      this.lastGameTick = currentTick;
+      if (this.eventsDisplay && typeof this.eventsDisplay.tick === "function") {
+        this.eventsDisplay.tick();
+      }
+      if (
+        this.allianceNotifications &&
+        typeof this.allianceNotifications.tick === "function"
+      ) {
+        this.allianceNotifications.tick();
+      }
+    }
   }
 
   private closeAllOverlays(): void {
@@ -555,7 +584,7 @@ export class MobileUI {
     });
 
     this.gestureDetector.on("long-press", (gesture) => {
-      this.economyOverlay.open();
+      this.handleMapLongPress(gesture.position);
     });
 
     this.gestureDetector.on("edge-swipe-left", (gesture) => {
@@ -602,7 +631,13 @@ export class MobileUI {
 
     // Update Phase 4 components with game state
     this.intelSidebar.game = game;
+    this.intelSidebar.eventsDisplay = this.eventsDisplay;
     this.playerToast.game = game;
+    this.playerToast.eventBus = this.eventBus;
+    this.eventsDisplay.game = game;
+    this.eventsDisplay.eventBus = this.eventBus;
+    this.allianceNotifications.game = game;
+    this.allianceNotifications.eventBus = this.eventBus;
 
     // Update Phase 5 components with game state
     this.researchSidebar.game = game;
@@ -960,22 +995,37 @@ export class MobileUI {
       return;
     }
 
+    // For all tiles, show action grid
+    this.actionGrid.showForTile(tile, this.currentGame, this.attackRatio);
+  }
+
+  /**
+   * Handle long-press on map
+   * Shows player toast for enemy/ally tiles, economy overlay otherwise
+   */
+  private handleMapLongPress(position: { x: number; y: number }): void {
+    const tile = this.screenToTile(position);
+    if (!tile || !this.currentGame) {
+      return;
+    }
+
     // Show player toast for enemy/ally tiles
     const myPlayer = this.currentGame.myPlayer();
     if (myPlayer) {
       const owner = this.currentGame.owner(tile);
       if (owner.isPlayer() && owner !== myPlayer) {
-        // Show toast for enemy/ally players
+        // Long-press on enemy/ally: show toast with diplomacy options
         this.playerToast.show(
           owner as import("../../core/game/GameView").PlayerView,
-          3000,
+          5000, // Show longer on long-press
         );
-        HapticFeedback.tap();
+        HapticFeedback.longPress();
+        return;
       }
     }
 
-    // For normal gameplay, show action grid
-    this.actionGrid.showForTile(tile, this.currentGame, this.attackRatio);
+    // Long-press on own/neutral tiles: open economy overlay
+    this.economyOverlay.open();
   }
 
   /**

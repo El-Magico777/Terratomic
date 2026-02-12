@@ -712,6 +712,75 @@ export class MobileActionGrid extends LitElement {
       });
     }
 
+    // Diplomacy actions
+    if (targetPlayer) {
+      const isAllied = myPlayer.isAlliedWith(targetPlayer);
+      const isAtWar = myPlayer.isAtWarWith(targetPlayer);
+
+      if (isAtWar) {
+        actions.push({
+          id: "diplomacy:request-peace",
+          icon: "🕊️",
+          label: "Request Peace",
+        });
+      } else if (isAllied) {
+        actions.push({
+          id: "diplomacy:break-alliance",
+          icon: "💔",
+          label: "Break Alliance",
+        });
+      } else {
+        actions.push({
+          id: "diplomacy:propose-ally",
+          icon: "🤝",
+          label: "Propose Alliance",
+        });
+      }
+
+      if (!isAtWar) {
+        actions.push({
+          id: "attack:declare-war",
+          icon: "⚔️",
+          label: "Declare War",
+        });
+      }
+    }
+
+    // Nuclear options (if player has missile silo)
+    const gold = Number(myPlayer.gold());
+    if (this.canLaunchNuke(myPlayer, "atom")) {
+      actions.push({
+        id: "attack:nuke-atom",
+        icon: "☢️",
+        label: "Atom Bomb",
+        cost: 5000,
+        disabled: gold < 5000,
+        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
+      });
+    }
+
+    if (this.canLaunchNuke(myPlayer, "hbomb")) {
+      actions.push({
+        id: "attack:nuke-hbomb",
+        icon: "💥",
+        label: "H-Bomb",
+        cost: 15000,
+        disabled: gold < 15000,
+        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
+      });
+    }
+
+    if (this.canLaunchNuke(myPlayer, "mirv")) {
+      actions.push({
+        id: "attack:nuke-mirv",
+        icon: "🚀",
+        label: "MIRV",
+        cost: 50000,
+        disabled: gold < 50000,
+        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
+      });
+    }
+
     return actions;
   }
 
