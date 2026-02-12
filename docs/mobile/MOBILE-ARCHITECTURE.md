@@ -6,7 +6,7 @@
 
 The mobile UI is a touch-first layer that activates when `MobileDetector.isMobile()` returns true (based on `navigator.maxTouchPoints`, `ontouchstart`, or user-agent heuristics). It replaces the desktop right-click/keyboard interactions with gesture-driven components built as **Lit web components** with Shadow DOM encapsulation.
 
-**Total scope:** 14 files, ~5 440 lines under `src/client/mobile/`.
+**Total scope:** 13 files, ~5,294 lines under `src/client/mobile/`.
 
 ---
 
@@ -25,7 +25,6 @@ MobileUI (orchestrator – 998 lines)
 │   ├── MobileEconomyOverlay      — left-slide economy panel (troop ratio, attack ratio, investments)
 │   ├── MobileIntelSidebar        — left-slide sidebar (Players leaderboard + Events stub)
 │   ├── MobilePlayerToast         — slide-down toast for player info – show() never called
-│   ├── MobilePlacementMode       — full-screen building placement overlay
 │   ├── MobileResearchSidebar     — right-slide sidebar hosting MobileResearchPanel
 │   └── MobileSettingsSidebar     — right-slide sidebar hosting MobileSettingsPanel
 │
@@ -147,14 +146,13 @@ When `document.body.classList.contains("mobile-ui-enabled")`:
 | File                                | Lines | Status                                   |
 | ----------------------------------- | ----- | ---------------------------------------- |
 | `MobileActionGrid.ts`               | 1003  | Active, primary interaction surface      |
-| `MobileUI.ts`                       | 998   | Active orchestrator                      |
+| `MobileUI.ts`                       | 1086  | Active orchestrator                      |
 | `components/MobileResearchPanel.ts` | 683   | Active, embedded in ResearchSidebar      |
 | `overlays/MobileEconomyOverlay.ts`  | 647   | Active                                   |
 | `overlays/MobileIntelSidebar.ts`    | 362   | Active (Events tab stubbed)              |
 | `MobileTopBar.ts`                   | 307   | Active                                   |
 | `gestures/GestureDetector.ts`       | 280   | Active (pinch/drag partial)              |
 | `components/MobileSettingsPanel.ts` | 262   | Active                                   |
-| `overlays/MobilePlacementMode.ts`   | 233   | Active (edge-case entry only)            |
 | `overlays/MobileResearchSidebar.ts` | 154   | Active                                   |
 | `overlays/MobilePlayerToast.ts`     | 149   | Active – `show()` not yet called         |
 | `overlays/MobileSettingsSidebar.ts` | 147   | Active                                   |
@@ -201,6 +199,7 @@ The following dead/orphaned code was removed on 2026-02-12:
 | `popups/MobileDiplomacyPopup.ts`      | 174   | Unreachable via hidden context button             |
 | `popups/MobileUnitActionPopup.ts`     | 148   | Never opened (stub)                               |
 | `overlays/MobileAttackRatioSlider.ts` | 226   | Unreachable via hidden context button             |
+| `overlays/MobilePlacementMode.ts`     | 233   | Unreachable (ActionGrid always sets selectedTile) |
 
-~2 550 lines and ~540 lines of supporting code in MobileUI.ts were removed.
-24 files → 14 files, ~8 000 lines → ~5 440 lines.
+~2,861 lines and ~618 lines of supporting code in MobileUI.ts were removed.
+24 files → 13 files, ~8,000 lines → ~5,294 lines.
