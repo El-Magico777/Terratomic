@@ -960,6 +960,20 @@ export class MobileUI {
       return;
     }
 
+    // Show player toast for enemy/ally tiles
+    const myPlayer = this.currentGame.myPlayer();
+    if (myPlayer) {
+      const owner = this.currentGame.owner(tile);
+      if (owner.isPlayer() && owner !== myPlayer) {
+        // Show toast for enemy/ally players
+        this.playerToast.show(
+          owner as import("../../core/game/GameView").PlayerView,
+          3000,
+        );
+        HapticFeedback.tap();
+      }
+    }
+
     // For normal gameplay, show action grid
     this.actionGrid.showForTile(tile, this.currentGame, this.attackRatio);
   }

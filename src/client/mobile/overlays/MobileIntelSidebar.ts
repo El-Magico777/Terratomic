@@ -324,20 +324,22 @@ export class MobileIntelSidebar extends LitElement {
   }
 
   private renderEventsTab() {
-    // Placeholder for events - will integrate EventsDisplay component later
+    // Events log is a desktop-only feature
+    // Mobile uses a simpler notification system via toasts and action confirmations
     return html`
       <div class="empty-state">
-        Events feed coming soon
+        <div style="opacity: 0.6; margin-bottom: 16px;">📱</div>
+        Events log not available on mobile
         <br /><br />
-        Will show:
-        <br />
-        • Alliance requests
-        <br />
-        • War declarations
-        <br />
-        • Attacks
-        <br />
-        • Research complete
+        <div style="font-size: 13px; opacity: 0.7;">
+          Game notifications appear as:
+          <br />
+          • Player toasts (tap enemy tiles)
+          <br />
+          • Action confirmations
+          <br />
+          • Top bar updates
+        </div>
       </div>
     `;
   }
