@@ -26,7 +26,6 @@ import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
 import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
 import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
-import { MobilePlacementMode } from "./overlays/MobilePlacementMode";
 import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
 import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
 import { MobileSettingsSidebar } from "./overlays/MobileSettingsSidebar";
@@ -39,7 +38,6 @@ export class MobileUI {
   private transformHandler: TransformHandler | null = null;
 
   // Phase 2 components
-  private placementMode: MobilePlacementMode;
   private economyOverlay: MobileEconomyOverlay;
 
   // Phase 4 components
@@ -76,9 +74,6 @@ export class MobileUI {
     this.topBar = document.createElement("mobile-top-bar") as MobileTopBar;
 
     // Create Phase 2 components
-    this.placementMode = document.createElement(
-      "mobile-placement-mode",
-    ) as MobilePlacementMode;
     this.economyOverlay = document.createElement(
       "mobile-economy-overlay",
     ) as MobileEconomyOverlay;
@@ -125,7 +120,6 @@ export class MobileUI {
     import("./MobileTopBar");
 
     // Phase 2 components
-    import("./overlays/MobilePlacementMode");
     import("./overlays/MobileEconomyOverlay");
 
     // Phase 4 components
@@ -145,7 +139,6 @@ export class MobileUI {
     document.body.appendChild(this.actionGrid);
 
     // Attach Phase 2 components
-    document.body.appendChild(this.placementMode);
     document.body.appendChild(this.economyOverlay);
 
     // Attach Phase 4 components
@@ -243,7 +236,6 @@ export class MobileUI {
     this.intelSidebar.close();
     this.researchSidebar.close();
     this.settingsSidebar.close();
-    this.placementMode.exit();
     this.playerToast.hide();
   }
 
@@ -500,11 +492,6 @@ export class MobileUI {
       this.economyOverlay.open();
     });
 
-    // Placement mode cancelled
-    this.placementMode.addEventListener("placement-cancelled", () => {
-      this.exitPlacementMode();
-    });
-
     // Economy overlay closed
     this.economyOverlay.addEventListener("overlay-closed", () => {
       console.log("[MobileUI] Economy overlay closed");
@@ -574,23 +561,12 @@ export class MobileUI {
     // Register gesture callbacks
     this.gestureDetector.on("tap", (gesture) => {
       console.log("[MobileUI] Tap detected:", gesture.position);
-
-      // If in placement mode, handle placement
-      if (this.placementMode.active) {
-        this.handlePlacementTap(gesture.position);
-      } else {
-        // Otherwise, handle map tile selection
-        this.handleMapTap(gesture.position);
-      }
+      this.handleMapTap(gesture.position);
     });
 
     this.gestureDetector.on("long-press", (gesture) => {
       console.log("[MobileUI] Long-press detected:", gesture.position);
-
-      // If not in placement mode, open economy overlay
-      if (!this.placementMode.active) {
-        this.economyOverlay.open();
-      }
+      this.economyOverlay.open();
     });
 
     this.gestureDetector.on("edge-swipe-left", (gesture) => {
@@ -612,17 +588,7 @@ export class MobileUI {
 
     this.gestureDetector.on("drag", (gesture) => {
       console.log("[MobileUI] Drag detected, delta:", gesture.delta);
-
-      // If in placement mode, update finger position
-      if (this.placementMode.active) {
-        this.placementMode.updateFingerPosition(
-          gesture.position.x,
-          gesture.position.y,
-        );
-      } else {
-        // Otherwise, handle map pan
-        // TODO: Handle map pan
-      }
+      // TODO: Handle map pan
     });
 
     console.log("[MobileUI] Gesture detection initialized");
@@ -741,14 +707,14 @@ export class MobileUI {
       return;
     }
 
-    // Build directly on selected tile if we have one
+    // Build directly on selected tile (always available since ActionGrid requires tile tap)
     if (this.selectedTile) {
       this.eventBus.emit(new BuildUnitIntentEvent(unitType, this.selectedTile));
-      return;
+    } else {
+      console.warn(
+        "[MobileUI] Build action selected but no tile selected (should not happen)",
+      );
     }
-
-    // Enter placement mode as fallback
-    this.placementMode.enter(unitType, 0, "❓");
   }
 
   private parseBuildAction(action: string): UnitType | null {
@@ -1025,46 +991,6 @@ export class MobileUI {
   }
 
   /**
-   * Handle placement tap (finalize building placement)
-   */
-  private handlePlacementTap(position: { x: number; y: number }): void {
-    console.log("[MobileUI] Placement tap at:", position);
-
-    // TODO: Convert screen position to tile coordinates
-    const tile = this.screenToTile(position);
-
-    if (!tile) {
-      console.warn("[MobileUI] Could not convert position to tile");
-      return;
-    }
-
-    // Get the unit type from placement mode
-    const unitType = this.placementMode.unitType;
-
-    if (!unitType) {
-      console.warn("[MobileUI] No unit type in placement mode");
-      return;
-    }
-
-    // Emit BuildUnitIntentEvent
-    const event = new BuildUnitIntentEvent(unitType, tile);
-    this.eventBus.emit(event);
-
-    console.log("[MobileUI] BuildUnitIntentEvent emitted:", { unitType, tile });
-
-    // Exit placement mode
-    this.exitPlacementMode();
-  }
-
-  /**
-   * Exit placement mode
-   */
-  private exitPlacementMode(): void {
-    if (!this.placementMode.active) return;
-    this.placementMode.exit();
-  }
-
-  /**
    * Convert screen position to tile coordinates
    * TODO: Implement actual conversion based on MapRenderer
    */
@@ -1134,7 +1060,6 @@ export class MobileUI {
     // Remove components from DOM
     this.topBar.remove();
     this.actionGrid.remove();
-    this.placementMode.remove();
     this.economyOverlay.remove();
     this.intelSidebar.remove();
     this.playerToast.remove();
