@@ -30,6 +30,7 @@ export class GestureDetector {
   private initialPinchDistance: number = 0;
   private isPinching: boolean = false;
   private isDragging: boolean = false;
+  private lastTouchPos: { x: number; y: number } | null = null;
 
   // Bound event handler references for proper cleanup
   private boundTouchStart: (e: TouchEvent) => void;
@@ -80,6 +81,7 @@ export class GestureDetector {
     const touch = validTouches[0];
     this.touchStartTime = Date.now();
     this.touchStartPos = { x: touch.clientX, y: touch.clientY };
+    this.lastTouchPos = { x: touch.clientX, y: touch.clientY };
 
     // Handle pinch gesture (2+ fingers)
     if (validTouches.length >= 2) {
@@ -111,7 +113,7 @@ export class GestureDetector {
   }
 
   private onTouchMove(e: TouchEvent): void {
-    if (!this.touchStartPos) return;
+    if (!this.touchStartPos || !this.lastTouchPos) return;
 
     const validTouches = Array.from(e.touches).filter(
       (t) => !this.isPalmTouch(t),
@@ -119,9 +121,11 @@ export class GestureDetector {
     if (validTouches.length === 0) return;
 
     const touch = validTouches[0];
-    const deltaX = touch.clientX - this.touchStartPos.x;
-    const deltaY = touch.clientY - this.touchStartPos.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const deltaXFromStart = touch.clientX - this.touchStartPos.x;
+    const deltaYFromStart = touch.clientY - this.touchStartPos.y;
+    const distance = Math.sqrt(
+      deltaXFromStart * deltaXFromStart + deltaYFromStart * deltaYFromStart,
+    );
 
     // Cancel long-press if moved too much
     if (distance > this.MOVEMENT_THRESHOLD) {
@@ -146,13 +150,19 @@ export class GestureDetector {
       return;
     }
 
-    // Handle drag gesture
+    // Handle drag gesture - use incremental delta from last position
     if (this.isDragging && !this.isPinching) {
+      const incrementalDeltaX = touch.clientX - this.lastTouchPos.x;
+      const incrementalDeltaY = touch.clientY - this.lastTouchPos.y;
+
       this.emit({
         type: "drag",
         position: { x: touch.clientX, y: touch.clientY },
-        delta: { x: deltaX, y: deltaY },
+        delta: { x: incrementalDeltaX, y: incrementalDeltaY },
       });
+
+      // Update last position for next move event
+      this.lastTouchPos = { x: touch.clientX, y: touch.clientY };
       e.preventDefault();
     }
   }
@@ -171,6 +181,7 @@ export class GestureDetector {
     if (this.isDragging || this.isPinching) {
       this.isDragging = false;
       this.touchStartPos = null;
+      this.lastTouchPos = null;
       return;
     }
 
@@ -231,6 +242,7 @@ export class GestureDetector {
     }
 
     this.touchStartPos = null;
+    this.lastTouchPos = null;
     this.isDragging = false;
   }
 
