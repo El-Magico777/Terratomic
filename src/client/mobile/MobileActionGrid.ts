@@ -654,81 +654,30 @@ export class MobileActionGrid extends LitElement {
       priority: "high",
     });
 
-    // Diplomacy actions
-    if (targetPlayer) {
-      const isAllied = myPlayer.isAlliedWith(targetPlayer);
-      const isAtWar = myPlayer.isAtWarWith(targetPlayer);
-
-      if (isAtWar) {
-        actions.push({
-          id: "diplomacy:request-peace",
-          icon: "🕊️",
-          label: "Request Peace",
-        });
-      } else if (isAllied) {
-        actions.push({
-          id: "diplomacy:break-alliance",
-          icon: "💔",
-          label: "Break Alliance",
-        });
-      } else {
-        actions.push({
-          id: "diplomacy:propose-ally",
-          icon: "🤝",
-          label: "Propose Alliance",
-        });
-      }
-
-      if (!isAtWar) {
-        actions.push({
-          id: "attack:declare-war",
-          icon: "⚔️",
-          label: "Declare War",
-        });
-      }
-    }
-
-    // Nuclear options (if player has missile silo)
-    const gold = Number(myPlayer.gold());
-    if (this.canLaunchNuke(myPlayer, "atom")) {
-      actions.push({
-        id: "attack:nuke-atom",
-        icon: "☢️",
-        label: "Atom Bomb",
-        cost: 5000,
-        disabled: gold < 5000,
-        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    if (this.canLaunchNuke(myPlayer, "hbomb")) {
-      actions.push({
-        id: "attack:nuke-hbomb",
-        icon: "💥",
-        label: "H-Bomb",
-        cost: 15000,
-        disabled: gold < 15000,
-        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    if (this.canLaunchNuke(myPlayer, "mirv")) {
-      actions.push({
-        id: "attack:nuke-mirv",
-        icon: "🚀",
-        label: "MIRV",
-        cost: 50000,
-        disabled: gold < 50000,
-        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    // Fighter Jet air attack (if airfield exists)
+    // Air attacks (if airfield exists)
     const hasAirfield = this.playerHasAirfield(myPlayer);
     if (hasAirfield) {
+      // Paratroopers
+      actions.push({
+        id: "attack:airstrike",
+        icon: "🪂",
+        label: "Paratroopers",
+        disabled: troops === 0,
+        disabledReason: troops === 0 ? "No troops" : undefined,
+      });
+
+      // Bomber run
+      actions.push({
+        id: "attack:bomber",
+        icon: "💣",
+        label: "Bomber Run",
+      });
+
+      // Fighter Jet air attack (if jet engines researched)
       const hasJetEngines = myPlayer.hasUpgrade(UpgradeType.JetEngines);
       if (hasJetEngines) {
         const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
+        const gold = Number(myPlayer.gold());
         actions.push({
           id: `build:${UnitType.FighterJet}`,
           icon: "🛩️",
@@ -762,6 +711,26 @@ export class MobileActionGrid extends LitElement {
       disabledReason: troops === 0 ? "No troops" : undefined,
       priority: "high",
     });
+
+    // Air attacks (if airfield exists)
+    const hasAirfield = this.playerHasAirfield(myPlayer);
+    if (hasAirfield) {
+      // Paratroopers
+      actions.push({
+        id: "attack:airstrike",
+        icon: "🪂",
+        label: "Paratroopers",
+        disabled: troops === 0,
+        disabledReason: troops === 0 ? "No troops" : undefined,
+      });
+
+      // Bomber run
+      actions.push({
+        id: "attack:bomber",
+        icon: "💣",
+        label: "Bomber Run",
+      });
+    }
 
     // Diplomacy actions
     if (targetPlayer) {
@@ -843,6 +812,29 @@ export class MobileActionGrid extends LitElement {
     const actions: ActionGridItem[] = [];
     const owner = game.owner(tile);
     const targetPlayer = owner.isPlayer() ? (owner as PlayerView) : null;
+    const troops = Number(myPlayer.troops());
+
+    // Air attacks (if airfield exists)
+    const hasAirfield = this.playerHasAirfield(myPlayer);
+    if (hasAirfield) {
+      // Paratroopers
+      actions.push({
+        id: "attack:airstrike",
+        icon: "🪂",
+        label: "Paratroopers",
+        disabled: troops === 0,
+        disabledReason: troops === 0 ? "No troops" : undefined,
+        priority: "high",
+      });
+
+      // Bomber run
+      actions.push({
+        id: "attack:bomber",
+        icon: "💣",
+        label: "Bomber Run",
+        priority: "high",
+      });
+    }
 
     if (targetPlayer) {
       const isAllied = myPlayer.isAlliedWith(targetPlayer);
