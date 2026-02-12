@@ -8,7 +8,6 @@ import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { GameView, PlayerView } from "../../../core/game/GameView";
 import { HapticFeedback } from "../utils/HapticFeedback";
-import "../utils/SkeletonLoader";
 
 export type IntelTab = "players" | "events";
 
@@ -265,8 +264,8 @@ export class MobileIntelSidebar extends LitElement {
 
   private renderPlayersTab() {
     if (!this.game) {
-      // Show skeleton loader while game data loads
-      return html`<skeleton-loader type="list" count="5"></skeleton-loader>`;
+      // Show loading state while game data loads
+      return html`<div class="empty-state">Loading...</div>`;
     }
 
     const players = this.getPlayerList();

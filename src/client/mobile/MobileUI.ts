@@ -21,43 +21,28 @@ import {
 } from "../Transport";
 import type { TransformHandler } from "../graphics/TransformHandler";
 import { MobileActionGrid } from "./MobileActionGrid";
-import { ButtonState, MobileContextButton } from "./MobileContextButton";
 import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
-import { MobileAttackRatioSlider } from "./overlays/MobileAttackRatioSlider";
 import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
 import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
 import { MobilePlacementMode } from "./overlays/MobilePlacementMode";
 import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
 import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
 import { MobileSettingsSidebar } from "./overlays/MobileSettingsSidebar";
-import { MobileAttackPopup } from "./popups/MobileAttackPopup";
-import { MobileBuildPopup } from "./popups/MobileBuildPopup";
-import { MobileDiplomacyPopup } from "./popups/MobileDiplomacyPopup";
-import { MobileUnitActionPopup } from "./popups/MobileUnitActionPopup";
 
 export class MobileUI {
   private actionGrid: MobileActionGrid;
-  private contextButton: MobileContextButton;
   private topBar: MobileTopBar;
   private gestureDetector: GestureDetector | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private transformHandler: TransformHandler | null = null;
-  private popupReadyPromise: Promise<void> | null = null;
 
   // Phase 2 components
-  private buildPopup: MobileBuildPopup;
   private placementMode: MobilePlacementMode;
   private economyOverlay: MobileEconomyOverlay;
 
-  // Phase 3 components
-  private attackPopup: MobileAttackPopup;
-  private attackRatioSlider: MobileAttackRatioSlider;
-  private unitActionPopup: MobileUnitActionPopup;
-
   // Phase 4 components
-  private diplomacyPopup: MobileDiplomacyPopup;
   private intelSidebar: MobileIntelSidebar;
   private playerToast: MobilePlayerToast;
 
@@ -88,15 +73,9 @@ export class MobileUI {
     this.actionGrid = document.createElement(
       "mobile-action-grid",
     ) as MobileActionGrid;
-    this.contextButton = document.createElement(
-      "mobile-context-button",
-    ) as MobileContextButton;
     this.topBar = document.createElement("mobile-top-bar") as MobileTopBar;
 
     // Create Phase 2 components
-    this.buildPopup = document.createElement(
-      "mobile-build-popup",
-    ) as MobileBuildPopup;
     this.placementMode = document.createElement(
       "mobile-placement-mode",
     ) as MobilePlacementMode;
@@ -104,21 +83,7 @@ export class MobileUI {
       "mobile-economy-overlay",
     ) as MobileEconomyOverlay;
 
-    // Create Phase 3 components
-    this.attackPopup = document.createElement(
-      "mobile-attack-popup",
-    ) as MobileAttackPopup;
-    this.attackRatioSlider = document.createElement(
-      "mobile-attack-ratio-slider",
-    ) as MobileAttackRatioSlider;
-    this.unitActionPopup = document.createElement(
-      "mobile-unit-action-popup",
-    ) as MobileUnitActionPopup;
-
     // Create Phase 4 components
-    this.diplomacyPopup = document.createElement(
-      "mobile-diplomacy-popup",
-    ) as MobileDiplomacyPopup;
     this.intelSidebar = document.createElement(
       "mobile-intel-sidebar",
     ) as MobileIntelSidebar;
@@ -157,30 +122,19 @@ export class MobileUI {
   private setupCustomElements(): void {
     // Import components to ensure they're registered
     import("./MobileActionGrid");
-    import("./MobileContextButton");
     import("./MobileTopBar");
 
     // Phase 2 components
-    import("./popups/MobileBuildPopup");
     import("./overlays/MobilePlacementMode");
     import("./overlays/MobileEconomyOverlay");
 
-    // Phase 3 components
-    import("./popups/MobileAttackPopup");
-    import("./overlays/MobileAttackRatioSlider");
-    import("./popups/MobileUnitActionPopup");
-
     // Phase 4 components
-    import("./popups/MobileDiplomacyPopup");
     import("./overlays/MobileIntelSidebar");
     import("./overlays/MobilePlayerToast");
 
     // Phase 5 components
     import("./overlays/MobileResearchSidebar");
     import("./overlays/MobileSettingsSidebar");
-
-    // Action grid
-    import("./MobileActionGrid");
   }
 
   /**
@@ -189,20 +143,12 @@ export class MobileUI {
   private attachComponents(): void {
     document.body.appendChild(this.topBar);
     document.body.appendChild(this.actionGrid);
-    document.body.appendChild(this.contextButton);
 
     // Attach Phase 2 components
-    document.body.appendChild(this.buildPopup);
     document.body.appendChild(this.placementMode);
     document.body.appendChild(this.economyOverlay);
 
-    // Attach Phase 3 components
-    document.body.appendChild(this.attackPopup);
-    document.body.appendChild(this.attackRatioSlider);
-    document.body.appendChild(this.unitActionPopup);
-
     // Attach Phase 4 components
-    document.body.appendChild(this.diplomacyPopup);
     document.body.appendChild(this.intelSidebar);
     document.body.appendChild(this.playerToast);
 
@@ -228,13 +174,8 @@ export class MobileUI {
         console.log("[MobileUI] Attaching components to DOM");
         this.attachComponents();
         this.setupEventListeners();
-        // Initialize button state and size after custom elements are attached
-        this.contextButton.size = MobileDetector.getContextButtonSize();
-        this.contextButton.updateState("attack");
         this.componentsAttached = true;
       }
-      // Hide context button - using action grid instead
-      this.contextButton.style.display = "none";
       this.topBar.style.display = "";
       this.economyTab.style.display = "";
       document.body.classList.add("mobile-ui-enabled");
@@ -243,7 +184,6 @@ export class MobileUI {
     } else {
       // Only manipulate components if they've been attached
       if (this.componentsAttached) {
-        this.contextButton.style.display = "none";
         this.topBar.style.display = "none";
         this.economyTab.style.display = "none";
         this.closeAllOverlays();
@@ -299,12 +239,7 @@ export class MobileUI {
 
   private closeAllOverlays(): void {
     this.actionGrid.close();
-    this.buildPopup.close();
-    this.attackPopup.close();
-    this.unitActionPopup.close();
-    this.diplomacyPopup.close();
     this.economyOverlay.close();
-    this.attackRatioSlider.close();
     this.intelSidebar.close();
     this.researchSidebar.close();
     this.settingsSidebar.close();
@@ -541,12 +476,6 @@ export class MobileUI {
    * Set up event listeners for UI components
    */
   private setupEventListeners(): void {
-    // Context button click
-    this.contextButton.addEventListener("button-click", (e: Event) => {
-      const event = e as CustomEvent<{ state: ButtonState }>;
-      this.handleContextButtonClick(event.detail.state);
-    });
-
     // Top bar menu click
     this.topBar.addEventListener("menu-click", () => {
       this.handleMenuClick();
@@ -571,17 +500,6 @@ export class MobileUI {
       this.economyOverlay.open();
     });
 
-    // Build popup item selected
-    this.buildPopup.addEventListener("item-selected", (e: Event) => {
-      const event = e as CustomEvent<{ action: string }>;
-      this.handleBuildItemSelected(event.detail.action);
-    });
-
-    // Build popup closed
-    this.buildPopup.addEventListener("popup-closed", () => {
-      console.log("[MobileUI] Build popup closed");
-    });
-
     // Placement mode cancelled
     this.placementMode.addEventListener("placement-cancelled", () => {
       this.exitPlacementMode();
@@ -597,51 +515,6 @@ export class MobileUI {
       this.attackRatio = event.detail.ratio;
     });
 
-    // Phase 3: Attack popup item selected
-    this.attackPopup.addEventListener("item-selected", (e: Event) => {
-      const event = e as CustomEvent<{ action: string }>;
-      this.handleAttackItemSelected(event.detail.action);
-    });
-
-    // Phase 3: Attack popup closed
-    this.attackPopup.addEventListener("popup-closed", () => {
-      console.log("[MobileUI] Attack popup closed");
-    });
-
-    // Phase 3: Attack ratio changed
-    this.attackRatioSlider.addEventListener("ratio-changed", (e: Event) => {
-      const event = e as CustomEvent<{ ratio: number }>;
-      this.attackRatio = event.detail.ratio;
-      console.log("[MobileUI] Attack ratio changed to:", this.attackRatio);
-    });
-
-    // Phase 3: Attack ratio slider closed
-    this.attackRatioSlider.addEventListener("slider-closed", () => {
-      console.log("[MobileUI] Attack ratio slider closed");
-    });
-
-    // Phase 3: Unit action selected
-    this.unitActionPopup.addEventListener("item-selected", (e: Event) => {
-      const event = e as CustomEvent<{ action: string }>;
-      this.handleUnitActionSelected(event.detail.action);
-    });
-
-    // Phase 3: Unit action popup closed
-    this.unitActionPopup.addEventListener("popup-closed", () => {
-      console.log("[MobileUI] Unit action popup closed");
-    });
-
-    // Phase 4: Diplomacy popup item selected
-    this.diplomacyPopup.addEventListener("item-selected", (e: Event) => {
-      const event = e as CustomEvent<{ action: string }>;
-      this.handleDiplomacyItemSelected(event.detail.action);
-    });
-
-    // Phase 4: Diplomacy popup closed
-    this.diplomacyPopup.addEventListener("popup-closed", () => {
-      console.log("[MobileUI] Diplomacy popup closed");
-    });
-
     // Phase 4: Intel sidebar closed
     this.intelSidebar.addEventListener("sidebar-closed", () => {
       console.log("[MobileUI] Intel sidebar closed");
@@ -654,7 +527,6 @@ export class MobileUI {
         "[MobileUI] Player selected from sidebar:",
         event.detail.player,
       );
-      // Could open diplomacy actions here
     });
 
     // Phase 4: Player toast clicked
@@ -689,13 +561,6 @@ export class MobileUI {
     // Handle orientation changes
     window.addEventListener("orientationchange", () => {
       this.handleOrientationChange();
-    });
-
-    // Handle resize (for responsive button sizing)
-    window.addEventListener("resize", () => {
-      if (this.componentsAttached) {
-        this.contextButton.size = MobileDetector.getContextButtonSize();
-      }
     });
   }
 
@@ -801,123 +666,6 @@ export class MobileUI {
     this.transformHandler = transformHandler;
   }
 
-  /**
-   * Update context button state based on game state
-   */
-  updateContextButton(state: ButtonState): void {
-    this.contextButton.updateState(state);
-  }
-
-  /**
-   * Handle context button clicks
-   */
-  private handleContextButtonClick(state: ButtonState): void {
-    console.log(`[MobileUI] Context button clicked: ${state}`);
-
-    if (this.currentGame?.inSpawnPhase()) {
-      this.handleBuildAction();
-      return;
-    }
-
-    switch (state) {
-      case "build":
-        this.handleBuildAction();
-        break;
-      case "attack":
-        this.handleAttackAction();
-        break;
-      case "manage":
-        this.handleManageAction();
-        break;
-      case "diplomacy":
-        this.handleDiplomacyAction();
-        break;
-      case "deploy":
-        this.handleDeployAction();
-        break;
-      case "water":
-        this.handleWaterAction();
-        break;
-    }
-  }
-
-  /**
-   * Handle build action (show build popup)
-   */
-  private async handleBuildAction(): Promise<void> {
-    console.log("[MobileUI] Build action triggered");
-
-    // Check if we have a game and selected tile
-    if (!this.currentGame || !this.selectedTile) {
-      console.warn(
-        "[MobileUI] Cannot show build popup: no game or selected tile",
-      );
-      return;
-    }
-
-    // Spawn selection during spawn phase
-    if (this.currentGame.inSpawnPhase()) {
-      if (
-        this.currentGame.isLand(this.selectedTile) &&
-        !this.currentGame.hasOwner(this.selectedTile)
-      ) {
-        this.eventBus.emit(new SendSpawnIntentEvent(this.selectedTile));
-      }
-      return;
-    }
-
-    if (await this.tryExpandOnEmptyTile()) {
-      return;
-    }
-
-    if (!this.isBuildPopupReady()) {
-      this.ensurePopupsReady().then(() => this.handleBuildAction());
-      return;
-    }
-
-    // Show build popup at context button position
-    const buttonRect = this.contextButton.getBoundingClientRect();
-    const position = {
-      x: buttonRect.left + buttonRect.width / 2,
-      y: buttonRect.top,
-    };
-
-    this.buildPopup.openForTile(this.selectedTile, this.currentGame, position);
-  }
-
-  /**
-   * Handle attack action (show attack popup)
-   */
-  private async handleAttackAction(): Promise<void> {
-    console.log("[MobileUI] Attack action triggered");
-
-    if (!this.isAttackPopupReady()) {
-      this.ensurePopupsReady().then(() => this.handleAttackAction());
-      return;
-    }
-
-    // Check if we have a game and selected tile
-    if (!this.currentGame || !this.selectedTile) {
-      console.warn(
-        "[MobileUI] Cannot show attack popup: no game or selected tile",
-      );
-      return;
-    }
-
-    if (await this.tryExpandOnEmptyTile()) {
-      return;
-    }
-
-    // Show attack popup at context button position
-    const buttonRect = this.contextButton.getBoundingClientRect();
-    const position = {
-      x: buttonRect.left + buttonRect.width / 2,
-      y: buttonRect.top,
-    };
-
-    this.attackPopup.openForTile(this.selectedTile, this.currentGame, position);
-  }
-
   private async tryExpandOnEmptyTile(): Promise<boolean> {
     if (!this.currentGame || !this.selectedTile) {
       return false;
@@ -981,101 +729,12 @@ export class MobileUI {
   }
 
   /**
-   * Handle manage action (show management options)
-   */
-  private handleManageAction(): void {
-    console.log("[MobileUI] Manage action triggered");
-
-    // On long-press of attack button, show attack ratio slider
-    if (!this.currentGame) return;
-
-    const myPlayer = this.currentGame.myPlayer();
-    if (!myPlayer) return;
-
-    const totalTroops = Number(myPlayer.troops());
-    this.attackRatioSlider.open(totalTroops, this.attackRatio);
-  }
-
-  /**
-   * Handle diplomacy action (show diplomacy popup)
-   */
-  private handleDiplomacyAction(): void {
-    console.log("[MobileUI] Diplomacy action triggered");
-
-    // Check if we have a game and selected tile
-    if (!this.currentGame || !this.selectedTile) {
-      console.warn(
-        "[MobileUI] Cannot show diplomacy popup: no game or selected tile",
-      );
-      return;
-    }
-
-    // Check if selected tile has a player owner
-    const owner = this.currentGame.owner(this.selectedTile);
-    if (!owner.isPlayer()) {
-      console.warn("[MobileUI] Selected tile has no player owner");
-      return;
-    }
-
-    // Show diplomacy popup at context button position
-    const buttonRect = this.contextButton.getBoundingClientRect();
-    const position = {
-      x: buttonRect.left + buttonRect.width / 2,
-      y: buttonRect.top,
-    };
-
-    this.diplomacyPopup.game = this.currentGame;
-    this.diplomacyPopup.selectedTile = this.selectedTile;
-    this.diplomacyPopup.show(position);
-  }
-
-  /**
-   * Handle deploy action (deploy unit)
-   */
-  private handleDeployAction(): void {
-    console.log("[MobileUI] Deploy action triggered");
-
-    // Check if we have a game and selected tile
-    if (!this.currentGame || !this.selectedTile) {
-      console.warn(
-        "[MobileUI] Cannot show unit action popup: no game or selected tile",
-      );
-      return;
-    }
-
-    // Get the unit at selected tile (if any)
-    // TODO: Get actual unit from game state
-    // For now, just show the popup
-    const buttonRect = this.contextButton.getBoundingClientRect();
-    const position = {
-      x: buttonRect.left + buttonRect.width / 2,
-      y: buttonRect.top,
-    };
-
-    // this.unitActionPopup.openForUnit(unit, this.currentGame, position);
-    console.log("[MobileUI] Unit action popup - implementation pending");
-  }
-
-  /**
-   * Handle water action (build naval units)
-   */
-  private handleWaterAction(): void {
-    console.log("[MobileUI] Water action triggered");
-    // Show water build popup (same as build action)
-    this.handleBuildAction();
-  }
-
-  /**
-   * Handle build item selected from popup
+   * Handle build item selected from action grid
    */
   private handleBuildItemSelected(action: string): void {
     console.log("[MobileUI] Build item selected:", action);
 
-    // Close the build popup
-    this.buildPopup.close();
-
     const unitType = this.parseBuildAction(action);
-    console.log("[MobileUI] Parsed unit type:", unitType);
 
     if (!unitType) {
       console.warn("[MobileUI] Invalid build action:", action);
@@ -1084,22 +743,12 @@ export class MobileUI {
 
     // Build directly on selected tile if we have one
     if (this.selectedTile) {
-      console.log(
-        "[MobileUI] Emitting BuildUnitIntentEvent for:",
-        unitType,
-        "at tile:",
-        this.selectedTile,
-      );
       this.eventBus.emit(new BuildUnitIntentEvent(unitType, this.selectedTile));
       return;
     }
 
-    console.warn("[MobileUI] No selected tile for build action");
-    const cost = this.getUnitCost(unitType);
-    const icon = this.getUnitIcon(unitType);
-
-    // Enter placement mode
-    this.placementMode.enter(unitType, cost, icon);
+    // Enter placement mode as fallback
+    this.placementMode.enter(unitType, 0, "❓");
   }
 
   private parseBuildAction(action: string): UnitType | null {
@@ -1111,13 +760,10 @@ export class MobileUI {
   }
 
   /**
-   * Handle attack item selected from popup
+   * Handle attack item selected from action grid
    */
   private handleAttackItemSelected(action: string): void {
     console.log("[MobileUI] Attack item selected:", action);
-
-    // Close the attack popup
-    this.attackPopup.close();
 
     if (!this.currentGame || !this.selectedTile) return;
 
@@ -1239,53 +885,10 @@ export class MobileUI {
   }
 
   /**
-   * Handle unit action selected from popup
-   */
-  private handleUnitActionSelected(action: string): void {
-    console.log("[MobileUI] Unit action selected:", action);
-
-    // Close the unit action popup
-    this.unitActionPopup.close();
-
-    switch (action) {
-      case "unit:select-target":
-        // TODO: Enter target selection mode
-        console.log("[MobileUI] Select target mode - implementation pending");
-        break;
-
-      case "unit:show-range":
-        // TODO: Show range overlay
-        console.log("[MobileUI] Show range - implementation pending");
-        break;
-
-      case "unit:upgrade":
-        // TODO: Show upgrade options
-        console.log("[MobileUI] Unit upgrade - implementation pending");
-        break;
-
-      case "unit:patrol":
-        // TODO: Set patrol waypoint
-        console.log("[MobileUI] Set patrol - implementation pending");
-        break;
-
-      case "unit:disband":
-        // TODO: Confirm and disband unit
-        console.log("[MobileUI] Disband unit - implementation pending");
-        break;
-
-      default:
-        console.warn("[MobileUI] Unknown unit action:", action);
-    }
-  }
-
-  /**
-   * Handle diplomacy item selected from popup
+   * Handle diplomacy item selected from action grid
    */
   private handleDiplomacyItemSelected(action: string): void {
     console.log("[MobileUI] Diplomacy action selected:", action);
-
-    // Close the diplomacy popup
-    this.diplomacyPopup.close();
 
     if (!this.currentGame || !this.selectedTile) return;
 
@@ -1422,48 +1025,6 @@ export class MobileUI {
   }
 
   /**
-   * Update context button state based on selected tile
-   */
-  private updateContextButtonForTile(tile: TileRef): void {
-    if (!this.currentGame) {
-      this.contextButton.updateState("build");
-      return;
-    }
-
-    const myPlayer = this.currentGame.myPlayer();
-    if (!myPlayer) {
-      this.contextButton.updateState("build");
-      return;
-    }
-
-    // Spawn phase - show attack icon for spawn selection
-    if (this.currentGame.inSpawnPhase()) {
-      this.contextButton.updateState("attack");
-      return;
-    }
-
-    const owner = this.currentGame.owner(tile);
-    const isMyTile = owner === myPlayer;
-    const isWater = !this.currentGame.isLand(tile);
-    const isNeutral = !owner.isPlayer();
-
-    if (isMyTile) {
-      // Own territory - show build options
-      if (isWater) {
-        this.contextButton.updateState("water");
-      } else {
-        this.contextButton.updateState("build");
-      }
-    } else if (isNeutral) {
-      // Neutral territory - attack to expand
-      this.contextButton.updateState("attack");
-    } else {
-      // Enemy player territory - always show attack (peace timer handled by game logic)
-      this.contextButton.updateState("attack");
-    }
-  }
-
-  /**
    * Handle placement tap (finalize building placement)
    */
   private handlePlacementTap(position: { x: number; y: number }): void {
@@ -1524,106 +1085,6 @@ export class MobileUI {
     return this.currentGame.ref(cell.x, cell.y);
   }
 
-  private isBuildPopupReady(): boolean {
-    return typeof this.buildPopup.openForTile === "function";
-  }
-
-  private isAttackPopupReady(): boolean {
-    return typeof this.attackPopup.openForTile === "function";
-  }
-
-  private ensurePopupsReady(): Promise<void> {
-    if (this.popupReadyPromise) {
-      return this.popupReadyPromise;
-    }
-
-    this.popupReadyPromise = Promise.all([
-      customElements.whenDefined("mobile-build-popup"),
-      customElements.whenDefined("mobile-attack-popup"),
-    ]).then(() => {
-      // Replace popups if they were created before custom elements were defined
-      if (!this.isBuildPopupReady()) {
-        const replacement = document.createElement(
-          "mobile-build-popup",
-        ) as MobileBuildPopup;
-        if (this.buildPopup.isConnected) {
-          this.buildPopup.replaceWith(replacement);
-        }
-        this.buildPopup = replacement;
-        if (this.componentsAttached && !this.buildPopup.isConnected) {
-          document.body.appendChild(this.buildPopup);
-        }
-      }
-
-      if (!this.isAttackPopupReady()) {
-        const replacement = document.createElement(
-          "mobile-attack-popup",
-        ) as MobileAttackPopup;
-        if (this.attackPopup.isConnected) {
-          this.attackPopup.replaceWith(replacement);
-        }
-        this.attackPopup = replacement;
-        if (this.componentsAttached && !this.attackPopup.isConnected) {
-          document.body.appendChild(this.attackPopup);
-        }
-      }
-    });
-
-    return this.popupReadyPromise;
-  }
-
-  /**
-   * Get unit cost (placeholder)
-   * TODO: Get from actual game data
-   */
-  private getUnitCost(unitType: UnitType): number {
-    // Default costs from documentation
-    const costs: Record<string, number> = {
-      City: 50,
-      Port: 180,
-      Hospital: 80,
-      Factory: 120,
-      "Defense Post": 200,
-      Silo: 500,
-      Airfield: 350,
-      "Research Lab": 300,
-      Academy: 400,
-      SAM: 280,
-      Doomsday: 2000,
-      Warship: 100,
-      Submarine: 150,
-      "Fighter Jet": 40,
-    };
-
-    return costs[unitType] ?? 100;
-  }
-
-  /**
-   * Get unit icon (placeholder)
-   * TODO: Get from actual sprite data
-   */
-  private getUnitIcon(unitType: UnitType): string {
-    // Default icons
-    const icons: Record<string, string> = {
-      City: "🏙️",
-      Port: "⚓",
-      Hospital: "🏥",
-      Factory: "🏭",
-      "Defense Post": "🛡️",
-      Silo: "🚀",
-      Airfield: "✈️",
-      "Research Lab": "🔬",
-      Academy: "🎓",
-      SAM: "🎯",
-      Doomsday: "☢️",
-      Warship: "🚢",
-      Submarine: "🔱",
-      "Fighter Jet": "✈️",
-    };
-
-    return icons[unitType] ?? "❓";
-  }
-
   /**
    * Handle menu button click (open Intel sidebar)
    */
@@ -1662,11 +1123,6 @@ export class MobileUI {
   private handleOrientationChange(): void {
     const orientation = MobileDetector.getOrientation();
     console.log(`[MobileUI] Orientation changed to: ${orientation}`);
-
-    // Update button size if needed
-    this.contextButton.size = MobileDetector.getContextButtonSize();
-
-    // TODO: Adjust sidebar widths based on orientation
   }
 
   /**
@@ -1676,18 +1132,15 @@ export class MobileUI {
     console.log("[MobileUI] Destroying mobile UI");
 
     // Remove components from DOM
-    this.contextButton.remove();
     this.topBar.remove();
-    this.buildPopup.remove();
+    this.actionGrid.remove();
     this.placementMode.remove();
     this.economyOverlay.remove();
-    this.attackPopup.remove();
-    this.attackRatioSlider.remove();
-    this.unitActionPopup.remove();
-    this.diplomacyPopup.remove();
     this.intelSidebar.remove();
     this.playerToast.remove();
     this.researchSidebar.remove();
+    this.settingsSidebar.remove();
+    this.economyTab.remove();
 
     // Clean up gesture detector
     if (this.gestureDetector) {
