@@ -7,6 +7,7 @@ import { EventBus } from "../../core/EventBus";
 import { UnitType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
 import type { GameView } from "../../core/game/GameView";
+import { DragEvent, ZoomEvent } from "../InputHandler";
 import {
   BuildUnitIntentEvent,
   SendAllianceRequestIntentEvent,
@@ -557,21 +558,30 @@ export class MobileUI {
     });
 
     this.gestureDetector.on("edge-swipe-left", (gesture) => {
-      // TODO: Open Intel sidebar
       this.handleOpenIntelSidebar();
     });
 
     this.gestureDetector.on("edge-swipe-right", (gesture) => {
-      // TODO: Open Research sidebar
       this.handleOpenResearchSidebar();
     });
 
     this.gestureDetector.on("pinch", (gesture) => {
-      // TODO: Handle map zoom
+      if (!gesture.scale || !this.canvas) return;
+
+      // Calculate zoom delta from scale (scale > 1 = zoom in, scale < 1 = zoom out)
+      const delta = (1 - gesture.scale) * 600;
+
+      // Use center of canvas as zoom point
+      const rect = this.canvas.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      this.eventBus.emit(new ZoomEvent(centerX, centerY, delta));
     });
 
     this.gestureDetector.on("drag", (gesture) => {
-      // TODO: Handle map pan
+      if (!gesture.delta) return;
+      this.eventBus.emit(new DragEvent(gesture.delta.x, gesture.delta.y));
     });
   }
 
@@ -799,11 +809,12 @@ export class MobileUI {
         break;
 
       case "attack:mark-target":
-        // TODO: Mark target for bomber priority
+        // Mark target for bomber priority - feature not yet implemented
         break;
 
       case "attack:view-intel":
-        // TODO: Open Intel sidebar
+        // Open Intel sidebar
+        this.intelSidebar.open();
         break;
 
       default:
@@ -939,7 +950,6 @@ export class MobileUI {
 
   /**
    * Convert screen position to tile coordinates
-   * TODO: Implement actual conversion based on MapRenderer
    */
   private screenToTile(position: { x: number; y: number }): TileRef | null {
     if (!this.currentGame || !this.transformHandler) {
