@@ -15,6 +15,7 @@ import {
   playerMaxUnitLevel,
 } from "../../core/game/Upgradeables";
 import { HapticFeedback, HapticPattern } from "./utils/HapticFeedback";
+import { getActionIcon, getUnitIcon } from "./utils/Icons";
 
 export interface ActionGridItem {
   id: string;
@@ -155,10 +156,24 @@ export class MobileActionGrid extends LitElement {
     .action-icon {
       font-size: 24px;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+    }
+
+    .action-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: brightness(1.1);
     }
 
     .action-tile.high-priority .action-icon {
       font-size: 32px;
+      width: 36px;
+      height: 36px;
     }
 
     .action-label {
@@ -228,9 +243,14 @@ export class MobileActionGrid extends LitElement {
       .filter(Boolean)
       .join(" ");
 
+    // Render icon as image if it's a path, otherwise as text/emoji
+    const iconHtml = item.icon.startsWith("/")
+      ? html`<img src="${item.icon}" alt="${item.label}" />`
+      : item.icon;
+
     return html`
       <div class=${classes} @click=${() => this.handleActionClick(item)}>
-        <div class="action-icon">${item.icon}</div>
+        <div class="action-icon">${iconHtml}</div>
         <div class="action-label">${item.label}</div>
         ${item.cost
           ? html`<div class="action-cost">
@@ -450,7 +470,7 @@ export class MobileActionGrid extends LitElement {
       return [
         {
           id: "spawn",
-          icon: "🎯",
+          icon: getActionIcon("spawn"),
           label: "Spawn Here",
           priority: "high",
         },
@@ -477,7 +497,7 @@ export class MobileActionGrid extends LitElement {
       const portCost = this.getUnitCost(UnitType.Port, myPlayer);
       actions.push({
         id: `build:${UnitType.Port}`,
-        icon: "⚓",
+        icon: getUnitIcon(UnitType.Port) ?? "⚓",
         label: "Port",
         cost: portCost,
         disabled: gold < portCost,
@@ -490,41 +510,57 @@ export class MobileActionGrid extends LitElement {
     const landStructures = [
       {
         type: UnitType.City,
-        icon: "🏙️",
+        icon: getUnitIcon(UnitType.City) ?? "🏙️",
         label: "City",
         priority: "high" as const,
       },
       {
         type: UnitType.Factory,
-        icon: "🏭",
+        icon: getUnitIcon(UnitType.Factory) ?? "🏭",
         label: "Factory",
         priority: "high" as const,
       },
-      { type: UnitType.DefensePost, icon: "🛡️", label: "Defense Post" },
+      {
+        type: UnitType.DefensePost,
+        icon: getUnitIcon(UnitType.DefensePost) ?? "🛡️",
+        label: "Defense Post",
+      },
       {
         type: UnitType.Airfield,
-        icon: "✈️",
+        icon: getUnitIcon(UnitType.Airfield) ?? "✈️",
         label: "Airfield",
         priority: "high" as const,
       },
       {
         type: UnitType.Hospital,
-        icon: "🏥",
+        icon: getUnitIcon(UnitType.Hospital) ?? "🏥",
         label: "Hospital",
         upgrade: UpgradeType.HospitalResearch,
       },
       {
         type: UnitType.MissileSilo,
-        icon: "⚛️",
+        icon: getUnitIcon(UnitType.MissileSilo) ?? "⚛️",
         label: "Missile Silo",
         upgrade: UpgradeType.NuclearFission,
       },
-      { type: UnitType.ResearchLab, icon: "🔬", label: "Research Lab" },
-      { type: UnitType.Academy, icon: "🏛️", label: "Academy" },
-      { type: UnitType.SAMLauncher, icon: "🎯", label: "SAM Launcher" },
+      {
+        type: UnitType.ResearchLab,
+        icon: getUnitIcon(UnitType.ResearchLab) ?? "🔬",
+        label: "Research Lab",
+      },
+      {
+        type: UnitType.Academy,
+        icon: getUnitIcon(UnitType.Academy) ?? "🏛️",
+        label: "Academy",
+      },
+      {
+        type: UnitType.SAMLauncher,
+        icon: getUnitIcon(UnitType.SAMLauncher) ?? "🎯",
+        label: "SAM Launcher",
+      },
       {
         type: UnitType.DoomsdayDevice,
-        icon: "💀",
+        icon: getUnitIcon(UnitType.DoomsdayDevice) ?? "💀",
         label: "Doomsday Device",
         upgrade: UpgradeType.DoomsdayDeviceResearch,
       },
@@ -558,7 +594,8 @@ export class MobileActionGrid extends LitElement {
         const artilleryCost = this.getUnitCost(UnitType.Artillery, myPlayer);
         actions.push({
           id: `build:${UnitType.Artillery}`,
-          icon: "🎯",
+          icon:
+            getUnitIcon(UnitType.Artillery) ?? getActionIcon("artilleryAttack"),
           label: "Artillery",
           cost: artilleryCost,
           disabled: gold < artilleryCost,
@@ -575,7 +612,7 @@ export class MobileActionGrid extends LitElement {
         const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
         actions.push({
           id: `build:${UnitType.FighterJet}`,
-          icon: "🛩️",
+          icon: getUnitIcon(UnitType.FighterJet) ?? getActionIcon("airAttack"),
           label: "Fighter Jet",
           cost: jetCost,
           disabled: gold < jetCost,
@@ -613,7 +650,7 @@ export class MobileActionGrid extends LitElement {
       const portCost = this.getUnitCost(UnitType.Port, myPlayer);
       actions.push({
         id: `build:${UnitType.Port}`,
-        icon: "⚓",
+        icon: getUnitIcon(UnitType.Port) ?? "⚓",
         label: "Port",
         cost: portCost,
         disabled: gold < portCost,
@@ -631,7 +668,7 @@ export class MobileActionGrid extends LitElement {
       const warshipCost = this.getUnitCost(UnitType.Warship, myPlayer);
       actions.push({
         id: `build:${UnitType.Warship}`,
-        icon: "🚢",
+        icon: getUnitIcon(UnitType.Warship) ?? getActionIcon("navyAssault"),
         label: "Warship",
         cost: warshipCost,
         disabled: gold < warshipCost,
@@ -645,7 +682,7 @@ export class MobileActionGrid extends LitElement {
         const submarineCost = this.getUnitCost(UnitType.Submarine, myPlayer);
         actions.push({
           id: `build:${UnitType.Submarine}`,
-          icon: "🔱",
+          icon: getUnitIcon(UnitType.Submarine) ?? getActionIcon("submarine"),
           label: "Submarine",
           cost: submarineCost,
           disabled: gold < submarineCost,
@@ -663,7 +700,7 @@ export class MobileActionGrid extends LitElement {
         const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
         actions.push({
           id: `build:${UnitType.FighterJet}`,
-          icon: "🛩️",
+          icon: getUnitIcon(UnitType.FighterJet) ?? getActionIcon("airAttack"),
           label: "Fighter Jet",
           cost: jetCost,
           disabled: gold < jetCost,
@@ -688,7 +725,7 @@ export class MobileActionGrid extends LitElement {
     // Ground attack (high priority)
     actions.push({
       id: "attack:ground",
-      icon: "🪖",
+      icon: getActionIcon("groundAttack"),
       label: "Ground Attack",
       disabled: troops === 0,
       disabledReason: troops === 0 ? "No troops" : undefined,
@@ -704,7 +741,7 @@ export class MobileActionGrid extends LitElement {
       // Paratroopers (requires JetEngines)
       actions.push({
         id: "attack:airstrike",
-        icon: "🪂",
+        icon: getActionIcon("paratrooper"),
         label: "Paratroopers",
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
@@ -715,7 +752,7 @@ export class MobileActionGrid extends LitElement {
       // Bomber run (requires war declaration)
       actions.push({
         id: "attack:bomber",
-        icon: "💣",
+        icon: getActionIcon("bomber"),
         label: "Bomber Run",
       });
     }
@@ -726,7 +763,7 @@ export class MobileActionGrid extends LitElement {
       const gold = Number(myPlayer.gold());
       actions.push({
         id: `build:${UnitType.FighterJet}`,
-        icon: "🛩️",
+        icon: getUnitIcon(UnitType.FighterJet) ?? getActionIcon("airAttack"),
         label: "Fighter Jet",
         cost: jetCost,
         disabled: gold < jetCost,
@@ -742,19 +779,19 @@ export class MobileActionGrid extends LitElement {
       if (isAtWar) {
         actions.push({
           id: "diplomacy:request-peace",
-          icon: "🕊️",
+          icon: getActionIcon("peace"),
           label: "Request Peace",
         });
       } else if (isAllied) {
         actions.push({
           id: "diplomacy:break-alliance",
-          icon: "💔",
+          icon: getActionIcon("breakAlliance"),
           label: "Break Alliance",
         });
       } else {
         actions.push({
           id: "diplomacy:propose-ally",
-          icon: "🤝",
+          icon: getActionIcon("alliance"),
           label: "Propose Alliance",
         });
       }
@@ -762,7 +799,7 @@ export class MobileActionGrid extends LitElement {
       if (!isAtWar) {
         actions.push({
           id: "attack:declare-war",
-          icon: "⚔️",
+          icon: getActionIcon("declareWar"),
           label: "Declare War",
         });
       }
@@ -773,7 +810,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "atom")) {
       actions.push({
         id: "attack:nuke-atom",
-        icon: "☢️",
+        icon: getActionIcon("atomBomb"),
         label: "Atom Bomb",
         cost: 5000,
         disabled: gold < 5000,
@@ -784,7 +821,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "hbomb")) {
       actions.push({
         id: "attack:nuke-hbomb",
-        icon: "💥",
+        icon: getActionIcon("hBomb"),
         label: "H-Bomb",
         cost: 15000,
         disabled: gold < 15000,
@@ -795,7 +832,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "mirv")) {
       actions.push({
         id: "attack:nuke-mirv",
-        icon: "🚀",
+        icon: getActionIcon("mirv"),
         label: "MIRV",
         cost: 50000,
         disabled: gold < 50000,
@@ -819,7 +856,7 @@ export class MobileActionGrid extends LitElement {
     // Naval assault (high priority)
     actions.push({
       id: "attack:naval",
-      icon: "🚢",
+      icon: getActionIcon("navyAssault"),
       label: "Naval Assault",
       disabled: troops === 0,
       disabledReason: troops === 0 ? "No troops" : undefined,
@@ -835,7 +872,7 @@ export class MobileActionGrid extends LitElement {
       // Paratroopers (requires JetEngines)
       actions.push({
         id: "attack:airstrike",
-        icon: "🪂",
+        icon: getActionIcon("paratrooper"),
         label: "Paratroopers",
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
@@ -846,7 +883,7 @@ export class MobileActionGrid extends LitElement {
       // Bomber run (requires war declaration)
       actions.push({
         id: "attack:bomber",
-        icon: "💣",
+        icon: getActionIcon("bomber"),
         label: "Bomber Run",
       });
     }
@@ -859,19 +896,19 @@ export class MobileActionGrid extends LitElement {
       if (isAtWar) {
         actions.push({
           id: "diplomacy:request-peace",
-          icon: "🕊️",
+          icon: getActionIcon("peace"),
           label: "Request Peace",
         });
       } else if (isAllied) {
         actions.push({
           id: "diplomacy:break-alliance",
-          icon: "💔",
+          icon: getActionIcon("breakAlliance"),
           label: "Break Alliance",
         });
       } else {
         actions.push({
           id: "diplomacy:propose-ally",
-          icon: "🤝",
+          icon: getActionIcon("alliance"),
           label: "Propose Alliance",
         });
       }
@@ -879,7 +916,7 @@ export class MobileActionGrid extends LitElement {
       if (!isAtWar) {
         actions.push({
           id: "attack:declare-war",
-          icon: "⚔️",
+          icon: getActionIcon("declareWar"),
           label: "Declare War",
         });
       }
@@ -890,7 +927,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "atom")) {
       actions.push({
         id: "attack:nuke-atom",
-        icon: "☢️",
+        icon: getActionIcon("atomBomb"),
         label: "Atom Bomb",
         cost: 5000,
         disabled: gold < 5000,
@@ -901,7 +938,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "hbomb")) {
       actions.push({
         id: "attack:nuke-hbomb",
-        icon: "💥",
+        icon: getActionIcon("hBomb"),
         label: "H-Bomb",
         cost: 15000,
         disabled: gold < 15000,
@@ -912,7 +949,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "mirv")) {
       actions.push({
         id: "attack:nuke-mirv",
-        icon: "🚀",
+        icon: getActionIcon("mirv"),
         label: "MIRV",
         cost: 50000,
         disabled: gold < 50000,
@@ -942,7 +979,7 @@ export class MobileActionGrid extends LitElement {
       // Paratroopers (requires JetEngines)
       actions.push({
         id: "attack:airstrike",
-        icon: "🪂",
+        icon: getActionIcon("paratrooper"),
         label: "Paratroopers",
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
@@ -954,7 +991,7 @@ export class MobileActionGrid extends LitElement {
       // Bomber run (requires war declaration)
       actions.push({
         id: "attack:bomber",
-        icon: "💣",
+        icon: getActionIcon("bomber"),
         label: "Bomber Run",
         priority: "high",
       });
@@ -967,20 +1004,20 @@ export class MobileActionGrid extends LitElement {
       if (isAtWar) {
         actions.push({
           id: "diplomacy:request-peace",
-          icon: "🕊️",
+          icon: getActionIcon("peace"),
           label: "Request Peace",
           priority: "high",
         });
       } else if (isAllied) {
         actions.push({
           id: "diplomacy:break-alliance",
-          icon: "💔",
+          icon: getActionIcon("breakAlliance"),
           label: "Break Alliance",
         });
       } else {
         actions.push({
           id: "diplomacy:propose-ally",
-          icon: "🤝",
+          icon: getActionIcon("alliance"),
           label: "Propose Alliance",
           priority: "high",
         });
@@ -989,7 +1026,7 @@ export class MobileActionGrid extends LitElement {
       if (!isAtWar) {
         actions.push({
           id: "attack:declare-war",
-          icon: "⚔️",
+          icon: getActionIcon("declareWar"),
           label: "Declare War",
         });
       }
@@ -999,7 +1036,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "atom")) {
       actions.push({
         id: "attack:nuke-atom",
-        icon: "☢️",
+        icon: getActionIcon("atomBomb"),
         label: "Atom Bomb",
         cost: 5000,
         disabled: gold < 5000,
@@ -1010,7 +1047,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "hbomb")) {
       actions.push({
         id: "attack:nuke-hbomb",
-        icon: "💥",
+        icon: getActionIcon("hBomb"),
         label: "H-Bomb",
         cost: 15000,
         disabled: gold < 15000,
@@ -1021,7 +1058,7 @@ export class MobileActionGrid extends LitElement {
     if (this.canLaunchNuke(myPlayer, "mirv")) {
       actions.push({
         id: "attack:nuke-mirv",
-        icon: "🚀",
+        icon: getActionIcon("mirv"),
         label: "MIRV",
         cost: 50000,
         disabled: gold < 50000,
@@ -1045,7 +1082,7 @@ export class MobileActionGrid extends LitElement {
     if (!isOcean) {
       actions.push({
         id: "attack:ground",
-        icon: "🪖",
+        icon: getActionIcon("groundAttack"),
         label: "Attack",
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
@@ -1064,7 +1101,7 @@ export class MobileActionGrid extends LitElement {
         const portCost = this.getUnitCost(UnitType.Port, myPlayer);
         actions.push({
           id: `build:${UnitType.Port}`,
-          icon: "⚓",
+          icon: getUnitIcon(UnitType.Port) ?? "⚓",
           label: "Port",
           cost: portCost,
           disabled: gold < portCost,
@@ -1080,7 +1117,7 @@ export class MobileActionGrid extends LitElement {
         const warshipCost = this.getUnitCost(UnitType.Warship, myPlayer);
         actions.push({
           id: `build:${UnitType.Warship}`,
-          icon: "🚢",
+          icon: getUnitIcon(UnitType.Warship) ?? getActionIcon("navyAssault"),
           label: "Warship",
           cost: warshipCost,
           disabled: gold < warshipCost,
@@ -1096,7 +1133,7 @@ export class MobileActionGrid extends LitElement {
           const submarineCost = this.getUnitCost(UnitType.Submarine, myPlayer);
           actions.push({
             id: `build:${UnitType.Submarine}`,
-            icon: "🔱",
+            icon: getUnitIcon(UnitType.Submarine) ?? getActionIcon("submarine"),
             label: "Submarine",
             cost: submarineCost,
             disabled: gold < submarineCost,
@@ -1115,7 +1152,8 @@ export class MobileActionGrid extends LitElement {
           const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
           actions.push({
             id: `build:${UnitType.FighterJet}`,
-            icon: "🛩️",
+            icon:
+              getUnitIcon(UnitType.FighterJet) ?? getActionIcon("airAttack"),
             label: "Fighter Jet",
             cost: jetCost,
             disabled: gold < jetCost,
@@ -1138,7 +1176,7 @@ export class MobileActionGrid extends LitElement {
     return [
       {
         id: "attack:naval",
-        icon: "🚢",
+        icon: getActionIcon("navyAssault"),
         label: "Naval Assault",
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
