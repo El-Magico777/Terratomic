@@ -468,6 +468,24 @@ export class MobileActionGrid extends LitElement {
     const gold = Number(myPlayer.gold());
     const actions: ActionGridItem[] = [];
 
+    // Check if there's nearby owned ocean shore for port placement
+    const nearbyShore = Array.from(
+      game.bfs(tile, (gm, t) => game.manhattanDist(tile, t) <= 10),
+    ).some((t) => game.owner(t) === myPlayer && game.isOceanShore(t));
+
+    if (nearbyShore) {
+      const portCost = this.getUnitCost(UnitType.Port, myPlayer);
+      actions.push({
+        id: `build:${UnitType.Port}`,
+        icon: "⚓",
+        label: "Port",
+        cost: portCost,
+        disabled: gold < portCost,
+        disabledReason: gold < portCost ? "Not enough gold" : undefined,
+        priority: "high",
+      });
+    }
+
     // All land structures
     const landStructures = [
       {
@@ -574,22 +592,8 @@ export class MobileActionGrid extends LitElement {
     game: GameView,
     myPlayer: PlayerView,
   ): ActionGridItem[] {
-    const actions = this.getOwnLandActions(tile, game, myPlayer);
-    const gold = Number(myPlayer.gold());
-
-    // Add Port as a high-priority action
-    const portCost = this.getUnitCost(UnitType.Port, myPlayer);
-    actions.unshift({
-      id: `build:${UnitType.Port}`,
-      icon: "⚓",
-      label: "Port",
-      cost: portCost,
-      disabled: gold < portCost,
-      disabledReason: gold < portCost ? "Not enough gold" : undefined,
-      priority: "high",
-    });
-
-    return actions;
+    // Shore is also land - use regular land actions (which already includes port if shore nearby)
+    return this.getOwnLandActions(tile, game, myPlayer);
   }
 
   private getOwnWaterActions(
@@ -599,6 +603,24 @@ export class MobileActionGrid extends LitElement {
   ): ActionGridItem[] {
     const gold = Number(myPlayer.gold());
     const actions: ActionGridItem[] = [];
+
+    // Check if there's nearby owned shore for port placement
+    const nearbyShore = Array.from(
+      game.bfs(tile, (gm, t) => game.manhattanDist(tile, t) <= 10),
+    ).some((t) => game.owner(t) === myPlayer && game.isOceanShore(t));
+
+    if (nearbyShore) {
+      const portCost = this.getUnitCost(UnitType.Port, myPlayer);
+      actions.push({
+        id: `build:${UnitType.Port}`,
+        icon: "⚓",
+        label: "Port",
+        cost: portCost,
+        disabled: gold < portCost,
+        disabledReason: gold < portCost ? "Not enough gold" : undefined,
+        priority: "high",
+      });
+    }
 
     // Check if player has a port (required for water units)
     const hasPort = this.playerHasPort(myPlayer);
@@ -1031,8 +1053,26 @@ export class MobileActionGrid extends LitElement {
       });
     }
 
-    // If ocean tile, show water unit build options (only if port exists)
+    // If ocean tile, check for port building and water units
     if (isOcean) {
+      // Check if there's nearby owned shore for port placement
+      const nearbyShore = Array.from(
+        game.bfs(tile, (gm, t) => game.manhattanDist(tile, t) <= 10),
+      ).some((t) => game.owner(t) === myPlayer && game.isOceanShore(t));
+
+      if (nearbyShore) {
+        const portCost = this.getUnitCost(UnitType.Port, myPlayer);
+        actions.push({
+          id: `build:${UnitType.Port}`,
+          icon: "⚓",
+          label: "Port",
+          cost: portCost,
+          disabled: gold < portCost,
+          disabledReason: gold < portCost ? "Not enough gold" : undefined,
+          priority: "high",
+        });
+      }
+
       const hasPort = this.playerHasPort(myPlayer);
 
       if (hasPort) {

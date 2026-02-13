@@ -822,15 +822,48 @@ export class MobileUI {
   private handleBuildItemSelected(action: string): void {
     const unitType = this.parseBuildAction(action);
 
-    if (!unitType) {
+    if (!unitType || !this.selectedTile || !this.currentGame) {
       return;
     }
 
-    // Build directly on selected tile (always available since ActionGrid requires tile tap)
-    if (this.selectedTile) {
-      this.eventBus.emit(new BuildUnitIntentEvent(unitType, this.selectedTile));
-      HapticFeedback.success();
+    let targetTile = this.selectedTile;
+
+    // Special handling for Port: if clicking on water, find nearest owned shore
+    if (
+      unitType === UnitType.Port &&
+      !this.currentGame.isLand(this.selectedTile)
+    ) {
+      const myPlayer = this.currentGame.myPlayer();
+      if (myPlayer) {
+        // Find nearest owned shore tile within search radius
+        const nearbyTiles = Array.from(
+          this.currentGame.bfs(
+            this.selectedTile,
+            (gm, t) =>
+              this.currentGame!.manhattanDist(this.selectedTile!, t) <= 10,
+          ),
+        );
+
+        const ownedShores = nearbyTiles
+          .filter(
+            (t) =>
+              this.currentGame!.owner(t) === myPlayer &&
+              this.currentGame!.isOceanShore(t),
+          )
+          .sort(
+            (a, b) =>
+              this.currentGame!.manhattanDist(this.selectedTile!, a) -
+              this.currentGame!.manhattanDist(this.selectedTile!, b),
+          );
+
+        if (ownedShores.length > 0) {
+          targetTile = ownedShores[0];
+        }
+      }
     }
+
+    this.eventBus.emit(new BuildUnitIntentEvent(unitType, targetTile));
+    HapticFeedback.success();
   }
 
   private parseBuildAction(action: string): UnitType | null {
