@@ -53,12 +53,12 @@ export class MobileSettingsSidebar extends LitElement {
       top: 0;
       right: 0;
       bottom: 0;
-      width: 78%;
-      max-width: 420px;
-      background: rgba(12, 18, 32, 0.96);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      box-shadow: -6px 0 28px rgba(0, 0, 0, 0.5);
+      width: 70%;
+      max-width: 400px;
+      background: rgba(20, 20, 30, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
       transform: translateX(100%);
       transition: transform 0.25s ease-out;
       display: flex;
@@ -75,13 +75,13 @@ export class MobileSettingsSidebar extends LitElement {
       align-items: center;
       justify-content: space-between;
       padding: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(0, 0, 0, 0.25);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.3);
       flex-shrink: 0;
     }
 
     .title {
-      color: #f8fafc;
+      color: white;
       font-size: 18px;
       font-weight: 600;
     }
@@ -89,7 +89,7 @@ export class MobileSettingsSidebar extends LitElement {
     .close-btn {
       background: none;
       border: none;
-      color: #f8fafc;
+      color: white;
       font-size: 24px;
       cursor: pointer;
       padding: 4px 8px;

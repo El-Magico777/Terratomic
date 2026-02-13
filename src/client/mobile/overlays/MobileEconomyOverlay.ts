@@ -79,14 +79,12 @@ export class MobileEconomyOverlay extends LitElement {
       left: 0;
       top: 0;
       bottom: 0;
-      width: min(78vw, 360px);
-      max-width: 360px;
-      background: rgba(20, 20, 30, 0.98);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-top-right-radius: 24px;
-      border-bottom-right-radius: 24px;
-      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+      width: min(70vw, 400px);
+      max-width: 400px;
+      background: rgba(20, 20, 30, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
       padding-top: max(16px, env(safe-area-inset-top, 0));
       padding-bottom: env(safe-area-inset-bottom, 0);
       transform: translateX(-100%);
@@ -108,22 +106,23 @@ export class MobileEconomyOverlay extends LitElement {
     }
 
     .header {
-      padding: 8px 24px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.3);
       color: white;
-      font-family:
-        system-ui,
-        -apple-system,
-        sans-serif;
     }
 
     .title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 0;
     }
 
     .subtitle {
-      font-size: 14px;
+      font-size: 13px;
       color: rgba(255, 255, 255, 0.6);
     }
 
