@@ -353,7 +353,6 @@ export class MobileUI {
       body.mobile-ui-enabled control-panel2,
       body.mobile-ui-enabled chat-display,
       body.mobile-ui-enabled events-display,
-      body.mobile-ui-enabled heads-up-message,
       body.mobile-ui-enabled options-menu,
       body.mobile-ui-enabled replay-panel,
       body.mobile-ui-enabled player-info-overlay,
