@@ -27,7 +27,7 @@ export class MobilePlayerToast extends LitElement {
     :host {
       display: block;
       position: fixed;
-      top: 64px;
+      top: calc(env(safe-area-inset-top, 0px) + 50px);
       left: 50%;
       transform: translateX(-50%) translateY(-100px);
       z-index: 2500;
@@ -45,15 +45,28 @@ export class MobilePlayerToast extends LitElement {
     }
 
     .toast {
-      background: rgba(20, 20, 30, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 12px;
-      padding: 16px 20px;
-      min-width: 240px;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(130, 140, 153, 0.13) 0%,
+          rgba(74, 84, 95, 0.09) 40%,
+          rgba(21, 26, 34, 0.04) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(33, 39, 49, 0.97) 0%,
+          rgba(20, 26, 35, 0.98) 56%,
+          rgba(13, 18, 25, 0.98) 100%
+        );
+      border: 1px solid rgba(167, 178, 191, 0.24);
+      border-radius: 10px;
+      padding: 12px 14px;
+      width: min(92vw, 300px);
+      min-width: 0;
       box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.4),
-        0 4px 8px rgba(0, 0, 0, 0.2);
+        inset 0 1px 0 rgba(231, 238, 246, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.52),
+        0 8px 22px rgba(0, 0, 0, 0.46);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
@@ -65,80 +78,117 @@ export class MobilePlayerToast extends LitElement {
     .player-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 6px;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(148, 160, 174, 0.22);
     }
 
     .player-name {
-      color: white;
-      font-size: 16px;
+      color: rgba(239, 245, 252, 0.96);
+      font-size: 14px;
       font-weight: 600;
       flex: 1;
+      letter-spacing: 0.15px;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .relation-badge {
-      font-size: 18px;
+      font-size: 14px;
+      line-height: 1;
     }
 
     .player-stats {
       display: flex;
-      gap: 16px;
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 14px;
+      gap: 8px;
+      color: rgba(206, 216, 228, 0.88);
+      font-size: 12px;
+      margin-bottom: 4px;
     }
 
     .stat {
       display: flex;
       align-items: center;
       gap: 4px;
+      padding: 3px 6px;
+      border-radius: 6px;
+      background: linear-gradient(
+        180deg,
+        rgba(21, 29, 39, 0.74) 0%,
+        rgba(13, 19, 27, 0.86) 100%
+      );
+      border: 1px solid rgba(116, 126, 140, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .relation-text {
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 13px;
-      margin-top: 4px;
+      color: rgba(194, 205, 218, 0.75);
+      font-size: 11px;
+      margin-top: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.35px;
     }
 
     .relation-text.allied {
-      color: #10b981;
+      color: rgba(112, 222, 172, 0.94);
     }
 
     .relation-text.enemy {
-      color: #ef4444;
+      color: rgba(249, 133, 133, 0.95);
     }
 
     .actions {
       display: flex;
-      gap: 0.5rem;
-      margin-top: 12px;
+      gap: 6px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(148, 160, 174, 0.22);
     }
 
     .action-btn {
       flex: 1;
-      padding: 8px 12px;
-      border: none;
+      padding: 6px 8px;
+      border: 1px solid rgba(138, 148, 161, 0.3);
       border-radius: 6px;
-      font-size: 0.75rem;
+      font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      transition: all 0.15s;
+      transition:
+        transform 0.12s ease,
+        filter 0.12s ease,
+        border-color 0.15s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
     .action-btn:active {
-      transform: scale(0.95);
+      transform: translateY(1px) scale(0.96);
+      filter: brightness(1.08);
     }
 
     .action-btn.peace {
-      background: #3b82f6;
-      color: white;
+      background: linear-gradient(
+        180deg,
+        rgba(44, 99, 171, 0.86) 0%,
+        rgba(22, 53, 92, 0.9) 100%
+      );
+      color: rgba(234, 243, 252, 0.96);
+      border-color: rgba(100, 161, 238, 0.4);
     }
 
     .action-btn.war {
-      background: #ef4444;
-      color: white;
+      background: linear-gradient(
+        180deg,
+        rgba(153, 54, 54, 0.88) 0%,
+        rgba(95, 28, 28, 0.92) 100%
+      );
+      color: rgba(255, 239, 239, 0.96);
+      border-color: rgba(226, 124, 124, 0.42);
     }
 
     .action-btn:disabled {
