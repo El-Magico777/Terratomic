@@ -7,7 +7,7 @@ import { EventBus } from "../../core/EventBus";
 import { UnitType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
 import type { GameView } from "../../core/game/GameView";
-import { DragEvent, ZoomEvent } from "../InputHandler";
+import { CenterCameraEvent, DragEvent, ZoomEvent } from "../InputHandler";
 import {
   BuildUnitIntentEvent,
   SendAllianceRequestIntentEvent,
@@ -64,6 +64,9 @@ export class MobileUI {
   private economyTab: HTMLButtonElement;
   private intelTab: HTMLButtonElement;
   private researchTab: HTMLButtonElement;
+  private zoomInButton: HTMLButtonElement;
+  private zoomCenterButton: HTMLButtonElement;
+  private zoomOutButton: HTMLButtonElement;
   private lastGameTick: number = -1; // Track last processed game tick
   private gameDurationSeconds: number = 0; // Track game time in seconds (only after spawn phase)
 
@@ -145,6 +148,42 @@ export class MobileUI {
     `;
     this.researchTab.setAttribute("aria-label", "Open research panel");
 
+    // Create zoom control buttons (always visible on mobile)
+    this.zoomInButton = document.createElement("button");
+    this.zoomInButton.className = "mobile-zoom-in";
+    // Lucide: Plus icon
+    this.zoomInButton.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+    `;
+    this.zoomInButton.setAttribute("aria-label", "Zoom in");
+
+    this.zoomCenterButton = document.createElement("button");
+    this.zoomCenterButton.className = "mobile-zoom-center";
+    // Lucide: Crosshair / Target icon
+    this.zoomCenterButton.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="22" y1="12" x2="18" y2="12" />
+        <line x1="6" y1="12" x2="2" y2="12" />
+        <line x1="12" y1="6" x2="12" y2="2" />
+        <line x1="12" y1="22" x2="12" y2="18" />
+      </svg>
+    `;
+    this.zoomCenterButton.setAttribute("aria-label", "Center on territory");
+
+    this.zoomOutButton = document.createElement("button");
+    this.zoomOutButton.className = "mobile-zoom-out";
+    // Lucide: Minus icon
+    this.zoomOutButton.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+    `;
+    this.zoomOutButton.setAttribute("aria-label", "Zoom out");
+
     // Don't attach to DOM yet - wait for setActive(true)
     // Don't call any custom element methods yet - they're not registered until imports complete
     // this.attachComponents(); // Deferred until activation
@@ -197,6 +236,11 @@ export class MobileUI {
     document.body.appendChild(this.intelTab);
     document.body.appendChild(this.researchTab);
 
+    // Attach zoom control buttons
+    document.body.appendChild(this.zoomInButton);
+    document.body.appendChild(this.zoomCenterButton);
+    document.body.appendChild(this.zoomOutButton);
+
     // Add viewport meta tag if not present
     this.ensureViewportMeta();
   }
@@ -226,6 +270,9 @@ export class MobileUI {
         this.economyTab.style.display = "none";
         this.intelTab.style.display = "none";
         this.researchTab.style.display = "none";
+        this.zoomInButton.style.display = "none";
+        this.zoomCenterButton.style.display = "none";
+        this.zoomOutButton.style.display = "none";
         this.closeAllOverlays();
       }
       document.body.classList.remove("mobile-ui-enabled");
@@ -587,6 +634,51 @@ export class MobileUI {
         background: rgba(25, 25, 30, 0.95);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
+
+      /* Zoom control buttons - left side, vertically centered */
+      body.mobile-ui-enabled .mobile-zoom-in,
+      body.mobile-ui-enabled .mobile-zoom-center,
+      body.mobile-ui-enabled .mobile-zoom-out {
+        position: fixed;
+        left: 12px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: rgba(15, 15, 20, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: rgba(255, 255, 255, 0.85);
+        z-index: 1700;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        border: none;
+        transition: transform 0.1s ease, background 0.1s ease;
+      }
+
+      body.mobile-ui-enabled .mobile-zoom-in {
+        top: calc(50% - 60px); /* Center minus offset for 3 buttons */
+      }
+
+      body.mobile-ui-enabled .mobile-zoom-center {
+        top: calc(50% - 18px); /* Center */
+      }
+
+      body.mobile-ui-enabled .mobile-zoom-out {
+        top: calc(50% + 24px); /* Center plus offset */
+      }
+
+      body.mobile-ui-enabled .mobile-zoom-in:active,
+      body.mobile-ui-enabled .mobile-zoom-center:active,
+      body.mobile-ui-enabled .mobile-zoom-out:active {
+        transform: scale(0.9);
+        background: rgba(25, 25, 30, 0.85);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      }
       
       /* Support for notched devices */
       @supports (padding: env(safe-area-inset-top)) {
@@ -636,6 +728,22 @@ export class MobileUI {
     this.researchTab.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       this.researchSidebar.open();
+    });
+
+    // Zoom control button handlers (pointerdown only - no click to avoid double-firing)
+    this.zoomInButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      this.handleZoomIn();
+    });
+
+    this.zoomCenterButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      this.handleZoomCenter();
+    });
+
+    this.zoomOutButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      this.handleZoomOut();
     });
 
     // Economy overlay closed
@@ -1209,6 +1317,37 @@ export class MobileUI {
    */
   private handleSettingsClick(): void {
     this.settingsSidebar.toggle();
+  }
+
+  /**
+   * Handle zoom in button click
+   */
+  private handleZoomIn(): void {
+    if (!this.canvas) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    // Negative delta = zoom in (scale increases)
+    this.eventBus.emit(new ZoomEvent(centerX, centerY, -100));
+  }
+
+  /**
+   * Handle zoom out button click
+   */
+  private handleZoomOut(): void {
+    if (!this.canvas) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    // Positive delta = zoom out (scale decreases)
+    this.eventBus.emit(new ZoomEvent(centerX, centerY, 100));
+  }
+
+  /**
+   * Handle center button click - pan to player's territory center
+   */
+  private handleZoomCenter(): void {
+    this.eventBus.emit(new CenterCameraEvent());
   }
 
   /**
