@@ -18,13 +18,6 @@ import {
   type TechNode,
 } from "../../../core/tech/ResearchTree";
 import { getTechMeta } from "../../../core/tech/TechEffects";
-import {
-  INVESTMENT_REQUEST_EVENT,
-  INVESTMENT_SYNC_EVENT,
-  INVESTMENT_SYNC_REQUEST_EVENT,
-  type InvestmentRequestDetail,
-  type InvestmentSyncDetail,
-} from "../../events/InvestmentEvents";
 import { SendResearchTreeSelectIntentEvent } from "../../Transport";
 import { HapticFeedback } from "../utils/HapticFeedback";
 
@@ -40,9 +33,7 @@ export class MobileResearchPanel extends LitElement {
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) eventBus: EventBus | null = null;
 
-  @state() private researchInvestmentRate = 0;
-  @state() private lockResearch = false;
-  @state() private activeCategory: Category | "all" = "all";
+  @state() private activeCategory: Category = "Land";
 
   private techs: TechNode[] = [...getTechNodes()];
   private categories: Category[] = ["Land", "Sea", "Air", "Nuclear"];
@@ -51,7 +42,7 @@ export class MobileResearchPanel extends LitElement {
   static styles = css`
     :host {
       display: grid;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto 1fr;
       height: 100%;
       min-height: 0;
       overflow: hidden;
@@ -63,101 +54,34 @@ export class MobileResearchPanel extends LitElement {
         sans-serif;
     }
 
-    /* Investment slider section */
-    .investment-section {
-      padding: 16px;
-      background: rgba(0, 0, 0, 0.3);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      flex-shrink: 0;
-    }
-
-    .investment-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .investment-label {
-      font-size: 13px;
-      color: #bdc3c7;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .investment-value {
-      font-size: 20px;
-      font-weight: 700;
-      color: #3498db;
-    }
-
-    .slider-container {
-      position: relative;
-      height: 44px;
-      display: flex;
-      align-items: center;
-    }
-
-    .investment-slider {
-      width: 100%;
-      height: 8px;
-      -webkit-appearance: none;
-      appearance: none;
-      background: linear-gradient(to right, #2c3e50 0%, #3498db 100%);
-      border-radius: 4px;
-      outline: none;
-    }
-
-    .investment-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #3498db, #2980b9);
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      border: 3px solid white;
-    }
-
-    .investment-slider::-moz-range-thumb {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #3498db, #2980b9);
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      border: 3px solid white;
-    }
-
     /* Category filter tabs */
     .category-tabs {
-      display: flex;
-      gap: 8px;
-      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      padding: 10px;
       background: rgba(0, 0, 0, 0.2);
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
       flex-shrink: 0;
     }
 
     .category-tab {
-      padding: 8px 16px;
-      border-radius: 20px;
+      padding: 8px 6px;
+      border-radius: 10px;
       background: rgba(255, 255, 255, 0.1);
       border: 2px solid transparent;
       color: #bdc3c7;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 600;
-      white-space: nowrap;
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 4px;
       cursor: pointer;
       transition: all 0.2s;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      min-width: 0;
     }
 
     .category-tab.cat-land {
@@ -194,8 +118,8 @@ export class MobileResearchPanel extends LitElement {
     }
 
     .category-tab-icon {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
     }
 
     .category-tab.active {
@@ -206,6 +130,19 @@ export class MobileResearchPanel extends LitElement {
 
     .category-tab:active {
       transform: scale(0.95);
+    }
+
+    .category-tab.prioritized {
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 0 10px rgba(115, 189, 255, 0.35);
+      border-color: rgba(115, 189, 255, 0.65);
+    }
+
+    .category-tab.prioritized.active {
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        0 0 12px rgba(115, 189, 255, 0.48);
     }
 
     /* Tech grid */
@@ -421,27 +358,16 @@ export class MobileResearchPanel extends LitElement {
 
   connectedCallback(): void {
     super.connectedCallback();
-    window.addEventListener(
-      INVESTMENT_SYNC_EVENT,
-      this.handleInvestmentSync as EventListener,
-    );
-    this.requestInvestmentSync();
     this.startRefreshTimer();
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    window.removeEventListener(
-      INVESTMENT_SYNC_EVENT,
-      this.handleInvestmentSync as EventListener,
-    );
     this.stopRefreshTimer();
   }
 
   private startRefreshTimer(): void {
-    this.syncResearchInvestmentFromGame();
     this.refreshTimer = window.setInterval(() => {
-      this.syncResearchInvestmentFromGame();
       this.requestUpdate();
     }, 500);
   }
@@ -453,57 +379,7 @@ export class MobileResearchPanel extends LitElement {
     }
   }
 
-  private syncResearchInvestmentFromGame(): void {
-    const me = this.game?.myPlayer?.();
-    if (!me) return;
-    const serverRate = me.researchInvestmentRate?.() ?? 0;
-    if (Math.abs(serverRate - this.researchInvestmentRate) > 1e-6) {
-      this.researchInvestmentRate = serverRate;
-    }
-  }
-
-  private handleInvestmentSync = (e: Event): void => {
-    const detail = (e as CustomEvent<InvestmentSyncDetail>).detail;
-    if (!detail) return;
-    this.researchInvestmentRate = detail.research;
-    this.lockResearch = detail.lockResearch;
-  };
-
-  private requestInvestmentSync(): void {
-    window.dispatchEvent(new CustomEvent(INVESTMENT_SYNC_REQUEST_EVENT));
-  }
-
-  private handleInvestmentChange(e: Event): void {
-    const target = e.target as HTMLInputElement;
-    const value = Math.max(
-      0,
-      Math.min(1, (parseInt(target.value || "0", 10) || 0) / 100),
-    );
-    if (this.lockResearch) {
-      target.value = Math.round(this.researchInvestmentRate * 100).toString();
-      return;
-    }
-
-    this.researchInvestmentRate = value;
-
-    this.dispatchInvestmentRequest({
-      type: "set",
-      slider: "research",
-      value,
-    });
-
-    HapticFeedback.tap();
-  }
-
-  private dispatchInvestmentRequest(detail: InvestmentRequestDetail) {
-    window.dispatchEvent(
-      new CustomEvent<InvestmentRequestDetail>(INVESTMENT_REQUEST_EVENT, {
-        detail,
-      }),
-    );
-  }
-
-  private handleCategoryClick(category: Category | "all"): void {
+  private handleCategoryClick(category: Category): void {
     this.activeCategory = category;
     HapticFeedback.tap();
   }
@@ -602,41 +478,16 @@ export class MobileResearchPanel extends LitElement {
     }
 
     return html`
-      <!-- Investment slider -->
-      <div class="investment-section">
-        <div class="investment-header">
-          <div class="investment-label">Research Investment</div>
-          <div class="investment-value">
-            ${Math.round(this.researchInvestmentRate * 100)}%
-          </div>
-        </div>
-        <div class="slider-container">
-          <input
-            type="range"
-            min="0"
-            max="50"
-            step="1"
-            .value="${String(Math.round(this.researchInvestmentRate * 100))}"
-            class="investment-slider"
-            @input="${this.handleInvestmentChange}"
-          />
-        </div>
-      </div>
-
       <!-- Category filter tabs -->
       <div class="category-tabs">
-        <button
-          class="category-tab ${this.activeCategory === "all" ? "active" : ""}"
-          @click="${() => this.handleCategoryClick("all")}"
-        >
-          All
-        </button>
         ${this.categories.map(
           (cat) => html`
             <button
               class="category-tab cat-${cat.toLowerCase()} ${this
                 .activeCategory === cat
                 ? "active"
+                : ""} ${this.isCategoryPrioritized(cat, researched, priorities)
+                ? "prioritized"
                 : ""}"
               @click="${() => this.handleCategoryClick(cat)}"
             >
@@ -654,10 +505,7 @@ export class MobileResearchPanel extends LitElement {
       <div class="tech-scroll">
         <div class="tech-grid">
           ${this.categories
-            .filter(
-              (cat) =>
-                this.activeCategory === "all" || this.activeCategory === cat,
-            )
+            .filter((cat) => this.activeCategory === cat)
             .map((cat) =>
               this.renderCategory(cat, researched, priorities, percentByTechId),
             )}
