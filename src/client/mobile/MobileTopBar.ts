@@ -47,14 +47,31 @@ export class MobileTopBar extends LitElement {
     .top-bar {
       min-height: 44px;
       padding-top: env(safe-area-inset-top, 0);
-      padding-left: max(16px, env(safe-area-inset-left, 0));
-      padding-right: max(16px, env(safe-area-inset-right, 0));
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      padding-left: max(10px, env(safe-area-inset-left, 0));
+      padding-right: max(10px, env(safe-area-inset-right, 0));
+      background:
+        linear-gradient(
+          180deg,
+          rgba(130, 140, 150, 0.18) 0%,
+          rgba(74, 82, 92, 0.14) 40%,
+          rgba(22, 27, 34, 0.05) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(42, 47, 56, 0.96) 0%,
+          rgba(29, 33, 41, 0.96) 45%,
+          rgba(18, 21, 28, 0.96) 100%
+        );
+      border-top: 1px solid rgba(196, 206, 218, 0.32);
+      border-bottom: 1px solid rgba(8, 10, 14, 0.8);
+      box-shadow:
+        inset 0 1px 0 rgba(220, 227, 235, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+        0 2px 8px rgba(0, 0, 0, 0.45);
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
+      gap: 8px;
       color: white;
       font-family:
         system-ui,
@@ -62,24 +79,73 @@ export class MobileTopBar extends LitElement {
         sans-serif;
       font-size: 14px;
       user-select: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .top-bar::before,
+    .top-bar::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      bottom: 8px;
+      width: 12px;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        rgba(190, 198, 210, 0.18) 0%,
+        rgba(18, 22, 28, 0.35) 100%
+      );
+      border: 1px solid rgba(14, 18, 24, 0.8);
+      box-shadow: inset 0 1px 0 rgba(210, 218, 226, 0.12);
+    }
+
+    .top-bar::before {
+      left: 0;
+      clip-path: polygon(0 14%, 100% 0, 100% 100%, 0 86%);
+      border-right: none;
+    }
+
+    .top-bar::after {
+      right: 0;
+      clip-path: polygon(0 0, 100% 14%, 100% 86%, 0 100%);
+      border-left: none;
+    }
+
+    .clock-recess,
+    .stats,
+    .buttons-right {
+      min-height: 30px;
+      border-radius: 999px;
+      border: 1px solid rgba(128, 136, 146, 0.28);
+      background: linear-gradient(
+        180deg,
+        rgba(10, 13, 18, 0.88) 0%,
+        rgba(17, 21, 29, 0.92) 100%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.4),
+        0 1px 1px rgba(0, 0, 0, 0.35);
     }
 
     .menu-button,
     .research-button,
     .settings-button {
-      min-width: 44px;
-      min-height: 44px;
+      min-width: 30px;
+      min-height: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: none;
       border: none;
-      color: white;
-      font-size: 18px;
+      color: rgba(255, 183, 105, 0.98);
+      font-size: 17px;
       cursor: pointer;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      text-shadow: 0 0 8px rgba(255, 169, 72, 0.2);
     }
 
     .menu-button:active,
@@ -92,32 +158,42 @@ export class MobileTopBar extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(228, 234, 242, 0.9);
       font-variant-numeric: tabular-nums;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
+      min-width: 62px;
+      padding: 0 12px;
     }
 
     .buttons-right {
       display: flex;
-      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      min-width: 38px;
+      padding: 0 6px;
     }
 
     .stats {
       display: flex;
       align-items: center;
-      gap: 16px;
-      flex: 1;
+      gap: 14px;
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 420px;
       justify-content: center;
       cursor: pointer;
-      padding: 12px 8px;
-      border-radius: 4px;
+      padding: 0 14px;
       transition: background 0.2s;
     }
 
     .stats:active {
-      background: rgba(255, 255, 255, 0.1);
+      background: linear-gradient(
+        180deg,
+        rgba(16, 21, 28, 0.9) 0%,
+        rgba(9, 12, 18, 0.92) 100%
+      );
     }
 
     .stat {
@@ -133,11 +209,14 @@ export class MobileTopBar extends LitElement {
     }
 
     .icon {
-      font-size: 16px;
+      font-size: 15px;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
     }
 
     .value {
-      font-weight: 500;
+      font-weight: 600;
+      color: rgba(240, 244, 249, 0.96);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
     }
 
     .trade-income-indicator {
@@ -205,6 +284,14 @@ export class MobileTopBar extends LitElement {
       z-index: 101;
     }
 
+    .clock-recess {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      overflow: hidden;
+    }
+
     .details-tooltip.visible {
       opacity: 1;
     }
@@ -260,12 +347,16 @@ export class MobileTopBar extends LitElement {
     return html`
       <div class="top-bar">
         ${timeDisplay
-          ? html`<div class="game-clock" title="Game Time">${timeDisplay}</div>`
+          ? html`
+              <div class="clock-recess" title="Game Time">
+                <div class="game-clock">${timeDisplay}</div>
+              </div>
+            `
           : ""}
 
-        <div class="stats" @click="${this.handleStatsClick}">
+        <div class="stats" @click="${this.handleStatsClick}" title="Stats">
           <div class="stat" title="Population">
-            <span class="icon">🏠</span>
+            <span class="icon">👥</span>
             <span class="value"
               >${renderTroops(this.stats.population)}/${renderTroops(
                 this.stats.maxPopulation,
@@ -290,6 +381,7 @@ export class MobileTopBar extends LitElement {
           <button
             class="settings-button"
             aria-label="Settings"
+            title="Settings"
             @click="${this.handleSettingsClick}"
           >
             ⚙️

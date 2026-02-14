@@ -881,7 +881,7 @@ export class MobileActionGrid extends LitElement {
     // Ground attack (high priority)
     actions.push({
       id: "attack:ground",
-      icon: getActionIcon("groundAttack"),
+      icon: getActionIcon("attack"),
       label: "Ground Attack",
       disabled: troops === 0,
       disabledReason: troops === 0 ? "No troops" : undefined,
@@ -1238,7 +1238,7 @@ export class MobileActionGrid extends LitElement {
     if (!isOcean) {
       actions.push({
         id: "attack:ground",
-        icon: getActionIcon("groundAttack"),
+        icon: getActionIcon("attack"),
         label: "Attack",
         disabled: troops === 0,
         disabledReason: troops === 0 ? "No troops" : undefined,
