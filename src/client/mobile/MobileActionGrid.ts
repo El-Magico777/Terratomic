@@ -913,8 +913,8 @@ export class MobileActionGrid extends LitElement {
       });
     }
 
-    // Fighter Jet air attack (if jet engines researched)
-    if (hasJetEngines) {
+    // Fighter Jet (only if airfield and jet engines)
+    if (hasAirfield && hasJetEngines) {
       const jetCost = this.getUnitCost(UnitType.FighterJet, myPlayer);
       const gold = Number(myPlayer.gold());
       actions.push({
@@ -1404,15 +1404,18 @@ export class MobileActionGrid extends LitElement {
   }
 
   private playerHasPort(myPlayer: PlayerView): boolean {
-    return myPlayer.unitsOwned(UnitType.Port) > 0;
+    // Only count completed ports, not ports under construction
+    return myPlayer.units(UnitType.Port).length > 0;
   }
 
   private playerHasAirfield(myPlayer: PlayerView): boolean {
-    return myPlayer.unitsOwned(UnitType.Airfield) > 0;
+    // Only count completed airfields, not airfields under construction
+    return myPlayer.units(UnitType.Airfield).length > 0;
   }
 
   private playerHasFactory(myPlayer: PlayerView): boolean {
-    return myPlayer.unitsOwned(UnitType.Factory) > 0;
+    // Only count completed factories, not factories under construction
+    return myPlayer.units(UnitType.Factory).length > 0;
   }
 
   private canLaunchNuke(
@@ -1421,7 +1424,8 @@ export class MobileActionGrid extends LitElement {
   ): boolean {
     if (!this.game) return false;
 
-    const silos = myPlayer.unitsOwned(UnitType.MissileSilo);
+    // Only count completed missile silos, not silos under construction
+    const silos = myPlayer.units(UnitType.MissileSilo).length;
     if (silos === 0) return false; // No silos
 
     const gold = Number(myPlayer.gold());
