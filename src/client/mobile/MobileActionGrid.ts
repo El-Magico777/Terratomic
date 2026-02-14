@@ -123,16 +123,98 @@ export class MobileActionGrid extends LitElement {
       min-height: 70px;
     }
 
+    /* Category Colors */
+    .action-tile.cat-spawn {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    .action-tile.cat-infrastructure {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+
+    .action-tile.cat-military {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: rgba(139, 92, 246, 0.35);
+    }
+
+    .action-tile.cat-combat {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    .action-tile.cat-nuclear {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .action-tile.cat-diplomacy {
+      background: rgba(20, 184, 166, 0.15);
+      border-color: rgba(20, 184, 166, 0.35);
+    }
+
     .action-tile.high-priority {
       grid-column: span 2;
+      min-height: 85px;
+    }
+
+    .action-tile.high-priority.cat-spawn {
+      background: rgba(34, 197, 94, 0.25);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+
+    .action-tile.high-priority.cat-infrastructure {
       background: rgba(59, 130, 246, 0.25);
       border-color: rgba(59, 130, 246, 0.5);
-      min-height: 85px;
+    }
+
+    .action-tile.high-priority.cat-military {
+      background: rgba(139, 92, 246, 0.25);
+      border-color: rgba(139, 92, 246, 0.5);
+    }
+
+    .action-tile.high-priority.cat-combat {
+      background: rgba(239, 68, 68, 0.25);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .action-tile.high-priority.cat-nuclear {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .action-tile.high-priority.cat-diplomacy {
+      background: rgba(20, 184, 166, 0.25);
+      border-color: rgba(20, 184, 166, 0.5);
     }
 
     .action-tile:active {
       transform: scale(0.95);
+    }
+
+    .action-tile.cat-spawn:active {
+      background: rgba(34, 197, 94, 0.3);
+    }
+
+    .action-tile.cat-infrastructure:active {
       background: rgba(59, 130, 246, 0.3);
+    }
+
+    .action-tile.cat-military:active {
+      background: rgba(139, 92, 246, 0.3);
+    }
+
+    .action-tile.cat-combat:active {
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    .action-tile.cat-nuclear:active {
+      background: rgba(245, 158, 11, 0.3);
+    }
+
+    .action-tile.cat-diplomacy:active {
+      background: rgba(20, 184, 166, 0.3);
     }
 
     .action-tile.disabled {
@@ -234,8 +316,10 @@ export class MobileActionGrid extends LitElement {
   }
 
   private renderActionTile(item: ActionGridItem) {
+    const category = this.getActionCategory(item.id);
     const classes = [
       "action-tile",
+      category ? `cat-${category}` : "",
       item.priority === "high" ? "high-priority" : "",
       item.disabled ? "disabled" : "",
       item.locked ? "locked" : "",
@@ -1283,5 +1367,56 @@ export class MobileActionGrid extends LitElement {
     }
 
     return true;
+  }
+
+  /**
+   * Determine the category of an action based on its ID
+   * Used for color-coding action tiles
+   */
+  private getActionCategory(
+    actionId: string,
+  ):
+    | "spawn"
+    | "infrastructure"
+    | "military"
+    | "combat"
+    | "nuclear"
+    | "diplomacy"
+    | null {
+    // Spawn
+    if (actionId === "spawn") return "spawn";
+
+    // Infrastructure & Buildings
+    if (actionId.startsWith("build:")) {
+      const unitType = actionId.replace("build:", "");
+      // Military units
+      if (
+        unitType === UnitType.Artillery ||
+        unitType === UnitType.Warship ||
+        unitType === UnitType.Submarine ||
+        unitType === UnitType.FighterJet
+      ) {
+        return "military";
+      }
+      // Everything else is infrastructure
+      return "infrastructure";
+    }
+
+    // Combat Actions
+    if (actionId.startsWith("attack:")) {
+      // Nuclear weapons
+      if (actionId.includes("nuke")) {
+        return "nuclear";
+      }
+      // Regular combat
+      return "combat";
+    }
+
+    // Diplomacy
+    if (actionId.startsWith("diplomacy:")) {
+      return "diplomacy";
+    }
+
+    return null;
   }
 }
