@@ -40,7 +40,7 @@ export class MobileResearchSidebar extends LitElement {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.42);
       opacity: 0;
       transition: opacity 0.25s ease;
     }
@@ -56,10 +56,23 @@ export class MobileResearchSidebar extends LitElement {
       bottom: 0;
       width: 70%;
       max-width: 400px;
-      background: rgba(20, 20, 30, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(132, 142, 154, 0.14) 0%,
+          rgba(76, 85, 97, 0.09) 36%,
+          rgba(20, 24, 31, 0.04) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(35, 40, 49, 0.97) 0%,
+          rgba(23, 28, 36, 0.98) 48%,
+          rgba(14, 18, 24, 0.98) 100%
+        );
+      border-left: 1px solid rgba(174, 185, 198, 0.22);
+      box-shadow:
+        inset 1px 0 0 rgba(220, 229, 238, 0.12),
+        -8px 0 24px rgba(0, 0, 0, 0.52);
       transform: translateX(100%);
       transition: transform 0.25s ease-out;
       display: flex;
@@ -75,30 +88,50 @@ export class MobileResearchSidebar extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.3);
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(161, 171, 184, 0.2);
+      background: linear-gradient(
+        180deg,
+        rgba(16, 20, 28, 0.86) 0%,
+        rgba(12, 16, 23, 0.92) 100%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(232, 239, 247, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.45);
       flex-shrink: 0;
     }
 
     .title {
-      color: white;
-      font-size: 18px;
+      color: rgba(235, 241, 248, 0.95);
+      font-size: 16px;
       font-weight: 600;
+      letter-spacing: 0.2px;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
     }
 
     .close-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
+      background: linear-gradient(
+        180deg,
+        rgba(18, 24, 33, 0.9) 0%,
+        rgba(11, 15, 22, 0.94) 100%
+      );
+      border: 1px solid rgba(136, 146, 159, 0.28);
+      border-radius: 6px;
+      color: rgba(244, 176, 99, 0.95);
+      font-size: 16px;
       cursor: pointer;
-      padding: 4px 8px;
+      min-width: 28px;
+      min-height: 24px;
+      padding: 0;
       -webkit-tap-highlight-color: transparent;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 1px 1px rgba(0, 0, 0, 0.35);
     }
 
     .close-btn:active {
-      opacity: 0.6;
+      opacity: 0.9;
+      transform: translateY(1px);
     }
 
     .content {

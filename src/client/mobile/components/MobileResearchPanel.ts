@@ -46,7 +46,14 @@ export class MobileResearchPanel extends LitElement {
       height: 100%;
       min-height: 0;
       overflow: hidden;
-      background: linear-gradient(to bottom, #1a2332, #0f1419);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(128, 138, 151, 0.1) 0%,
+          rgba(68, 78, 91, 0.06) 30%,
+          rgba(14, 19, 26, 0.02) 100%
+        ),
+        linear-gradient(to bottom, #1a2332, #0f1419);
       color: white;
       font-family:
         system-ui,
@@ -60,17 +67,28 @@ export class MobileResearchPanel extends LitElement {
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 6px;
       padding: 10px;
-      background: rgba(0, 0, 0, 0.2);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(
+        180deg,
+        rgba(13, 18, 26, 0.84) 0%,
+        rgba(10, 14, 20, 0.9) 100%
+      );
+      border-bottom: 1px solid rgba(150, 161, 174, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(236, 243, 251, 0.07),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.45);
       flex-shrink: 0;
     }
 
     .category-tab {
       padding: 8px 6px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid transparent;
-      color: #bdc3c7;
+      background: linear-gradient(
+        180deg,
+        rgba(20, 26, 35, 0.86) 0%,
+        rgba(11, 16, 23, 0.9) 100%
+      );
+      border: 1px solid rgba(120, 131, 145, 0.32);
+      color: rgba(190, 201, 214, 0.88);
       font-size: 11px;
       font-weight: 600;
       display: flex;
@@ -82,6 +100,9 @@ export class MobileResearchPanel extends LitElement {
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
       min-width: 0;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.38);
     }
 
     .category-tab.cat-land {
@@ -123,9 +144,13 @@ export class MobileResearchPanel extends LitElement {
     }
 
     .category-tab.active {
-      background: rgba(52, 152, 219, 0.2);
-      border-color: #3498db;
-      color: #3498db;
+      background: linear-gradient(
+        180deg,
+        rgba(28, 53, 87, 0.58) 0%,
+        rgba(15, 29, 46, 0.92) 100%
+      );
+      border-color: rgba(96, 159, 246, 0.72);
+      color: rgba(152, 206, 255, 0.96);
     }
 
     .category-tab:active {
@@ -135,8 +160,8 @@ export class MobileResearchPanel extends LitElement {
     .category-tab.prioritized {
       box-shadow:
         0 0 0 1px rgba(255, 255, 255, 0.08),
-        0 0 10px rgba(115, 189, 255, 0.35);
-      border-color: rgba(115, 189, 255, 0.65);
+        0 0 12px rgba(115, 189, 255, 0.38);
+      border-color: rgba(115, 189, 255, 0.68);
     }
 
     .category-tab.prioritized.active {
@@ -155,22 +180,29 @@ export class MobileResearchPanel extends LitElement {
     }
 
     .tech-grid {
-      padding: 16px;
+      padding: 12px;
     }
 
     .category-section {
-      margin-bottom: 24px;
+      margin-bottom: 18px;
     }
 
     .category-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
-      padding: 8px 12px;
-      background: rgba(255, 255, 255, 0.05);
+      margin-bottom: 10px;
+      padding: 7px 10px;
+      background: linear-gradient(
+        180deg,
+        rgba(22, 29, 38, 0.84) 0%,
+        rgba(13, 18, 24, 0.92) 100%
+      );
       border-radius: 8px;
-      border-left: 4px solid;
+      border-left: 3px solid;
+      border-top: 1px solid rgba(235, 242, 250, 0.05);
+      border-right: 1px solid rgba(94, 105, 120, 0.25);
+      border-bottom: 1px solid rgba(94, 105, 120, 0.25);
     }
 
     .category-header-left {
@@ -181,12 +213,16 @@ export class MobileResearchPanel extends LitElement {
 
     .category-priority-button {
       border: 1px solid currentColor;
-      background: rgba(0, 0, 0, 0.25);
+      background: linear-gradient(
+        180deg,
+        rgba(18, 25, 33, 0.82) 0%,
+        rgba(9, 14, 20, 0.88) 100%
+      );
       color: currentColor;
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 4px 8px;
+      padding: 3px 8px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -196,8 +232,8 @@ export class MobileResearchPanel extends LitElement {
     }
 
     .category-priority-button.active {
-      background: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
     }
 
     .category-header.land {
@@ -221,7 +257,7 @@ export class MobileResearchPanel extends LitElement {
     }
 
     .category-title {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -247,18 +283,21 @@ export class MobileResearchPanel extends LitElement {
     .tech-card {
       background: linear-gradient(
         135deg,
-        rgba(52, 73, 94, 0.4),
-        rgba(44, 62, 80, 0.6)
+        rgba(48, 67, 88, 0.42),
+        rgba(20, 28, 38, 0.74)
       );
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 10px;
-      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(126, 136, 148, 0.3);
       cursor: pointer;
       transition: all 0.2s;
       -webkit-tap-highlight-color: transparent;
       position: relative;
       overflow: hidden;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.38);
     }
 
     .tech-card:active {
@@ -268,15 +307,15 @@ export class MobileResearchPanel extends LitElement {
     .tech-card.researched {
       background: linear-gradient(
         135deg,
-        rgba(46, 204, 113, 0.2),
-        rgba(39, 174, 96, 0.3)
+        rgba(46, 204, 113, 0.24),
+        rgba(24, 90, 58, 0.46)
       );
       border-color: #2ecc71;
     }
 
     .tech-card.prioritized {
-      border-color: #f39c12;
-      box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.3);
+      border-color: #f0ad42;
+      box-shadow: 0 0 0 2px rgba(240, 173, 66, 0.28);
     }
 
     .tech-card.unavailable {
@@ -301,16 +340,16 @@ export class MobileResearchPanel extends LitElement {
     }
 
     .tech-name {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
-      color: white;
+      color: rgba(239, 244, 250, 0.98);
       line-height: 1.3;
       flex: 1;
     }
 
     .tech-status {
-      font-size: 11px;
-      padding: 3px 8px;
+      font-size: 10px;
+      padding: 3px 7px;
       border-radius: 12px;
       font-weight: 600;
       margin-left: 8px;
@@ -334,7 +373,7 @@ export class MobileResearchPanel extends LitElement {
 
     .tech-description {
       font-size: 12px;
-      color: #bdc3c7;
+      color: rgba(193, 202, 214, 0.9);
       line-height: 1.4;
       margin-bottom: 6px;
     }
