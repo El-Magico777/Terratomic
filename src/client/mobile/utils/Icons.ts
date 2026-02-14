@@ -43,7 +43,7 @@ export const ACTION_ICONS = {
   navyAttack: "/images/BattleshipIconWhite.svg",
   navyAssault: "/images/BattleshipIconWhite.svg",
   airAttack: "/images/FighterJetIcon.svg",
-  paratrooper: "/images/paratrooper.f7f2b507cfb9f2a87b59.png",
+  paratrooper: "/images/AirAttackIconWhite.svg",
   bomber: "/images/bomberv3.39cfac5d40bad7d635c9.png",
   artilleryAttack: "/images/artillery-battery.png",
   submarine: "/images/submarine.svg",
