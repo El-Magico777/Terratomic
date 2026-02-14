@@ -165,6 +165,21 @@ export class MobileActionGrid extends LitElement {
       border-color: rgba(20, 184, 166, 0.35);
     }
 
+    .action-tile.cat-diplomacy-war {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .action-tile.cat-diplomacy-peace {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .action-tile.cat-diplomacy-alliance {
+      background: rgba(34, 197, 94, 0.15);
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
     /* Expanded tiles (2+ column span) */
     .action-tile.multi-column {
       min-height: 85px;
@@ -200,6 +215,21 @@ export class MobileActionGrid extends LitElement {
       border-color: rgba(20, 184, 166, 0.5);
     }
 
+    .action-tile.multi-column.cat-diplomacy-war {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .action-tile.multi-column.cat-diplomacy-peace {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.45);
+    }
+
+    .action-tile.multi-column.cat-diplomacy-alliance {
+      background: rgba(34, 197, 94, 0.25);
+      border-color: rgba(34, 197, 94, 0.5);
+    }
+
     .action-tile:active {
       transform: scale(0.95);
     }
@@ -226,6 +256,18 @@ export class MobileActionGrid extends LitElement {
 
     .action-tile.cat-diplomacy:active {
       background: rgba(20, 184, 166, 0.3);
+    }
+
+    .action-tile.cat-diplomacy-war:active {
+      background: rgba(245, 158, 11, 0.3);
+    }
+
+    .action-tile.cat-diplomacy-peace:active {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .action-tile.cat-diplomacy-alliance:active {
+      background: rgba(34, 197, 94, 0.3);
     }
 
     .action-tile.disabled {
@@ -1492,6 +1534,9 @@ export class MobileActionGrid extends LitElement {
     | "combat"
     | "nuclear"
     | "diplomacy"
+    | "diplomacy-war"
+    | "diplomacy-peace"
+    | "diplomacy-alliance"
     | null {
     // Spawn
     if (actionId === "spawn") return "spawn";
@@ -1512,6 +1557,25 @@ export class MobileActionGrid extends LitElement {
       return "infrastructure";
     }
 
+    // Diplomacy - specific actions
+    if (actionId === "diplomacy:request-peace") {
+      return "diplomacy-peace";
+    }
+    if (actionId === "diplomacy:propose-ally") {
+      return "diplomacy-alliance";
+    }
+    if (
+      actionId === "diplomacy:break-alliance" ||
+      actionId === "attack:declare-war"
+    ) {
+      return "diplomacy-war";
+    }
+
+    // Generic diplomacy fallback
+    if (actionId.startsWith("diplomacy:")) {
+      return "diplomacy";
+    }
+
     // Combat Actions
     if (actionId.startsWith("attack:")) {
       // Nuclear weapons
@@ -1520,11 +1584,6 @@ export class MobileActionGrid extends LitElement {
       }
       // Regular combat
       return "combat";
-    }
-
-    // Diplomacy
-    if (actionId.startsWith("diplomacy:")) {
-      return "diplomacy";
     }
 
     return null;
