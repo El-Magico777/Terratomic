@@ -51,7 +51,7 @@ export class MobileIntelSidebar extends LitElement {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.42);
       opacity: 0;
       transition: opacity 0.25s ease;
     }
@@ -67,14 +67,28 @@ export class MobileIntelSidebar extends LitElement {
       bottom: 0;
       width: 70%;
       max-width: 400px;
-      background: rgba(20, 20, 30, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(132, 142, 154, 0.14) 0%,
+          rgba(76, 85, 97, 0.09) 36%,
+          rgba(20, 24, 31, 0.04) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(35, 40, 49, 0.97) 0%,
+          rgba(23, 28, 36, 0.98) 48%,
+          rgba(14, 18, 24, 0.98) 100%
+        );
+      border-left: 1px solid rgba(174, 185, 198, 0.22);
+      box-shadow:
+        inset 1px 0 0 rgba(220, 229, 238, 0.12),
+        -8px 0 24px rgba(0, 0, 0, 0.52);
       transform: translateX(100%);
       transition: transform 0.25s ease-out;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     :host([visible]) .sidebar {
@@ -86,72 +100,119 @@ export class MobileIntelSidebar extends LitElement {
       align-items: center;
       justify-content: space-between;
       padding: 10px 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid rgba(161, 171, 184, 0.2);
+      background: linear-gradient(
+        180deg,
+        rgba(16, 20, 28, 0.86) 0%,
+        rgba(12, 16, 23, 0.92) 100%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(232, 239, 247, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.45);
     }
 
     .title {
-      color: white;
+      color: rgba(235, 241, 248, 0.95);
       font-size: 16px;
       font-weight: 600;
+      letter-spacing: 0.25px;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
     }
 
     .close-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 20px;
+      background: linear-gradient(
+        180deg,
+        rgba(18, 24, 33, 0.9) 0%,
+        rgba(11, 15, 22, 0.94) 100%
+      );
+      border: 1px solid rgba(136, 146, 159, 0.28);
+      border-radius: 6px;
+      color: rgba(244, 176, 99, 0.95);
+      font-size: 16px;
       cursor: pointer;
-      padding: 2px 6px;
+      min-width: 28px;
+      min-height: 24px;
+      padding: 0;
       -webkit-tap-highlight-color: transparent;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 1px 1px rgba(0, 0, 0, 0.35);
     }
 
     .close-btn:active {
-      opacity: 0.6;
+      opacity: 0.9;
+      transform: translateY(1px);
     }
 
     .tabs {
       display: flex;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.2);
+      gap: 6px;
+      padding: 8px 10px 7px;
+      border-bottom: 1px solid rgba(146, 156, 169, 0.2);
+      background: linear-gradient(
+        180deg,
+        rgba(14, 19, 26, 0.85) 0%,
+        rgba(11, 15, 21, 0.9) 100%
+      );
     }
 
     .tab {
       flex: 1;
-      padding: 12px;
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 15px;
-      font-weight: 500;
+      padding: 7px 6px;
+      background: linear-gradient(
+        180deg,
+        rgba(17, 22, 30, 0.88) 0%,
+        rgba(10, 14, 20, 0.9) 100%
+      );
+      border: 1px solid rgba(123, 133, 146, 0.28);
+      border-radius: 8px;
+      color: rgba(214, 222, 232, 0.72);
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
       position: relative;
       -webkit-tap-highlight-color: transparent;
+      letter-spacing: 0.2px;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.35);
     }
 
     .tab.active {
-      color: white;
+      color: rgba(241, 246, 252, 0.98);
+      border-color: rgba(92, 151, 238, 0.55);
+      background: linear-gradient(
+        180deg,
+        rgba(28, 52, 86, 0.56) 0%,
+        rgba(16, 27, 42, 0.9) 100%
+      );
     }
 
     .tab.active::after {
       content: "";
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #3b82f6;
+      left: 8px;
+      right: 8px;
+      bottom: 2px;
+      height: 1px;
+      background: rgba(123, 187, 255, 0.9);
+      box-shadow: 0 0 6px rgba(93, 164, 245, 0.45);
     }
 
     .tab:active {
-      background: rgba(255, 255, 255, 0.05);
+      filter: brightness(1.08);
     }
 
     .content {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      padding: 10px;
+      padding: 8px;
+      background: linear-gradient(
+        180deg,
+        rgba(11, 15, 21, 0.66) 0%,
+        rgba(9, 13, 18, 0.7) 100%
+      );
     }
 
     /* Players tab styles */
@@ -161,27 +222,39 @@ export class MobileIntelSidebar extends LitElement {
       gap: 8px;
       padding: 7px 8px;
       margin-bottom: 4px;
-      background: rgba(255, 255, 255, 0.05);
+      background: linear-gradient(
+        180deg,
+        rgba(25, 31, 40, 0.82) 0%,
+        rgba(14, 19, 25, 0.9) 100%
+      );
+      border: 1px solid rgba(124, 135, 149, 0.24);
       border-radius: 7px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
 
     .player-row.current-player {
-      border: 1px solid rgba(59, 130, 246, 0.45);
-      background: rgba(59, 130, 246, 0.16);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(90, 152, 238, 0.55);
+      background: linear-gradient(
+        180deg,
+        rgba(38, 67, 108, 0.45) 0%,
+        rgba(15, 31, 51, 0.88) 100%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(241, 246, 252, 0.08),
+        0 0 0 1px rgba(25, 39, 58, 0.4);
     }
 
     .player-row:active {
-      background: rgba(255, 255, 255, 0.1);
+      filter: brightness(1.08);
     }
 
     .player-rank {
-      font-size: 15px;
+      font-size: 14px;
       min-width: 26px;
       text-align: center;
       line-height: 1;
+      color: rgba(231, 238, 246, 0.95);
     }
 
     .player-info {
@@ -193,7 +266,7 @@ export class MobileIntelSidebar extends LitElement {
     }
 
     .player-name {
-      color: white;
+      color: rgba(238, 243, 250, 0.96);
       font-weight: 600;
       font-size: 12px;
       white-space: nowrap;
@@ -202,7 +275,7 @@ export class MobileIntelSidebar extends LitElement {
     }
 
     .player-stats {
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(192, 202, 214, 0.82);
       font-size: 11px;
       white-space: nowrap;
       margin-left: auto;
@@ -216,31 +289,44 @@ export class MobileIntelSidebar extends LitElement {
     .self-divider {
       height: 1px;
       margin: 6px 2px;
-      background: rgba(255, 255, 255, 0.14);
+      background: rgba(152, 162, 175, 0.26);
     }
 
     /* Events tab styles */
     .event-item {
       padding: 12px;
       margin-bottom: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      background: linear-gradient(
+        180deg,
+        rgba(23, 30, 39, 0.82) 0%,
+        rgba(13, 18, 24, 0.92) 100%
+      );
+      border: 1px solid rgba(123, 133, 145, 0.24);
       border-radius: 8px;
-      color: white;
+      color: rgba(235, 240, 247, 0.96);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .event-time {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(189, 198, 210, 0.72);
       font-size: 12px;
       margin-bottom: 4px;
     }
 
     .event-message {
-      font-size: 14px;
+      font-size: 13px;
+    }
+
+    .events-content {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 100%;
     }
 
     .empty-state {
       text-align: center;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(186, 196, 208, 0.68);
       padding: 48px 16px;
       font-size: 14px;
     }
@@ -251,16 +337,16 @@ export class MobileIntelSidebar extends LitElement {
     }
 
     .content::-webkit-scrollbar-track {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(20, 27, 36, 0.7);
     }
 
     .content::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(132, 143, 157, 0.45);
       border-radius: 4px;
     }
 
     .content::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(150, 161, 174, 0.56);
     }
   `;
 
@@ -370,7 +456,7 @@ export class MobileIntelSidebar extends LitElement {
     }
 
     // Render the events display component
-    return html`${this.eventsDisplay}`;
+    return html`<div class="events-content">${this.eventsDisplay}</div>`;
   }
 
   private getLeaderboardData(): {
