@@ -4,7 +4,7 @@
  */
 
 import { LitElement, css, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { renderNumber, renderTroops } from "../Utils";
 
 export interface TopBarStats {
@@ -26,6 +26,13 @@ export class MobileTopBar extends LitElement {
   };
 
   @property({ type: Boolean }) showDetails: boolean = false;
+
+  @state() private tradeIncomeAmount: number | bigint | null = null;
+  @state() private tradeIncomeAnimating: boolean = false;
+
+  private tradeIncomeHideTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private tradeIncomeAnimationTimeoutId: ReturnType<typeof setTimeout> | null =
+    null;
 
   static styles = css`
     :host {
@@ -120,12 +127,63 @@ export class MobileTopBar extends LitElement {
       font-variant-numeric: tabular-nums;
     }
 
+    .stat.gold-stat {
+      gap: 6px;
+      position: relative;
+    }
+
     .icon {
       font-size: 16px;
     }
 
     .value {
       font-weight: 500;
+    }
+
+    .trade-income-indicator {
+      position: absolute;
+      left: calc(100% + 6px);
+      top: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 18px;
+      padding: 0 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(74, 222, 128, 0.75);
+      background: rgba(10, 30, 14, 0.9);
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.35),
+        0 2px 6px rgba(0, 0, 0, 0.35);
+      font-size: 12px;
+      font-weight: 800;
+      color: #4ade80;
+      text-shadow: 0 0 6px rgba(74, 222, 128, 0.35);
+      font-variant-numeric: tabular-nums;
+      transform: translateY(-50%);
+      transform-origin: center;
+      will-change: transform;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .trade-income-indicator.animating {
+      animation: tradeIncomePulse 0.6s ease-out;
+    }
+
+    @keyframes tradeIncomePulse {
+      0% {
+        transform: translateY(-50%) scale(1);
+      }
+      30% {
+        transform: translateY(-50%) scale(1.2);
+      }
+      60% {
+        transform: translateY(-50%) scale(1.08);
+      }
+      100% {
+        transform: translateY(-50%) scale(1);
+      }
     }
 
     /* Details tooltip */
@@ -214,9 +272,17 @@ export class MobileTopBar extends LitElement {
               )}</span
             >
           </div>
-          <div class="stat" title="Gold">
+          <div class="stat gold-stat" title="Gold">
             <span class="icon">💰</span>
             <span class="value">${this.formatNumber(this.stats.gold)}</span>
+            ${this.tradeIncomeAmount !== null
+              ? html`<span
+                  class="trade-income-indicator ${this.tradeIncomeAnimating
+                    ? "animating"
+                    : ""}"
+                  >+${this.formatNumber(this.tradeIncomeAmount)}</span
+                >`
+              : ""}
           </div>
         </div>
 
@@ -287,8 +353,64 @@ export class MobileTopBar extends LitElement {
     `;
   }
 
-  private formatNumber(value: number): string {
+  private formatNumber(value: number | bigint): string {
     return renderNumber(value);
+  }
+
+  showTradeIncomeIndicator(amount: number | bigint): void {
+    const normalized = Number(amount);
+    if (!Number.isFinite(normalized) || normalized <= 0) {
+      return;
+    }
+
+    this.tradeIncomeAmount = normalized;
+
+    if (this.tradeIncomeHideTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeHideTimeoutId);
+    }
+    this.tradeIncomeHideTimeoutId = setTimeout(() => {
+      this.tradeIncomeAmount = null;
+      this.tradeIncomeAnimating = false;
+      this.tradeIncomeHideTimeoutId = null;
+      this.requestUpdate();
+    }, 5000);
+
+    this.tradeIncomeAnimating = false;
+    this.requestUpdate();
+    requestAnimationFrame(() => {
+      this.tradeIncomeAnimating = true;
+      this.requestUpdate();
+    });
+
+    if (this.tradeIncomeAnimationTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeAnimationTimeoutId);
+    }
+    this.tradeIncomeAnimationTimeoutId = setTimeout(() => {
+      this.tradeIncomeAnimating = false;
+      this.tradeIncomeAnimationTimeoutId = null;
+      this.requestUpdate();
+    }, 650);
+  }
+
+  clearTradeIncomeIndicator(): void {
+    this.tradeIncomeAmount = null;
+    this.tradeIncomeAnimating = false;
+
+    if (this.tradeIncomeHideTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeHideTimeoutId);
+      this.tradeIncomeHideTimeoutId = null;
+    }
+    if (this.tradeIncomeAnimationTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeAnimationTimeoutId);
+      this.tradeIncomeAnimationTimeoutId = null;
+    }
+
+    this.requestUpdate();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.clearTradeIncomeIndicator();
   }
 
   private handleSettingsClick(): void {

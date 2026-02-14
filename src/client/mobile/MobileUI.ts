@@ -4,8 +4,12 @@
  */
 
 import { EventBus } from "../../core/EventBus";
-import { UnitType } from "../../core/game/Game";
+import { MessageType, UnitType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
+import {
+  DisplayMessageUpdate,
+  GameUpdateType,
+} from "../../core/game/GameUpdates";
 import type { GameView } from "../../core/game/GameView";
 import { CenterCameraEvent, DragEvent, ZoomEvent } from "../InputHandler";
 import {
@@ -326,6 +330,10 @@ export class MobileUI {
     const tick = this.currentGame.ticks();
     const inSpawnPhase = this.currentGame.inSpawnPhase();
 
+    if (inSpawnPhase) {
+      this.topBar.clearTradeIncomeIndicator();
+    }
+
     // Toggle menu buttons visibility based on spawn phase
     // Hide them during spawn phase, show them during normal gameplay
     const displayStyle = inSpawnPhase ? "none" : "";
@@ -342,6 +350,15 @@ export class MobileUI {
       gameDurationSeconds: this.gameDurationSeconds,
       inSpawnPhase,
     });
+
+    if (!inSpawnPhase && myPlayer.isAlive()) {
+      const tradeIncomeAmount = this.getTradeIncomeAmountThisTick(
+        myPlayer.smallID(),
+      );
+      if (tradeIncomeAmount !== null && tradeIncomeAmount > 0n) {
+        this.topBar.showTradeIncomeIndicator(tradeIncomeAmount);
+      }
+    }
 
     this.updateAttackBarPosition();
 
@@ -372,6 +389,41 @@ export class MobileUI {
         this.allianceNotifications.topOffset = this.attackBar.currentHeight;
       }
     }
+  }
+
+  private getTradeIncomeAmountThisTick(myPlayerSmallID: number): bigint | null {
+    if (!this.currentGame) {
+      return null;
+    }
+
+    const updates = this.currentGame.updatesSinceLastTick();
+    const displayEvents = updates?.[GameUpdateType.DisplayEvent] as
+      | DisplayMessageUpdate[]
+      | undefined;
+
+    if (!displayEvents || displayEvents.length === 0) {
+      return null;
+    }
+
+    let total = 0n;
+    let foundAny = false;
+
+    for (const event of displayEvents) {
+      if (event.messageType !== MessageType.RECEIVED_GOLD_FROM_TRADE) {
+        continue;
+      }
+
+      if (event.playerID !== null && event.playerID !== myPlayerSmallID) {
+        continue;
+      }
+
+      if (event.goldAmount !== undefined && event.goldAmount > 0n) {
+        total += event.goldAmount;
+        foundAny = true;
+      }
+    }
+
+    return foundAny ? total : null;
   }
 
   private updateAttackBarPosition(): void {
