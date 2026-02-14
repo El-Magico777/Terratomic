@@ -26,6 +26,7 @@ import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
 import { MobileAllianceNotifications } from "./overlays/MobileAllianceNotifications";
+import { MobileAttackBar } from "./overlays/MobileAttackBar";
 import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
 import { MobileEventsDisplay } from "./overlays/MobileEventsDisplay";
 import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
@@ -49,6 +50,7 @@ export class MobileUI {
   private playerToast: MobilePlayerToast;
   private eventsDisplay: MobileEventsDisplay;
   private allianceNotifications: MobileAllianceNotifications;
+  private attackBar: MobileAttackBar;
 
   // Phase 5 components
   private researchSidebar: MobileResearchSidebar;
@@ -102,6 +104,9 @@ export class MobileUI {
     this.allianceNotifications = document.createElement(
       "mobile-alliance-notifications",
     ) as MobileAllianceNotifications;
+    this.attackBar = document.createElement(
+      "mobile-attack-bar",
+    ) as MobileAttackBar;
 
     // Create Phase 5 components
     this.researchSidebar = document.createElement(
@@ -205,6 +210,7 @@ export class MobileUI {
 
     // Phase 4 components
     import("./overlays/MobileAllianceNotifications");
+    import("./overlays/MobileAttackBar");
     import("./overlays/MobileEventsDisplay");
     import("./overlays/MobileIntelSidebar");
     import("./overlays/MobilePlayerToast");
@@ -228,6 +234,7 @@ export class MobileUI {
     document.body.appendChild(this.intelSidebar);
     document.body.appendChild(this.playerToast);
     document.body.appendChild(this.allianceNotifications);
+    document.body.appendChild(this.attackBar);
 
     // Attach Phase 5 components
     document.body.appendChild(this.researchSidebar);
@@ -356,6 +363,9 @@ export class MobileUI {
         typeof this.allianceNotifications.tick === "function"
       ) {
         this.allianceNotifications.tick();
+      }
+      if (this.attackBar && typeof this.attackBar.tick === "function") {
+        this.attackBar.tick();
       }
     }
   }
@@ -869,6 +879,8 @@ export class MobileUI {
     this.eventsDisplay.eventBus = this.eventBus;
     this.allianceNotifications.game = game;
     this.allianceNotifications.eventBus = this.eventBus;
+    this.attackBar.game = game;
+    this.attackBar.eventBus = this.eventBus;
 
     // Update Phase 5 components with game state
     this.researchSidebar.game = game;
