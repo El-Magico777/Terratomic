@@ -12,6 +12,15 @@ import type { MobileEventsDisplay } from "./MobileEventsDisplay";
 
 export type IntelTab = "players" | "events";
 
+interface PlayerListEntry {
+  player: PlayerView;
+  population: number;
+  gold: number;
+  relation: string;
+  rank: number;
+  isCurrentPlayer: boolean;
+}
+
 @customElement("mobile-intel-sidebar")
 export class MobileIntelSidebar extends LitElement {
   @property({ type: Boolean, reflect: true }) visible: boolean = false;
@@ -157,6 +166,12 @@ export class MobileIntelSidebar extends LitElement {
       -webkit-tap-highlight-color: transparent;
     }
 
+    .player-row.current-player {
+      border: 1px solid rgba(59, 130, 246, 0.45);
+      background: rgba(59, 130, 246, 0.16);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
     .player-row:active {
       background: rgba(255, 255, 255, 0.1);
     }
@@ -184,6 +199,12 @@ export class MobileIntelSidebar extends LitElement {
 
     .player-relation {
       font-size: 18px;
+    }
+
+    .self-divider {
+      height: 1px;
+      margin: 10px 4px;
+      background: rgba(255, 255, 255, 0.14);
     }
 
     /* Events tab styles */
@@ -270,34 +291,35 @@ export class MobileIntelSidebar extends LitElement {
       return html`<div class="empty-state">Loading...</div>`;
     }
 
-    const players = this.getPlayerList();
+    const { leaderboardEntries, pinnedCurrentPlayer } =
+      this.getLeaderboardData();
 
-    if (players.length === 0) {
+    if (leaderboardEntries.length === 0) {
       return html`<div class="empty-state">No players found</div>`;
     }
 
     return html`
-      ${players.map((entry, index) => this.renderPlayerRow(entry, index))}
+      ${leaderboardEntries.map((entry) => this.renderPlayerRow(entry))}
+      ${pinnedCurrentPlayer
+        ? html`
+            <div class="self-divider"></div>
+            ${this.renderPlayerRow(pinnedCurrentPlayer, true)}
+          `
+        : null}
     `;
   }
 
-  private renderPlayerRow(
-    entry: {
-      player: PlayerView;
-      population: number;
-      gold: number;
-      relation: string;
-    },
-    index: number,
-  ) {
+  private renderPlayerRow(entry: PlayerListEntry, pinnedSelf: boolean = false) {
+    const rowClass = `player-row${entry.isCurrentPlayer ? " current-player" : ""}${pinnedSelf ? " pinned-self" : ""}`;
+
     const rankIcon =
-      index === 0
+      entry.rank === 1
         ? "🥇"
-        : index === 1
+        : entry.rank === 2
           ? "🥈"
-          : index === 2
+          : entry.rank === 3
             ? "🥉"
-            : `${index + 1}`;
+            : `${entry.rank}`;
 
     const relationIcon =
       entry.relation === "allied"
@@ -308,7 +330,7 @@ export class MobileIntelSidebar extends LitElement {
 
     return html`
       <div
-        class="player-row"
+        class="${rowClass}"
         @click="${() => this.handlePlayerClick(entry.player)}"
       >
         <div class="player-rank">${rankIcon}</div>
@@ -339,15 +361,28 @@ export class MobileIntelSidebar extends LitElement {
     return html`${this.eventsDisplay}`;
   }
 
-  private getPlayerList() {
-    if (!this.game) return [];
+  private getLeaderboardData(): {
+    leaderboardEntries: PlayerListEntry[];
+    pinnedCurrentPlayer: PlayerListEntry | null;
+  } {
+    if (!this.game) {
+      return {
+        leaderboardEntries: [],
+        pinnedCurrentPlayer: null,
+      };
+    }
 
     const myPlayer = this.game.myPlayer();
-    if (!myPlayer) return [];
+    if (!myPlayer) {
+      return {
+        leaderboardEntries: [],
+        pinnedCurrentPlayer: null,
+      };
+    }
 
     const allPlayers = this.game.players();
-    return allPlayers
-      .map((player) => {
+    const rankedEntries = allPlayers
+      .map((player, originalIndex) => {
         const population = player.numTilesOwned();
         const gold = Number(player.gold());
 
@@ -358,9 +393,53 @@ export class MobileIntelSidebar extends LitElement {
           relation = "enemy";
         }
 
-        return { player, population, gold, relation };
+        return {
+          player,
+          population,
+          gold,
+          relation,
+          originalIndex,
+        };
       })
-      .sort((a, b) => b.population - a.population); // Sort by population
+      .sort((a, b) => {
+        if (b.population !== a.population) {
+          return b.population - a.population;
+        }
+
+        return a.originalIndex - b.originalIndex;
+      })
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1,
+        isCurrentPlayer: entry.player === myPlayer,
+      }));
+
+    if (rankedEntries.length === 0) {
+      return {
+        leaderboardEntries: [],
+        pinnedCurrentPlayer: null,
+      };
+    }
+
+    const leaderboardCutoffIndex = Math.min(9, rankedEntries.length - 1);
+    const leaderboardCutoffPopulation =
+      rankedEntries[leaderboardCutoffIndex].population;
+
+    const leaderboardEntries = rankedEntries.filter(
+      (entry) => entry.population >= leaderboardCutoffPopulation,
+    );
+
+    const currentPlayerInLeaderboard = leaderboardEntries.some(
+      (entry) => entry.isCurrentPlayer,
+    );
+    const pinnedCurrentPlayer = currentPlayerInLeaderboard
+      ? null
+      : (rankedEntries.find((entry) => entry.isCurrentPlayer) ?? null);
+
+    return {
+      leaderboardEntries,
+      pinnedCurrentPlayer,
+    };
   }
 
   private switchTab(tab: IntelTab): void {
