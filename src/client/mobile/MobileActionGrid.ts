@@ -63,11 +63,11 @@ export class MobileActionGrid extends LitElement {
 
     .backdrop {
       position: fixed;
-      top: 0;
+      top: calc(44px + env(safe-area-inset-top, 0px));
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.38);
       opacity: 0;
       transition: opacity 0.25s ease;
       pointer-events: none;
@@ -79,19 +79,64 @@ export class MobileActionGrid extends LitElement {
     }
 
     .grid-container {
-      background: linear-gradient(
-        to top,
-        rgba(17, 24, 39, 0.98),
-        rgba(17, 24, 39, 0.95)
-      );
+      background:
+        linear-gradient(
+          180deg,
+          rgba(145, 154, 166, 0.16) 0%,
+          rgba(82, 90, 102, 0.1) 34%,
+          rgba(19, 23, 30, 0.04) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(39, 45, 55, 0.97) 0%,
+          rgba(26, 31, 39, 0.98) 48%,
+          rgba(16, 20, 27, 0.98) 100%
+        );
       border-top-left-radius: 20px;
       border-top-right-radius: 20px;
+      border-top: 1px solid rgba(188, 198, 210, 0.3);
+      border-left: 1px solid rgba(40, 46, 56, 0.8);
+      border-right: 1px solid rgba(40, 46, 56, 0.8);
       padding: 16px;
       padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
       transform: translateY(100%);
       transition: transform 0.25s ease;
       pointer-events: none;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+      box-shadow:
+        inset 0 1px 0 rgba(216, 224, 233, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 -8px 22px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .grid-container::before,
+    .grid-container::after {
+      content: "";
+      position: absolute;
+      top: 10px;
+      bottom: 14px;
+      width: 14px;
+      pointer-events: none;
+      background: linear-gradient(
+        180deg,
+        rgba(192, 201, 212, 0.16) 0%,
+        rgba(17, 22, 29, 0.38) 100%
+      );
+      border: 1px solid rgba(14, 18, 24, 0.82);
+      box-shadow: inset 0 1px 0 rgba(225, 233, 242, 0.1);
+    }
+
+    .grid-container::before {
+      left: 0;
+      clip-path: polygon(0 18%, 100% 0, 100% 100%, 0 84%);
+      border-right: none;
+    }
+
+    .grid-container::after {
+      right: 0;
+      clip-path: polygon(0 0, 100% 18%, 100% 84%, 0 100%);
+      border-left: none;
     }
 
     :host([visible]) .grid-container {
@@ -115,8 +160,22 @@ export class MobileActionGrid extends LitElement {
     }
 
     .action-tile {
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid rgba(59, 130, 246, 0.3);
+      --cat-rgb: 59, 130, 246;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(228, 236, 245, 0.05) 0%,
+          rgba(95, 106, 120, 0.04) 18%,
+          rgba(15, 19, 25, 0.86) 30%,
+          rgba(10, 14, 20, 0.92) 100%
+        ),
+        radial-gradient(
+          120% 110% at 50% 0%,
+          rgba(var(--cat-rgb), 0.14) 0%,
+          rgba(var(--cat-rgb), 0.05) 38%,
+          rgba(0, 0, 0, 0) 72%
+        );
+      border: 1px solid rgba(var(--cat-rgb), 0.45);
       border-radius: 10px;
       padding: 8px;
       display: flex;
@@ -132,155 +191,177 @@ export class MobileActionGrid extends LitElement {
       flex: 0 0 auto;
       width: var(--item-width);
       box-sizing: border-box;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.45),
+        0 1px 2px rgba(0, 0, 0, 0.35);
     }
 
     /* Category Colors */
     .action-tile.cat-spawn {
-      background: rgba(34, 197, 94, 0.15);
-      border-color: rgba(34, 197, 94, 0.35);
+      --cat-rgb: 34, 197, 94;
     }
 
     .action-tile.cat-infrastructure {
-      background: rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.35);
+      --cat-rgb: 59, 130, 246;
     }
 
     .action-tile.cat-military {
-      background: rgba(139, 92, 246, 0.15);
-      border-color: rgba(139, 92, 246, 0.35);
+      --cat-rgb: 139, 92, 246;
     }
 
     .action-tile.cat-combat {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.35);
+      --cat-rgb: 239, 68, 68;
     }
 
     .action-tile.cat-nuclear {
-      background: rgba(245, 158, 11, 0.15);
-      border-color: rgba(245, 158, 11, 0.35);
+      --cat-rgb: 245, 158, 11;
     }
 
     .action-tile.cat-diplomacy {
-      background: rgba(20, 184, 166, 0.15);
-      border-color: rgba(20, 184, 166, 0.35);
+      --cat-rgb: 20, 184, 166;
     }
 
     .action-tile.cat-diplomacy-war {
-      background: rgba(245, 158, 11, 0.15);
-      border-color: rgba(245, 158, 11, 0.35);
+      --cat-rgb: 245, 158, 11;
     }
 
     .action-tile.cat-diplomacy-peace {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: rgba(255, 255, 255, 0.3);
+      --cat-rgb: 203, 213, 225;
     }
 
     .action-tile.cat-diplomacy-alliance {
-      background: rgba(34, 197, 94, 0.15);
-      border-color: rgba(34, 197, 94, 0.35);
+      --cat-rgb: 34, 197, 94;
     }
 
     /* Expanded tiles (2+ column span) */
     .action-tile.multi-column {
       min-height: 85px;
+      border-width: 1px;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(233, 239, 247, 0.07) 0%,
+          rgba(105, 115, 128, 0.05) 18%,
+          rgba(17, 21, 28, 0.86) 32%,
+          rgba(11, 15, 21, 0.93) 100%
+        ),
+        radial-gradient(
+          130% 115% at 50% 0%,
+          rgba(var(--cat-rgb), 0.2) 0%,
+          rgba(var(--cat-rgb), 0.08) 40%,
+          rgba(0, 0, 0, 0) 76%
+        );
     }
 
     .action-tile.multi-column.cat-spawn {
-      background: rgba(34, 197, 94, 0.25);
-      border-color: rgba(34, 197, 94, 0.5);
+      border-color: rgba(34, 197, 94, 0.54);
     }
 
     .action-tile.multi-column.cat-infrastructure {
-      background: rgba(59, 130, 246, 0.25);
-      border-color: rgba(59, 130, 246, 0.5);
+      border-color: rgba(59, 130, 246, 0.54);
     }
 
     .action-tile.multi-column.cat-military {
-      background: rgba(139, 92, 246, 0.25);
-      border-color: rgba(139, 92, 246, 0.5);
+      border-color: rgba(139, 92, 246, 0.54);
     }
 
     .action-tile.multi-column.cat-combat {
-      background: rgba(239, 68, 68, 0.25);
-      border-color: rgba(239, 68, 68, 0.5);
+      border-color: rgba(239, 68, 68, 0.54);
     }
 
     .action-tile.multi-column.cat-nuclear {
-      background: rgba(245, 158, 11, 0.25);
-      border-color: rgba(245, 158, 11, 0.5);
+      border-color: rgba(245, 158, 11, 0.54);
     }
 
     .action-tile.multi-column.cat-diplomacy {
-      background: rgba(20, 184, 166, 0.25);
-      border-color: rgba(20, 184, 166, 0.5);
+      border-color: rgba(20, 184, 166, 0.54);
     }
 
     .action-tile.multi-column.cat-diplomacy-war {
-      background: rgba(245, 158, 11, 0.25);
-      border-color: rgba(245, 158, 11, 0.5);
+      border-color: rgba(245, 158, 11, 0.54);
     }
 
     .action-tile.multi-column.cat-diplomacy-peace {
-      background: rgba(255, 255, 255, 0.2);
-      border-color: rgba(255, 255, 255, 0.45);
+      border-color: rgba(203, 213, 225, 0.5);
     }
 
     .action-tile.multi-column.cat-diplomacy-alliance {
-      background: rgba(34, 197, 94, 0.25);
-      border-color: rgba(34, 197, 94, 0.5);
+      border-color: rgba(34, 197, 94, 0.54);
     }
 
     .action-tile:active {
       transform: scale(0.95);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(18, 24, 32, 0.95) 0%,
+          rgba(8, 11, 17, 0.95) 100%
+        ),
+        radial-gradient(
+          120% 115% at 50% 0%,
+          rgba(var(--cat-rgb), 0.25) 0%,
+          rgba(var(--cat-rgb), 0.1) 45%,
+          rgba(0, 0, 0, 0) 78%
+        );
+      border-color: rgba(var(--cat-rgb), 0.6);
     }
 
     .action-tile.cat-spawn:active {
-      background: rgba(34, 197, 94, 0.3);
+      border-color: rgba(34, 197, 94, 0.62);
     }
 
     .action-tile.cat-infrastructure:active {
-      background: rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.62);
     }
 
     .action-tile.cat-military:active {
-      background: rgba(139, 92, 246, 0.3);
+      border-color: rgba(139, 92, 246, 0.62);
     }
 
     .action-tile.cat-combat:active {
-      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.62);
     }
 
     .action-tile.cat-nuclear:active {
-      background: rgba(245, 158, 11, 0.3);
+      border-color: rgba(245, 158, 11, 0.62);
     }
 
     .action-tile.cat-diplomacy:active {
-      background: rgba(20, 184, 166, 0.3);
+      border-color: rgba(20, 184, 166, 0.62);
     }
 
     .action-tile.cat-diplomacy-war:active {
-      background: rgba(245, 158, 11, 0.3);
+      border-color: rgba(245, 158, 11, 0.62);
     }
 
     .action-tile.cat-diplomacy-peace:active {
-      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(203, 213, 225, 0.58);
     }
 
     .action-tile.cat-diplomacy-alliance:active {
-      background: rgba(34, 197, 94, 0.3);
+      border-color: rgba(34, 197, 94, 0.62);
     }
 
     .action-tile.disabled {
-      opacity: 0.5;
+      opacity: 0.55;
       cursor: not-allowed;
-      background: rgba(107, 114, 128, 0.15);
-      border-color: rgba(107, 114, 128, 0.3);
+      background: linear-gradient(
+        180deg,
+        rgba(95, 103, 114, 0.13) 0%,
+        rgba(45, 52, 61, 0.25) 100%
+      );
+      border-color: rgba(120, 129, 141, 0.32);
     }
 
     .action-tile.locked {
       opacity: 0.6;
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.3);
+      background: linear-gradient(
+        180deg,
+        rgba(239, 68, 68, 0.18) 0%,
+        rgba(36, 14, 18, 0.3) 100%
+      );
+      border-color: rgba(239, 68, 68, 0.44);
     }
 
     .action-tile.disabled:active,
@@ -302,7 +383,7 @@ export class MobileActionGrid extends LitElement {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      filter: brightness(1.1);
+      filter: brightness(1.08) saturate(0.95);
     }
 
     .action-tile.multi-column .action-icon {
@@ -312,11 +393,12 @@ export class MobileActionGrid extends LitElement {
     }
 
     .action-label {
-      color: rgba(255, 255, 255, 0.95);
+      color: rgba(236, 241, 247, 0.96);
       font-size: 11px;
       text-align: center;
-      font-weight: 500;
+      font-weight: 600;
       line-height: 1.2;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
     }
 
     .action-tile.multi-column .action-label {
@@ -325,9 +407,10 @@ export class MobileActionGrid extends LitElement {
     }
 
     .action-cost {
-      color: rgba(251, 191, 36, 0.9);
+      color: rgba(251, 191, 36, 0.95);
       font-size: 10px;
       font-weight: 600;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
     }
 
     .action-tile.multi-column .action-cost {
@@ -349,10 +432,12 @@ export class MobileActionGrid extends LitElement {
 
     .close-hint {
       text-align: center;
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 12px;
-      margin-top: 8px;
-      padding: 8px;
+      color: rgba(198, 206, 216, 0.6);
+      font-size: 11px;
+      margin-top: 4px;
+      padding: 2px 0 0;
+      line-height: 1.1;
+      letter-spacing: 0.2px;
     }
   `;
 
