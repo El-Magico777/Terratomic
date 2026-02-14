@@ -26,7 +26,8 @@ export interface ActionGridItem {
   disabledReason?: string;
   locked?: boolean;
   lockedReason?: string;
-  priority?: "high" | "normal"; // High priority = larger tile
+  priority?: "high" | "normal"; // High priority = shown first
+  columnSpan?: number; // Dynamically calculated percentage width for perfect grid filling
 }
 
 export type ActionCategory =
@@ -43,6 +44,7 @@ export type ActionCategory =
 @customElement("mobile-action-grid")
 export class MobileActionGrid extends LitElement {
   @property({ type: Boolean, reflect: true }) visible: boolean = false;
+  @property({ type: Boolean, reflect: true }) ready: boolean = false; // Items calculated and ready to show
   @property({ type: Object }) tile: TileRef | null = null;
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Array }) items: ActionGridItem[] = [];
@@ -98,12 +100,18 @@ export class MobileActionGrid extends LitElement {
     }
 
     .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       max-height: 60vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    :host([ready]) .grid {
+      opacity: 1;
     }
 
     .action-tile {
@@ -121,6 +129,9 @@ export class MobileActionGrid extends LitElement {
       -webkit-tap-highlight-color: transparent;
       transition: all 0.15s ease;
       min-height: 70px;
+      flex: 0 0 auto;
+      width: var(--item-width);
+      box-sizing: border-box;
     }
 
     /* Category Colors */
@@ -154,37 +165,37 @@ export class MobileActionGrid extends LitElement {
       border-color: rgba(20, 184, 166, 0.35);
     }
 
-    .action-tile.high-priority {
-      grid-column: span 2;
+    /* Expanded tiles (2+ column span) */
+    .action-tile.multi-column {
       min-height: 85px;
     }
 
-    .action-tile.high-priority.cat-spawn {
+    .action-tile.multi-column.cat-spawn {
       background: rgba(34, 197, 94, 0.25);
       border-color: rgba(34, 197, 94, 0.5);
     }
 
-    .action-tile.high-priority.cat-infrastructure {
+    .action-tile.multi-column.cat-infrastructure {
       background: rgba(59, 130, 246, 0.25);
       border-color: rgba(59, 130, 246, 0.5);
     }
 
-    .action-tile.high-priority.cat-military {
+    .action-tile.multi-column.cat-military {
       background: rgba(139, 92, 246, 0.25);
       border-color: rgba(139, 92, 246, 0.5);
     }
 
-    .action-tile.high-priority.cat-combat {
+    .action-tile.multi-column.cat-combat {
       background: rgba(239, 68, 68, 0.25);
       border-color: rgba(239, 68, 68, 0.5);
     }
 
-    .action-tile.high-priority.cat-nuclear {
+    .action-tile.multi-column.cat-nuclear {
       background: rgba(245, 158, 11, 0.25);
       border-color: rgba(245, 158, 11, 0.5);
     }
 
-    .action-tile.high-priority.cat-diplomacy {
+    .action-tile.multi-column.cat-diplomacy {
       background: rgba(20, 184, 166, 0.25);
       border-color: rgba(20, 184, 166, 0.5);
     }
@@ -252,7 +263,7 @@ export class MobileActionGrid extends LitElement {
       filter: brightness(1.1);
     }
 
-    .action-tile.high-priority .action-icon {
+    .action-tile.multi-column .action-icon {
       font-size: 32px;
       width: 36px;
       height: 36px;
@@ -266,7 +277,7 @@ export class MobileActionGrid extends LitElement {
       line-height: 1.2;
     }
 
-    .action-tile.high-priority .action-label {
+    .action-tile.multi-column .action-label {
       font-size: 13px;
       font-weight: 600;
     }
@@ -277,7 +288,7 @@ export class MobileActionGrid extends LitElement {
       font-weight: 600;
     }
 
-    .action-tile.high-priority .action-cost {
+    .action-tile.multi-column .action-cost {
       font-size: 12px;
     }
 
@@ -317,10 +328,11 @@ export class MobileActionGrid extends LitElement {
 
   private renderActionTile(item: ActionGridItem) {
     const category = this.getActionCategory(item.id);
+    const itemWidth = item.columnSpan ?? 1;
     const classes = [
       "action-tile",
       category ? `cat-${category}` : "",
-      item.priority === "high" ? "high-priority" : "",
+      itemWidth > 1 ? "multi-column" : "",
       item.disabled ? "disabled" : "",
       item.locked ? "locked" : "",
     ]
@@ -333,7 +345,11 @@ export class MobileActionGrid extends LitElement {
       : item.icon;
 
     return html`
-      <div class=${classes} @click=${() => this.handleActionClick(item)}>
+      <div
+        class=${classes}
+        style="--item-width: ${itemWidth}%"
+        @click=${() => this.handleActionClick(item)}
+      >
         <div class="action-icon">${iconHtml}</div>
         <div class="action-label">${item.label}</div>
         ${item.cost
@@ -403,22 +419,35 @@ export class MobileActionGrid extends LitElement {
     this.game = game;
     this.attackRatio = attackRatio;
 
+    // Clear old items immediately to prevent flicker
+    this.items = [];
+    this.ready = false;
+    this.visible = true;
+    this.lastOpenedTime = Date.now();
+
+    // Wait for grid container to render and establish layout
+    await this.updateComplete;
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Now calculate with accurate grid dimensions
+    const columns = this.calculateColumns();
+
     // Fast path for spawn phase - no async needed
     if (game.inSpawnPhase()) {
       const myPlayer = game.myPlayer();
       if (myPlayer) {
-        this.items = this.getSpawnActions(tile, game, myPlayer);
-        this.visible = true;
-        this.lastOpenedTime = Date.now();
+        const actions = this.getSpawnActions(tile, game, myPlayer);
+        this.items = this.processItemsForGrid(actions, columns);
+        this.ready = true;
         this.requestUpdate();
       }
       return;
     }
 
     const category = await this.determineTileCategory(tile, game);
-    this.items = await this.getActionsForCategory(category, tile, game);
-    this.visible = true;
-    this.lastOpenedTime = Date.now();
+    const actions = await this.getActionsForCategory(category, tile, game);
+    this.items = this.processItemsForGrid(actions, columns);
+    this.ready = true;
     this.requestUpdate();
   }
 
@@ -427,6 +456,7 @@ export class MobileActionGrid extends LitElement {
    */
   close(): void {
     this.visible = false;
+    this.ready = false;
     this.dispatchEvent(
       new CustomEvent("grid-closed", {
         bubbles: true,
@@ -1367,6 +1397,86 @@ export class MobileActionGrid extends LitElement {
     }
 
     return true;
+  }
+
+  /**
+   * Calculate actual number of columns based on container width
+   * CSS: repeat(auto-fill, minmax(65px, 1fr)) with 8px gap
+   */
+  private calculateColumns(): number {
+    const gridElement = this.shadowRoot?.querySelector(".grid") as HTMLElement;
+    if (!gridElement) {
+      return 5; // Fallback if grid not rendered yet
+    }
+
+    const width = gridElement.clientWidth;
+    const minColumnWidth = 65; // From CSS minmax
+    const gap = 8; // From CSS gap
+
+    // Calculate: how many columns fit?
+    // Formula: (width + gap) / (minColumnWidth + gap)
+    const columns = Math.floor((width + gap) / (minColumnWidth + gap));
+    return Math.max(1, columns); // At least 1 column
+  }
+
+  /**
+   * Process items for grid display:
+   * 1. Sort high priority first
+   * 2. Fill grid naturally
+   * 3. If top row is incomplete, expand top row items to fill it completely
+   *
+   * Uses percentage widths for perfect fractional precision (e.g., 2.5 columns = 50%)
+   */
+  private processItemsForGrid(
+    items: ActionGridItem[],
+    columns: number,
+  ): ActionGridItem[] {
+    // Sort: high priority first, then normal
+    const sorted = [...items].sort((a, b) => {
+      const aPriority = a.priority === "high" ? 1 : 0;
+      const bPriority = b.priority === "high" ? 1 : 0;
+      return bPriority - aPriority;
+    });
+
+    const totalItems = sorted.length;
+    const remainder = totalItems % columns;
+
+    // Calculate single column percentage (accounts for gap)
+    const gap = 8; // Must match CSS gap
+    const gapPercent = (gap / this.getGridWidth()) * 100;
+    const singleColPercent = (100 - gapPercent * (columns - 1)) / columns;
+
+    // If perfectly divisible, all items are single column
+    if (remainder === 0) {
+      return sorted.map((item) => ({
+        ...item,
+        columnSpan: singleColPercent,
+      }));
+    }
+
+    // Top row has `remainder` items that need to fill all columns
+    // Each gets: (columns / remainder) columns worth of space
+    const topRowColSpan = columns / remainder;
+    const topRowPercent =
+      topRowColSpan * singleColPercent + (topRowColSpan - 1) * gapPercent;
+
+    return sorted.map((item, index) => {
+      if (index < remainder) {
+        // Top row item - expanded to fill row evenly
+        return { ...item, columnSpan: topRowPercent };
+      } else {
+        // Normal row item - single column
+        return { ...item, columnSpan: singleColPercent };
+      }
+    });
+  }
+
+  /**
+   * Get grid container width for percentage calculations
+   */
+  private getGridWidth(): number {
+    const gridElement = this.shadowRoot?.querySelector(".grid") as HTMLElement;
+    return gridElement?.clientWidth || 390; // Fallback to typical mobile width
   }
 
   /**
