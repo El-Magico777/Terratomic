@@ -54,15 +54,15 @@ export class MobileIntelSidebar extends LitElement {
     .sidebar {
       position: absolute;
       top: 0;
-      left: 0;
+      right: 0;
       bottom: 0;
       width: 70%;
       max-width: 400px;
       background: rgba(20, 20, 30, 0.95);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
-      transform: translateX(-100%);
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+      transform: translateX(100%);
       transition: transform 0.25s ease-out;
       display: flex;
       flex-direction: column;

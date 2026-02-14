@@ -110,17 +110,39 @@ export class MobileUI {
 
     this.economyTab = document.createElement("button");
     this.economyTab.className = "mobile-economy-tab";
-    this.economyTab.textContent = "Economy";
+    this.economyTab.style.display = "none"; // Hidden by default
+    // Lucide: Trending Up (Standard Clean Icon)
+    this.economyTab.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+        <polyline points="16 7 22 7 22 13" />
+      </svg>
+    `;
     this.economyTab.setAttribute("aria-label", "Open economy panel");
 
     this.intelTab = document.createElement("button");
     this.intelTab.className = "mobile-intel-tab";
-    this.intelTab.textContent = "Intel";
+    this.intelTab.style.display = "none"; // Hidden by default
+    // Lucide: Radio / Radar (Standard Clean Icon)
+    this.intelTab.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="2" />
+        <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
+      </svg>
+    `;
     this.intelTab.setAttribute("aria-label", "Open intel panel");
 
     this.researchTab = document.createElement("button");
     this.researchTab.className = "mobile-research-tab";
-    this.researchTab.textContent = "Research";
+    this.researchTab.style.display = "none"; // Hidden by default
+    // Lucide: Flask Conical (Standard Clean Icon)
+    this.researchTab.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2" />
+        <path d="M8.5 2h7" />
+        <path d="M7 16h10" />
+      </svg>
+    `;
     this.researchTab.setAttribute("aria-label", "Open research panel");
 
     // Don't attach to DOM yet - wait for setActive(true)
@@ -194,9 +216,6 @@ export class MobileUI {
         this.componentsAttached = true;
       }
       this.topBar.style.display = "";
-      this.economyTab.style.display = "";
-      this.intelTab.style.display = "";
-      this.researchTab.style.display = "";
       document.body.classList.add("mobile-ui-enabled");
       this.injectMobileStyles();
       this.startStatsLoop();
@@ -252,6 +271,15 @@ export class MobileUI {
     const maxPopulation = this.currentGame.config().maxPopulation(myPlayer); // Max population cap
     const tick = this.currentGame.ticks();
     const inSpawnPhase = this.currentGame.inSpawnPhase();
+
+    // Toggle menu buttons visibility based on spawn phase
+    // Hide them during spawn phase, show them during normal gameplay
+    const displayStyle = inSpawnPhase ? "none" : "";
+    if (this.economyTab.style.display !== displayStyle) {
+      this.economyTab.style.display = displayStyle;
+      this.intelTab.style.display = displayStyle;
+      this.researchTab.style.display = displayStyle;
+    }
 
     this.topBar.updateStats({
       population,
@@ -478,86 +506,86 @@ export class MobileUI {
 
       body.mobile-ui-enabled .mobile-economy-tab {
         position: fixed;
-        left: 0;
-        top: 50%;
-        transform: translate(-4px, -50%);
-        padding: 12px 10px;
-        min-height: 96px;
-        border-radius: 0 12px 12px 0;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-left: none;
-        background: rgba(20, 20, 30, 0.9);
+        right: 12px;
+        top: calc(env(safe-area-inset-top, 0px) + 60px);
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: rgba(15, 15, 20, 0.85); /* Darker, premium bg */
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         color: #fbbf24;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
         z-index: 1700;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border: none; /* Removed cheap border */
       }
 
       body.mobile-ui-enabled .mobile-economy-tab:active {
-        transform: translate(0, -50%);
+        transform: scale(0.92);
+        background: rgba(25, 25, 30, 0.95);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
 
       body.mobile-ui-enabled .mobile-intel-tab {
         position: fixed;
-        left: 0;
-        top: calc(50% - 116px);
-        transform: translate(-4px, -50%);
-        padding: 12px 10px;
-        min-height: 96px;
-        border-radius: 0 12px 12px 0;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-left: none;
-        background: rgba(20, 20, 30, 0.9);
+        right: 12px;
+        top: calc(env(safe-area-inset-top, 0px) + 180px); /* 60 + 48 + 12 + 48 + 12 = 180 */
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: rgba(15, 15, 20, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         color: #60a5fa;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
         z-index: 1700;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border: none;
       }
 
       body.mobile-ui-enabled .mobile-intel-tab:active {
-        transform: translate(0, -50%);
+        transform: scale(0.92);
+        background: rgba(25, 25, 30, 0.95);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
 
       body.mobile-ui-enabled .mobile-research-tab {
         position: fixed;
-        right: 0;
-        top: 50%;
-        transform: translate(4px, -50%);
-        padding: 12px 10px;
-        min-height: 96px;
-        border-radius: 12px 0 0 12px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-right: none;
-        background: rgba(20, 20, 30, 0.9);
+        right: 12px;
+        top: calc(env(safe-area-inset-top, 0px) + 120px); /* 60 + 48 + 12 = 120 */
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: rgba(15, 15, 20, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         color: #a78bfa;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.4px;
-        text-transform: uppercase;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
         z-index: 1700;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        border: none;
       }
 
       body.mobile-ui-enabled .mobile-research-tab:active {
-        transform: translate(0, -50%);
+        transform: scale(0.92);
+        background: rgba(25, 25, 30, 0.95);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
       }
       
       /* Support for notched devices */

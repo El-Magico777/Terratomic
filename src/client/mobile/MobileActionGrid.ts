@@ -57,7 +57,7 @@ export class MobileActionGrid extends LitElement {
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 900;
+      z-index: 2000;
       pointer-events: none;
     }
 

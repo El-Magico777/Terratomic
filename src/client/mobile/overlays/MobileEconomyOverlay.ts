@@ -76,7 +76,7 @@ export class MobileEconomyOverlay extends LitElement {
 
     .panel {
       position: absolute;
-      left: 0;
+      right: 0;
       top: 0;
       bottom: 0;
       width: min(70vw, 400px);
@@ -84,10 +84,10 @@ export class MobileEconomyOverlay extends LitElement {
       background: rgba(20, 20, 30, 0.95);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
       padding-top: max(16px, env(safe-area-inset-top, 0));
       padding-bottom: env(safe-area-inset-bottom, 0);
-      transform: translateX(-100%);
+      transform: translateX(100%);
       transition: transform 0.25s ease-out;
       height: 100%;
       overflow-y: auto;
@@ -97,28 +97,33 @@ export class MobileEconomyOverlay extends LitElement {
       transform: translateX(0);
     }
 
-    .handle {
-      width: 4px;
-      height: 48px;
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 2px;
-      margin: 12px 16px 8px;
-    }
-
     .header {
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      align-items: center;
+      justify-content: space-between;
       padding: 16px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       background: rgba(0, 0, 0, 0.3);
-      color: white;
     }
 
     .title {
+      color: white;
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 0;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .close-btn:active {
+      opacity: 0.6;
     }
 
     .subtitle {
@@ -267,26 +272,6 @@ export class MobileEconomyOverlay extends LitElement {
       font-weight: 600;
       color: #ef4444;
     }
-
-    .close-button {
-      position: sticky;
-      bottom: 16px;
-      width: calc(100% - 48px);
-      margin: 16px 24px;
-      padding: 16px;
-      background: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .close-button:active {
-      background: #2563eb;
-    }
   `;
 
   render() {
@@ -301,11 +286,9 @@ export class MobileEconomyOverlay extends LitElement {
     return html`
       <div class="backdrop" @click="${this.close}"></div>
       <div class="panel">
-        <div class="handle"></div>
-
         <div class="header">
           <div class="title">💰 Economy</div>
-          <div class="subtitle">Production and investments</div>
+          <button class="close-btn" @click="${this.close}">✕</button>
         </div>
 
         <div class="content">
@@ -468,8 +451,6 @@ export class MobileEconomyOverlay extends LitElement {
                 </div>
               `
             : null}
-
-          <button class="close-button" @click="${this.close}">Done</button>
         </div>
       </div>
     `;
