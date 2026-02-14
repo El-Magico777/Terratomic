@@ -85,14 +85,14 @@ export class MobileIntelSidebar extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px;
+      padding: 10px 12px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       background: rgba(0, 0, 0, 0.3);
     }
 
     .title {
       color: white;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 600;
     }
 
@@ -100,9 +100,9 @@ export class MobileIntelSidebar extends LitElement {
       background: none;
       border: none;
       color: white;
-      font-size: 24px;
+      font-size: 20px;
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 2px 6px;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -149,19 +149,20 @@ export class MobileIntelSidebar extends LitElement {
 
     .content {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      padding: 16px;
+      padding: 10px;
     }
 
     /* Players tab styles */
     .player-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px;
-      margin-bottom: 8px;
+      gap: 8px;
+      padding: 7px 8px;
+      margin-bottom: 4px;
       background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
+      border-radius: 7px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
@@ -177,33 +178,44 @@ export class MobileIntelSidebar extends LitElement {
     }
 
     .player-rank {
-      font-size: 20px;
-      min-width: 32px;
+      font-size: 15px;
+      min-width: 26px;
+      text-align: center;
+      line-height: 1;
     }
 
     .player-info {
       flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
     }
 
     .player-name {
       color: white;
-      font-weight: 500;
-      font-size: 15px;
+      font-weight: 600;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .player-stats {
       color: rgba(255, 255, 255, 0.6);
-      font-size: 13px;
-      margin-top: 2px;
+      font-size: 11px;
+      white-space: nowrap;
+      margin-left: auto;
     }
 
     .player-relation {
-      font-size: 18px;
+      font-size: 14px;
+      line-height: 1;
     }
 
     .self-divider {
       height: 1px;
-      margin: 10px 4px;
+      margin: 6px 2px;
       background: rgba(255, 255, 255, 0.14);
     }
 
@@ -421,13 +433,7 @@ export class MobileIntelSidebar extends LitElement {
       };
     }
 
-    const leaderboardCutoffIndex = Math.min(9, rankedEntries.length - 1);
-    const leaderboardCutoffPopulation =
-      rankedEntries[leaderboardCutoffIndex].population;
-
-    const leaderboardEntries = rankedEntries.filter(
-      (entry) => entry.population >= leaderboardCutoffPopulation,
-    );
+    const leaderboardEntries = rankedEntries.slice(0, 10);
 
     const currentPlayerInLeaderboard = leaderboardEntries.some(
       (entry) => entry.isCurrentPlayer,
