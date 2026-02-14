@@ -65,7 +65,7 @@ export class MobileEconomyOverlay extends LitElement {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.42);
       opacity: 0;
       transition: opacity 0.25s ease-out;
     }
@@ -79,13 +79,26 @@ export class MobileEconomyOverlay extends LitElement {
       right: 0;
       top: 0;
       bottom: 0;
-      width: min(70vw, 400px);
-      max-width: 400px;
-      background: rgba(20, 20, 30, 0.95);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
-      padding-top: max(16px, env(safe-area-inset-top, 0));
+      width: min(64vw, 420px);
+      max-width: 420px;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(136, 146, 159, 0.15) 0%,
+          rgba(76, 85, 97, 0.1) 35%,
+          rgba(18, 22, 29, 0.04) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(35, 40, 49, 0.97) 0%,
+          rgba(23, 28, 36, 0.98) 48%,
+          rgba(14, 18, 24, 0.98) 100%
+        );
+      border-left: 1px solid rgba(174, 185, 198, 0.22);
+      box-shadow:
+        inset 1px 0 0 rgba(220, 229, 238, 0.12),
+        -8px 0 24px rgba(0, 0, 0, 0.52);
+      padding-top: max(6px, env(safe-area-inset-top, 0));
       padding-bottom: env(safe-area-inset-bottom, 0);
       transform: translateX(100%);
       transition: transform 0.25s ease-out;
@@ -101,51 +114,85 @@ export class MobileEconomyOverlay extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(0, 0, 0, 0.3);
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(161, 171, 184, 0.2);
+      background: linear-gradient(
+        180deg,
+        rgba(16, 20, 28, 0.86) 0%,
+        rgba(12, 16, 23, 0.92) 100%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(232, 239, 247, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.45);
     }
 
     .title {
-      color: white;
-      font-size: 18px;
+      color: rgba(235, 241, 248, 0.95);
+      font-size: 16px;
       font-weight: 600;
+      letter-spacing: 0.2px;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
     }
 
     .close-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 24px;
+      background: linear-gradient(
+        180deg,
+        rgba(18, 24, 33, 0.9) 0%,
+        rgba(11, 15, 22, 0.94) 100%
+      );
+      border: 1px solid rgba(136, 146, 159, 0.28);
+      border-radius: 6px;
+      color: rgba(244, 176, 99, 0.95);
+      font-size: 16px;
       cursor: pointer;
-      padding: 4px 8px;
+      min-width: 28px;
+      min-height: 24px;
+      padding: 0;
       -webkit-tap-highlight-color: transparent;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 1px 1px rgba(0, 0, 0, 0.35);
     }
 
     .close-btn:active {
-      opacity: 0.6;
+      opacity: 0.9;
+      transform: translateY(1px);
     }
 
     .subtitle {
-      font-size: 13px;
+      font-size: 10px;
       color: rgba(255, 255, 255, 0.6);
     }
 
     .section-title {
-      color: rgba(255, 255, 255, 0.75);
-      font-size: 12px;
+      color: rgba(208, 218, 230, 0.86);
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.6px;
       text-transform: uppercase;
-      margin: 16px 0 8px;
+      margin: 8px 0 4px;
     }
 
     .content {
-      padding: 0 24px 24px;
+      padding: 0 10px 10px;
+      background: linear-gradient(
+        180deg,
+        rgba(11, 15, 21, 0.68) 0%,
+        rgba(9, 13, 18, 0.72) 100%
+      );
     }
 
     .slider-group {
-      margin-bottom: 32px;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(123, 133, 145, 0.24);
+      background: linear-gradient(
+        180deg,
+        rgba(23, 30, 39, 0.82) 0%,
+        rgba(13, 18, 24, 0.92) 100%
+      );
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .slider-group.disabled {
@@ -158,74 +205,94 @@ export class MobileEconomyOverlay extends LitElement {
 
     .lock-note {
       margin-top: 8px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.6);
+      font-size: 10px;
+      color: rgba(199, 208, 220, 0.82);
     }
 
     .slider-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
+      margin-bottom: 4px;
     }
 
     .slider-label {
-      color: white;
-      font-size: 15px;
-      font-weight: 500;
+      color: rgba(236, 242, 249, 0.96);
+      font-size: 11px;
+      font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 5px;
     }
 
     .slider-icon {
-      font-size: 18px;
+      font-size: 14px;
     }
 
     .slider-value {
-      color: #fbbf24;
-      font-size: 16px;
+      color: rgba(250, 199, 93, 0.96);
+      font-size: 12px;
       font-weight: 600;
       font-variant-numeric: tabular-nums;
-      min-width: 48px;
+      min-width: 32px;
       text-align: right;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+    }
+
+    .value-lock-group {
+      display: flex;
+      align-items: center;
     }
 
     .lock-button {
-      background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: rgba(255, 255, 255, 0.6);
-      padding: 4px 8px;
+      background: linear-gradient(
+        180deg,
+        rgba(17, 22, 30, 0.82) 0%,
+        rgba(11, 15, 22, 0.92) 100%
+      );
+      border: 1px solid rgba(130, 140, 152, 0.35);
+      color: rgba(212, 221, 232, 0.78);
+      padding: 2px 6px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 10px;
       cursor: pointer;
-      margin-left: 8px;
+      margin-left: 6px;
       -webkit-tap-highlight-color: transparent;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .lock-button.locked {
-      background: rgba(59, 130, 246, 0.2);
-      border-color: #3b82f6;
-      color: #3b82f6;
+      background: linear-gradient(
+        180deg,
+        rgba(28, 53, 87, 0.58) 0%,
+        rgba(15, 29, 46, 0.9) 100%
+      );
+      border-color: rgba(96, 159, 246, 0.72);
+      color: rgba(152, 206, 255, 0.95);
     }
 
     .lock-button:active {
-      background: rgba(255, 255, 255, 0.1);
+      filter: brightness(1.1);
     }
 
     .slider-container {
       position: relative;
-      height: 48px;
+      height: 30px;
       display: flex;
       align-items: center;
     }
 
     .slider {
       width: 100%;
-      height: 8px;
+      height: 6px;
       -webkit-appearance: none;
       appearance: none;
-      background: rgba(255, 255, 255, 0.1);
+      background: linear-gradient(
+        180deg,
+        rgba(16, 22, 29, 0.92) 0%,
+        rgba(10, 14, 20, 0.92) 100%
+      );
+      border: 1px solid rgba(120, 130, 141, 0.28);
       border-radius: 4px;
       outline: none;
       cursor: pointer;
@@ -234,12 +301,13 @@ export class MobileEconomyOverlay extends LitElement {
     .slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 24px;
-      height: 24px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      background: linear-gradient(135deg, #7aa6de, #3b82f6);
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(234, 241, 249, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
       transition: transform 0.15s ease;
     }
 
@@ -248,23 +316,23 @@ export class MobileEconomyOverlay extends LitElement {
     }
 
     .slider::-moz-range-thumb {
-      width: 24px;
-      height: 24px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      background: linear-gradient(135deg, #7aa6de, #3b82f6);
       cursor: pointer;
-      border: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(234, 241, 249, 0.4);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
     }
 
     .constraint-warning {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.14);
+      border: 1px solid rgba(239, 68, 68, 0.4);
       border-radius: 8px;
-      padding: 12px;
-      margin-top: 16px;
-      color: #fca5a5;
-      font-size: 13px;
+      padding: 8px;
+      margin-top: 8px;
+      color: #fdb3b3;
+      font-size: 11px;
       line-height: 1.5;
     }
 
@@ -348,7 +416,7 @@ export class MobileEconomyOverlay extends LitElement {
                 <span class="slider-icon">🏭</span>
                 <span>Production Investment</span>
               </div>
-              <div style="display: flex; align-items: center;">
+              <div class="value-lock-group">
                 <div class="slider-value">${this.production}%</div>
                 <button
                   class="lock-button ${this.productionLocked ? "locked" : ""}"
@@ -378,7 +446,7 @@ export class MobileEconomyOverlay extends LitElement {
                 <span class="slider-icon">🔬</span>
                 <span>Research Investment</span>
               </div>
-              <div style="display: flex; align-items: center;">
+              <div class="value-lock-group">
                 <div class="slider-value">${this.research}%</div>
                 <button
                   class="lock-button ${this.researchLocked ? "locked" : ""}"
@@ -408,7 +476,7 @@ export class MobileEconomyOverlay extends LitElement {
                 <span class="slider-icon">🛣️</span>
                 <span>Road Investment</span>
               </div>
-              <div style="display: flex; align-items: center;">
+              <div class="value-lock-group">
                 <div class="slider-value">${roadEnabled ? this.road : 0}%</div>
                 <button
                   class="lock-button ${this.roadLocked || !roadEnabled
