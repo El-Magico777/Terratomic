@@ -35,42 +35,67 @@ export class MobileSettingsPanel extends LitElement {
     :host {
       display: block;
       height: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       color: #e5e7eb;
-      font-family: "Oswald", "Trebuchet MS", sans-serif;
+      font-family:
+        system-ui,
+        -apple-system,
+        sans-serif;
       background:
+        linear-gradient(
+          180deg,
+          rgba(128, 138, 151, 0.1) 0%,
+          rgba(68, 78, 91, 0.06) 30%,
+          rgba(14, 19, 26, 0.02) 100%
+        ),
         radial-gradient(120% 120% at 0% 0%, #1f2a44 0%, #111827 60%),
         linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
     }
 
     .panel {
-      height: 100%;
+      min-height: 100%;
       display: flex;
       flex-direction: column;
     }
 
     .section {
-      padding: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 10px;
+      border-bottom: 1px solid rgba(149, 160, 174, 0.2);
+      background: linear-gradient(
+        180deg,
+        rgba(15, 20, 28, 0.82) 0%,
+        rgba(11, 15, 22, 0.9) 100%
+      );
+      box-shadow:
+        inset 0 1px 0 rgba(236, 242, 249, 0.05),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35);
     }
 
     .section-title {
-      font-size: 12px;
-      letter-spacing: 1.2px;
+      font-size: 11px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
-      color: rgba(255, 255, 255, 0.6);
-      margin-bottom: 10px;
+      color: rgba(206, 216, 228, 0.84);
+      margin-bottom: 8px;
     }
 
     .setting-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 12px;
-      border-radius: 12px;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(148, 163, 184, 0.15);
-      margin-bottom: 10px;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: linear-gradient(
+        180deg,
+        rgba(23, 30, 39, 0.82) 0%,
+        rgba(13, 18, 24, 0.92) 100%
+      );
+      border: 1px solid rgba(123, 133, 145, 0.24);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      margin-bottom: 8px;
     }
 
     .setting-info {
@@ -81,22 +106,21 @@ export class MobileSettingsPanel extends LitElement {
     }
 
     .setting-icon {
-      font-size: 18px;
+      font-size: 16px;
     }
 
     .setting-label {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
-      color: #f8fafc;
-      white-space: nowrap;
+      color: rgba(237, 243, 250, 0.98);
     }
 
     .toggle {
-      width: 54px;
-      height: 30px;
+      width: 48px;
+      height: 26px;
       border-radius: 999px;
-      background: rgba(148, 163, 184, 0.25);
-      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(148, 163, 184, 0.2);
+      border: 1px solid rgba(148, 163, 184, 0.35);
       position: relative;
       cursor: pointer;
       transition:
@@ -112,10 +136,10 @@ export class MobileSettingsPanel extends LitElement {
 
     .toggle-thumb {
       position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 22px;
-      height: 22px;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
       border-radius: 999px;
       background: #e2e8f0;
       transition:
@@ -125,29 +149,34 @@ export class MobileSettingsPanel extends LitElement {
     }
 
     .toggle.on .toggle-thumb {
-      transform: translateX(24px);
+      transform: translateX(22px);
       background: #38bdf8;
     }
 
     .actions {
-      padding: 16px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
+      background: linear-gradient(
+        180deg,
+        rgba(12, 17, 24, 0.72) 0%,
+        rgba(10, 14, 20, 0.78) 100%
+      );
     }
 
     .action-button {
       width: 100%;
-      padding: 14px 16px;
-      border-radius: 14px;
-      border: 1px solid rgba(59, 130, 246, 0.5);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(109, 156, 230, 0.52);
       background: linear-gradient(
         135deg,
-        rgba(37, 99, 235, 0.6),
-        rgba(59, 130, 246, 0.8)
+        rgba(32, 82, 179, 0.66),
+        rgba(59, 130, 246, 0.78)
       );
       color: #f8fafc;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
@@ -171,24 +200,28 @@ export class MobileSettingsPanel extends LitElement {
     }
 
     .muted-note {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
-      padding: 0 16px 12px;
+      font-size: 11px;
+      color: rgba(203, 213, 224, 0.66);
+      padding: 0 10px 10px;
     }
 
     .speed-controls {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
 
     .speed-button {
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-      background: rgba(15, 23, 42, 0.6);
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: linear-gradient(
+        180deg,
+        rgba(20, 26, 35, 0.86) 0%,
+        rgba(11, 16, 23, 0.9) 100%
+      );
       color: #e5e7eb;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
@@ -203,9 +236,30 @@ export class MobileSettingsPanel extends LitElement {
     }
 
     .speed-button.active {
-      background: rgba(56, 189, 248, 0.25);
-      border-color: rgba(56, 189, 248, 0.6);
-      color: #38bdf8;
+      background: linear-gradient(
+        180deg,
+        rgba(28, 53, 87, 0.58) 0%,
+        rgba(15, 29, 46, 0.9) 100%
+      );
+      border-color: rgba(96, 159, 246, 0.72);
+      color: rgba(152, 206, 255, 0.95);
+    }
+
+    :host::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    :host::-webkit-scrollbar-track {
+      background: rgba(20, 27, 36, 0.7);
+    }
+
+    :host::-webkit-scrollbar-thumb {
+      background: rgba(132, 143, 157, 0.45);
+      border-radius: 4px;
+    }
+
+    :host::-webkit-scrollbar-thumb:hover {
+      background: rgba(150, 161, 174, 0.56);
     }
   `;
 
@@ -322,7 +376,7 @@ export class MobileSettingsPanel extends LitElement {
     const isReplay = this.game?.config().isReplay() ?? false;
     const isSinglePlayer =
       this.game?.config().gameConfig().gameType === GameType.Singleplayer;
-    const showSpeedControls = isReplay || isSinglePlayer;
+    const showSpeedControls = isSinglePlayer;
 
     return html`
       <div class="panel">
