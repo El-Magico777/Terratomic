@@ -64,7 +64,7 @@ export class MobileAttackBar extends LitElement {
       padding: 6px 10px;
       max-height: 78px; /* ~2 rows of 32px bubbles + gaps + padding */
       overflow: hidden;
-      pointer-events: auto;
+      pointer-events: none;
       position: relative;
       z-index: 1;
     }
@@ -98,6 +98,7 @@ export class MobileAttackBar extends LitElement {
         opacity 0.15s ease;
       user-select: none;
       overflow: hidden;
+      pointer-events: auto;
     }
 
     .bubble:active {
