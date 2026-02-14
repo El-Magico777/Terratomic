@@ -343,6 +343,8 @@ export class MobileUI {
       inSpawnPhase,
     });
 
+    this.updateAttackBarPosition();
+
     // Update events display and alliance notifications only when game tick changes (not every frame)
     const currentTick = this.currentGame.ticks();
     if (currentTick !== this.lastGameTick) {
@@ -358,16 +360,27 @@ export class MobileUI {
       if (this.eventsDisplay && typeof this.eventsDisplay.tick === "function") {
         this.eventsDisplay.tick();
       }
+      if (this.attackBar && typeof this.attackBar.tick === "function") {
+        this.attackBar.tick();
+      }
       if (
         this.allianceNotifications &&
         typeof this.allianceNotifications.tick === "function"
       ) {
         this.allianceNotifications.tick();
-      }
-      if (this.attackBar && typeof this.attackBar.tick === "function") {
-        this.attackBar.tick();
+        // Push alliance notifications below the attack bar if it has content
+        this.allianceNotifications.topOffset = this.attackBar.currentHeight;
       }
     }
+  }
+
+  private updateAttackBarPosition(): void {
+    if (!this.componentsAttached) {
+      return;
+    }
+
+    const topBarBottom = Math.ceil(this.topBar.getBoundingClientRect().bottom);
+    this.attackBar.style.top = `${topBarBottom + 2}px`;
   }
 
   private closeAllOverlays(): void {
@@ -463,6 +476,7 @@ export class MobileUI {
         font-size: 13px !important;
         overflow: hidden !important;
         transform: translate(-50%, -8px) !important;
+        pointer-events: none !important;
       }
 
       body.mobile-ui-enabled tutorial-toast .tutorial-toast.visible,
@@ -556,6 +570,7 @@ export class MobileUI {
         transform: translateX(-50%) translateY(-10px) !important;
         font-size: 13px !important;
         z-index: 1700 !important;
+        pointer-events: none !important;
       }
       body.mobile-ui-enabled .research-priority-confirmation-toast.show {
         transform: translateX(-50%) translateY(0) !important;

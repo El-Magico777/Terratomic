@@ -17,7 +17,6 @@ import { renderTroops } from "../../Utils";
 import {
   GoToPlayerEvent,
   GoToPositionEvent,
-  GoToUnitEvent,
 } from "../../graphics/layers/Leaderboard";
 
 interface AttackBubble {
@@ -40,6 +39,13 @@ export class MobileAttackBar extends LitElement {
 
   @state() private bubbles: AttackBubble[] = [];
 
+  // Expose current height for other components to position below
+  get currentHeight(): number {
+    if (this.bubbles.length === 0) return 0;
+    const container = this.shadowRoot?.querySelector(".container");
+    return container ? container.getBoundingClientRect().height : 0;
+  }
+
   static styles = css`
     :host {
       display: block;
@@ -47,18 +53,20 @@ export class MobileAttackBar extends LitElement {
       top: calc(44px + env(safe-area-inset-top, 0px));
       left: 0;
       right: 0;
-      z-index: 1640;
+      z-index: 1760;
       pointer-events: none;
     }
 
     .container {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      padding: 8px 12px;
-      max-height: 96px; /* ~2 rows of 36px bubbles + gaps + padding */
+      gap: 5px;
+      padding: 6px 10px;
+      max-height: 78px; /* ~2 rows of 32px bubbles + gaps + padding */
       overflow: hidden;
       pointer-events: auto;
+      position: relative;
+      z-index: 1;
     }
 
     .container:empty {
@@ -67,14 +75,14 @@ export class MobileAttackBar extends LitElement {
 
     .bubble {
       display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: 36px;
-      padding: 0 10px;
+      align-items: stretch;
+      height: 32px;
+      padding: 0;
+      border: none;
       background: rgba(15, 15, 20, 0.8);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
-      border-radius: 18px;
+      border-radius: 16px;
       font-size: 12px;
       font-family:
         system-ui,
@@ -89,10 +97,45 @@ export class MobileAttackBar extends LitElement {
         transform 0.1s ease,
         opacity 0.15s ease;
       user-select: none;
+      overflow: hidden;
     }
 
     .bubble:active {
       transform: scale(0.95);
+    }
+
+    .bubble.cancelable {
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .bubble.cancelable:active {
+      background: rgba(239, 68, 68, 0.28);
+    }
+
+    .bubble-main,
+    .bubble-content {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+      padding: 0 8px;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .bubble-main:active {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .bubble-content {
+      pointer-events: none;
     }
 
     /* Color coding */
@@ -115,7 +158,7 @@ export class MobileAttackBar extends LitElement {
     }
 
     .icon {
-      font-size: 14px;
+      font-size: 13px;
       flex-shrink: 0;
     }
 
@@ -125,7 +168,7 @@ export class MobileAttackBar extends LitElement {
     }
 
     .name {
-      max-width: 80px;
+      max-width: 74px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -138,27 +181,13 @@ export class MobileAttackBar extends LitElement {
       font-style: italic;
     }
 
-    .cancel-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
+    .cancel-hint {
       margin-left: 4px;
-      margin-right: -6px;
-      background: rgba(255, 255, 255, 0.15);
-      border: none;
-      border-radius: 50%;
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 14px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-      transition: background 0.1s ease;
-    }
-
-    .cancel-btn:active {
-      background: rgba(255, 255, 255, 0.35);
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0.95;
+      flex-shrink: 0;
     }
   `;
 
@@ -188,7 +217,7 @@ export class MobileAttackBar extends LitElement {
       const attacker = this.game.playerBySmallID(
         attack.attackerID,
       ) as PlayerView;
-      newBubbles.push({
+      const bubble: AttackBubble = {
         type: "incoming",
         id: attack.id,
         troops: attack.troops,
@@ -196,7 +225,8 @@ export class MobileAttackBar extends LitElement {
         retreating: attack.retreating,
         attackerID: attack.attackerID,
         attackID: attack.id,
-      });
+      };
+      newBubbles.push(bubble);
     }
 
     // Outgoing attacks (blue) - against players
@@ -206,7 +236,7 @@ export class MobileAttackBar extends LitElement {
 
     for (const attack of outgoingAttacks) {
       const target = this.game.playerBySmallID(attack.targetID) as PlayerView;
-      newBubbles.push({
+      const bubble: AttackBubble = {
         type: "outgoing",
         id: attack.id,
         troops: attack.troops,
@@ -214,7 +244,8 @@ export class MobileAttackBar extends LitElement {
         retreating: attack.retreating,
         targetID: attack.targetID,
         attackID: attack.id,
-      });
+      };
+      newBubbles.push(bubble);
     }
 
     // Outgoing land attacks (gray) - against wilderness
@@ -223,14 +254,15 @@ export class MobileAttackBar extends LitElement {
       .filter((a) => a.targetID === 0);
 
     for (const attack of landAttacks) {
-      newBubbles.push({
+      const bubble: AttackBubble = {
         type: "land",
         id: attack.id,
         troops: attack.troops,
         playerName: "Wilderness",
         retreating: attack.retreating,
         attackID: attack.id,
-      });
+      };
+      newBubbles.push(bubble);
     }
 
     // Boats (blue)
@@ -239,13 +271,14 @@ export class MobileAttackBar extends LitElement {
       .filter((u) => u.type() === UnitType.TransportShip);
 
     for (const boat of boats) {
-      newBubbles.push({
+      const bubble: AttackBubble = {
         type: "boat",
         id: boat.id(),
         troops: boat.troops(),
         retreating: boat.retreating(),
         unitView: boat,
-      });
+      };
+      newBubbles.push(bubble);
     }
 
     // Paratroopers (blue)
@@ -254,12 +287,13 @@ export class MobileAttackBar extends LitElement {
       .filter((u) => u.type() === UnitType.Paratrooper);
 
     for (const para of paratroopers) {
-      newBubbles.push({
+      const bubble: AttackBubble = {
         type: "paratrooper",
         id: para.id(),
         troops: para.troops(),
         unitView: para,
-      });
+      };
+      newBubbles.push(bubble);
     }
 
     // Only update if changed (shallow comparison of length and IDs)
@@ -303,60 +337,34 @@ export class MobileAttackBar extends LitElement {
   private async handleBubbleTap(bubble: AttackBubble, e: Event): Promise<void> {
     e.stopPropagation();
 
-    switch (bubble.type) {
-      case "incoming":
-        // Focus on attacker - try to get attack position first
-        if (bubble.attackerID !== undefined) {
-          const attacker = this.game.playerBySmallID(
-            bubble.attackerID,
-          ) as PlayerView;
-          if (attacker && bubble.attackID) {
-            const avgPos = await attacker.attackAveragePosition(
-              bubble.attackerID,
-              bubble.attackID,
-            );
-            if (avgPos) {
-              this.eventBus.emit(new GoToPositionEvent(avgPos.x, avgPos.y));
-              return;
-            }
-          }
-          if (attacker) {
-            this.eventBus.emit(new GoToPlayerEvent(attacker));
-          }
-        }
-        break;
+    if (bubble.type !== "incoming" || bubble.attackerID === undefined) {
+      return;
+    }
 
-      case "outgoing":
-        // Focus on target player
-        if (bubble.targetID !== undefined) {
-          const target = this.game.playerBySmallID(
-            bubble.targetID,
-          ) as PlayerView;
-          if (target) {
-            this.eventBus.emit(new GoToPlayerEvent(target));
-          }
-        }
-        break;
-
-      case "land":
-        // No specific focus for wilderness attacks
-        break;
-
-      case "boat":
-      case "paratrooper":
-        // Focus on unit
-        if (bubble.unitView) {
-          this.eventBus.emit(new GoToUnitEvent(bubble.unitView));
-        }
-        break;
+    const attacker = this.game.playerBySmallID(bubble.attackerID) as PlayerView;
+    if (attacker && bubble.attackID) {
+      const avgPos = await attacker.attackAveragePosition(
+        bubble.attackerID,
+        bubble.attackID,
+      );
+      if (avgPos) {
+        this.eventBus.emit(new GoToPositionEvent(avgPos.x, avgPos.y));
+        return;
+      }
+    }
+    if (attacker) {
+      this.eventBus.emit(new GoToPlayerEvent(attacker));
     }
   }
 
   private handleCancel(bubble: AttackBubble, e: Event): void {
+    e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation();
 
-    // Immediately remove the bubble from UI for instant feedback
-    this.bubbles = this.bubbles.filter((b) => b.id !== bubble.id);
+    this.bubbles = this.bubbles.filter(
+      (b) => !(b.type === bubble.type && b.id === bubble.id),
+    );
 
     switch (bubble.type) {
       case "outgoing":
@@ -379,34 +387,73 @@ export class MobileAttackBar extends LitElement {
   }
 
   private renderBubble(bubble: AttackBubble): TemplateResult {
-    const canCancel =
-      bubble.type !== "incoming" &&
-      !(bubble.type === "boat" && bubble.retreating);
+    const canCancel = bubble.type !== "incoming" && !bubble.retreating;
+
+    if (canCancel) {
+      return html`
+        <button
+          class="bubble cancelable ${bubble.type} ${bubble.retreating
+            ? "retreating"
+            : ""}"
+          @pointerdown=${(e: Event) => this.handleCancel(bubble, e)}
+          @click=${(e: Event) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          aria-label="Cancel"
+        >
+          <span class="bubble-content">
+            <span class="icon">${this.getIcon(bubble.type)}</span>
+            <span class="troops">${renderTroops(bubble.troops)}</span>
+            ${bubble.playerName
+              ? html`<span class="name">${bubble.playerName}</span>`
+              : ""}
+            ${bubble.retreating
+              ? html`<span class="retreating-label">↩</span>`
+              : ""}
+            <span class="cancel-hint">✕</span>
+          </span>
+        </button>
+      `;
+    }
+
+    if (bubble.type !== "incoming") {
+      return html`
+        <div
+          class="bubble ${bubble.type} ${bubble.retreating ? "retreating" : ""}"
+        >
+          <span class="bubble-content">
+            <span class="icon">${this.getIcon(bubble.type)}</span>
+            <span class="troops">${renderTroops(bubble.troops)}</span>
+            ${bubble.playerName
+              ? html`<span class="name">${bubble.playerName}</span>`
+              : ""}
+            ${bubble.retreating
+              ? html`<span class="retreating-label">↩</span>`
+              : ""}
+          </span>
+        </div>
+      `;
+    }
 
     return html`
       <div
         class="bubble ${bubble.type} ${bubble.retreating ? "retreating" : ""}"
-        @click=${(e: Event) => this.handleBubbleTap(bubble, e)}
       >
-        <span class="icon">${this.getIcon(bubble.type)}</span>
-        <span class="troops">${renderTroops(bubble.troops)}</span>
-        ${bubble.playerName
-          ? html`<span class="name">${bubble.playerName}</span>`
-          : ""}
-        ${bubble.retreating
-          ? html`<span class="retreating-label">↩</span>`
-          : ""}
-        ${canCancel
-          ? html`
-              <button
-                class="cancel-btn"
-                @click=${(e: Event) => this.handleCancel(bubble, e)}
-                aria-label="Cancel"
-              >
-                ✕
-              </button>
-            `
-          : ""}
+        <button
+          class="bubble-main"
+          @pointerup=${(e: Event) => this.handleBubbleTap(bubble, e)}
+          aria-label="Focus"
+        >
+          <span class="icon">${this.getIcon(bubble.type)}</span>
+          <span class="troops">${renderTroops(bubble.troops)}</span>
+          ${bubble.playerName
+            ? html`<span class="name">${bubble.playerName}</span>`
+            : ""}
+          ${bubble.retreating
+            ? html`<span class="retreating-label">↩</span>`
+            : ""}
+        </button>
       </div>
     `;
   }

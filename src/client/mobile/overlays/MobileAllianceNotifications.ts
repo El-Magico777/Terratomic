@@ -36,6 +36,7 @@ interface AllianceExtensionWarning {
 export class MobileAllianceNotifications extends LitElement {
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) eventBus: EventBus | null = null;
+  @property({ type: Number }) topOffset: number = 0; // Extra offset from attack bar
 
   @state() private requests: AllianceRequest[] = [];
   @state() private extensionWarnings: AllianceExtensionWarning[] = [];
@@ -44,7 +45,7 @@ export class MobileAllianceNotifications extends LitElement {
     :host {
       display: block;
       position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 60px);
+      /* Base top is set via inline style to account for dynamic topOffset */
       left: 50%;
       transform: translateX(-50%);
       width: min(85vw, 280px);
@@ -190,6 +191,22 @@ export class MobileAllianceNotifications extends LitElement {
       background: rgba(255, 255, 255, 0.9);
     }
   `;
+
+  updated(changedProperties: Map<string, unknown>) {
+    super.updated(changedProperties);
+    // Update top position when topOffset changes
+    if (changedProperties.has("topOffset")) {
+      const baseTop = 60; // Base offset from top bar
+      this.style.top = `calc(env(safe-area-inset-top, 0px) + ${baseTop + this.topOffset}px)`;
+    }
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    // Set initial top position
+    const baseTop = 60;
+    this.style.top = `calc(env(safe-area-inset-top, 0px) + ${baseTop + this.topOffset}px)`;
+  }
 
   tick() {
     if (!this.game) return;
