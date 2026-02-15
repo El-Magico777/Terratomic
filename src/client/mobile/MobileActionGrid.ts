@@ -5,15 +5,9 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { aggregateStructureBuildCost } from "../../core/game/Costs";
 import { UnitType, UpgradeType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
 import type { GameView, PlayerView } from "../../core/game/GameView";
-import {
-  isStackableStructure,
-  isUpgradeableUnit,
-  playerMaxUnitLevel,
-} from "../../core/game/Upgradeables";
 import { HapticFeedback, HapticPattern } from "./utils/HapticFeedback";
 import { getActionIcon, getUnitIcon } from "./utils/Icons";
 
@@ -177,20 +171,21 @@ export class MobileActionGrid extends LitElement {
         );
       border: 1px solid rgba(var(--cat-rgb), 0.45);
       border-radius: 10px;
-      padding: 8px;
+      padding: 7px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 3px;
       cursor: pointer;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
       transition: all 0.15s ease;
-      min-height: 70px;
+      min-height: 62px;
       flex: 0 0 auto;
       width: var(--item-width);
       box-sizing: border-box;
+      position: relative;
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.06),
         inset 0 -2px 6px rgba(0, 0, 0, 0.45),
@@ -236,7 +231,7 @@ export class MobileActionGrid extends LitElement {
 
     /* Expanded tiles (2+ column span) */
     .action-tile.multi-column {
-      min-height: 85px;
+      min-height: 72px;
       border-width: 1px;
       background:
         linear-gradient(
@@ -377,6 +372,7 @@ export class MobileActionGrid extends LitElement {
       justify-content: center;
       width: 28px;
       height: 28px;
+      z-index: 1;
     }
 
     .action-icon img {
@@ -399,6 +395,7 @@ export class MobileActionGrid extends LitElement {
       font-weight: 600;
       line-height: 1.2;
       text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+      z-index: 1;
     }
 
     .action-tile.multi-column .action-label {
@@ -407,27 +404,33 @@ export class MobileActionGrid extends LitElement {
     }
 
     .action-cost {
-      color: rgba(251, 191, 36, 0.95);
-      font-size: 10px;
-      font-weight: 600;
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      max-width: calc(100% - 10px);
+      min-height: 16px;
+      padding: 0 5px;
+      border-radius: 999px;
+      border: 1px solid rgba(234, 179, 8, 0.52);
+      background: rgba(36, 23, 4, 0.82);
+      color: rgba(251, 191, 36, 0.98);
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+      pointer-events: none;
+      z-index: 3;
     }
 
     .action-tile.multi-column .action-cost {
-      font-size: 12px;
-    }
-
-    .action-disabled-reason,
-    .action-locked-reason {
-      color: rgba(239, 68, 68, 0.9);
       font-size: 10px;
-      text-align: center;
-      line-height: 1.1;
-      margin-top: 2px;
-    }
-
-    .action-locked-reason {
-      color: rgba(248, 113, 113, 0.9);
+      min-height: 18px;
+      padding: 0 6px;
     }
 
     .close-hint {
@@ -477,23 +480,13 @@ export class MobileActionGrid extends LitElement {
         style="--item-width: ${itemWidth}%"
         @click=${() => this.handleActionClick(item)}
       >
-        <div class="action-icon">${iconHtml}</div>
-        <div class="action-label">${item.label}</div>
         ${item.cost
           ? html`<div class="action-cost">
               💰${this.formatNumber(item.cost)}
             </div>`
           : ""}
-        ${item.disabled && item.disabledReason
-          ? html`<div class="action-disabled-reason">
-              ${item.disabledReason}
-            </div>`
-          : ""}
-        ${item.locked && item.lockedReason
-          ? html`<div class="action-locked-reason">
-              🔒 ${item.lockedReason}
-            </div>`
-          : ""}
+        <div class="action-icon">${iconHtml}</div>
+        <div class="action-label">${item.label}</div>
       </div>
     `;
   }
@@ -1429,42 +1422,8 @@ export class MobileActionGrid extends LitElement {
   private getUnitCost(unitType: UnitType, myPlayer: PlayerView): number {
     if (!this.game) return 0;
 
-    const player = myPlayer as any;
-    const base = this.game.config().unitInfo(unitType).cost(player);
-
-    if (isStackableStructure(unitType)) {
-      const stackCount =
-        typeof player.unitsOwned === "function"
-          ? player.unitsOwned(unitType) + 1
-          : 1;
-      const structureCost =
-        stackCount <= 1
-          ? base
-          : aggregateStructureBuildCost(
-              this.game.config(),
-              player,
-              unitType,
-              stackCount,
-              this.game.config().structureUpgradeCostMultiplier(unitType),
-            );
-      return Number(structureCost);
-    }
-
-    if (isUpgradeableUnit(unitType)) {
-      const techLevel = playerMaxUnitLevel(player, unitType);
-      if (techLevel <= 1) return Number(base);
-      return Number(
-        aggregateStructureBuildCost(
-          this.game.config(),
-          player,
-          unitType,
-          techLevel,
-          0,
-        ),
-      );
-    }
-
-    return Number(base);
+    const immediateCost = this.game.config().unitInfo(unitType).cost(myPlayer);
+    return Number(immediateCost);
   }
 
   private getUpgradeRequirementText(upgrade: UpgradeType): string {
