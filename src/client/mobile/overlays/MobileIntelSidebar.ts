@@ -6,11 +6,13 @@
 
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { GameMode, Team } from "../../../core/game/Game";
 import type { GameView, PlayerView } from "../../../core/game/GameView";
+import { renderNumber } from "../../Utils";
 import { HapticFeedback } from "../utils/HapticFeedback";
 import type { MobileEventsDisplay } from "./MobileEventsDisplay";
 
-export type IntelTab = "players" | "events";
+export type IntelTab = "players" | "teams" | "events";
 
 interface PlayerListEntry {
   player: PlayerView;
@@ -19,6 +21,14 @@ interface PlayerListEntry {
   relation: string;
   rank: number;
   isCurrentPlayer: boolean;
+}
+
+interface TeamListEntry {
+  teamName: string;
+  ownedPercent: string;
+  ownedSort: number;
+  totalGold: string;
+  totalTroops: string;
 }
 
 @customElement("mobile-intel-sidebar")
@@ -292,6 +302,55 @@ export class MobileIntelSidebar extends LitElement {
       background: rgba(152, 162, 175, 0.26);
     }
 
+    /* Teams tab styles */
+    .team-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      margin-bottom: 4px;
+      background: linear-gradient(
+        180deg,
+        rgba(25, 31, 40, 0.82) 0%,
+        rgba(14, 19, 25, 0.9) 100%
+      );
+      border: 1px solid rgba(124, 135, 149, 0.24);
+      border-radius: 7px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .team-rank {
+      font-size: 14px;
+      min-width: 26px;
+      text-align: center;
+      line-height: 1;
+      color: rgba(231, 238, 246, 0.95);
+    }
+
+    .team-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .team-name {
+      color: rgba(238, 243, 250, 0.96);
+      font-weight: 600;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-stats {
+      color: rgba(192, 202, 214, 0.82);
+      font-size: 11px;
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
     /* Events tab styles */
     .event-item {
       padding: 12px;
@@ -353,6 +412,11 @@ export class MobileIntelSidebar extends LitElement {
   render() {
     if (!this.visible) return null;
 
+    const isTeamMode = this.isTeamMode();
+    if (this.activeTab === "teams" && !isTeamMode) {
+      this.activeTab = "players";
+    }
+
     return html`
       <div class="backdrop" @click="${this.handleBackdropClick}"></div>
       <div class="sidebar">
@@ -367,6 +431,16 @@ export class MobileIntelSidebar extends LitElement {
           >
             Players
           </button>
+          ${isTeamMode
+            ? html`
+                <button
+                  class="tab ${this.activeTab === "teams" ? "active" : ""}"
+                  @click="${() => this.switchTab("teams")}"
+                >
+                  Teams
+                </button>
+              `
+            : null}
           <button
             class="tab ${this.activeTab === "events" ? "active" : ""}"
             @click="${() => this.switchTab("events")}"
@@ -377,7 +451,9 @@ export class MobileIntelSidebar extends LitElement {
         <div class="content">
           ${this.activeTab === "players"
             ? this.renderPlayersTab()
-            : this.renderEventsTab()}
+            : this.activeTab === "teams"
+              ? this.renderTeamsTab()
+              : this.renderEventsTab()}
         </div>
       </div>
     `;
@@ -459,6 +535,39 @@ export class MobileIntelSidebar extends LitElement {
     return html`<div class="events-content">${this.eventsDisplay}</div>`;
   }
 
+  private renderTeamsTab() {
+    if (!this.game) {
+      return html`<div class="empty-state">Loading...</div>`;
+    }
+
+    const teamEntries = this.getTeamLeaderboardData();
+    if (teamEntries.length === 0) {
+      return html`<div class="empty-state">No teams found</div>`;
+    }
+
+    return html`${teamEntries.map((entry, index) =>
+      this.renderTeamRow(entry, index + 1),
+    )}`;
+  }
+
+  private renderTeamRow(entry: TeamListEntry, rank: number) {
+    const rankIcon =
+      rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}`;
+
+    return html`
+      <div class="team-row">
+        <div class="team-rank">${rankIcon}</div>
+        <div class="team-info">
+          <div class="team-name">${entry.teamName}</div>
+          <div class="team-stats">
+            🏠 ${entry.ownedPercent} · 💰 ${entry.totalGold} · ⚔️
+            ${entry.totalTroops}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   private getLeaderboardData(): {
     leaderboardEntries: PlayerListEntry[];
     pinnedCurrentPlayer: PlayerListEntry | null;
@@ -534,6 +643,60 @@ export class MobileIntelSidebar extends LitElement {
     };
   }
 
+  private getTeamLeaderboardData(): TeamListEntry[] {
+    if (!this.game || !this.isTeamMode()) {
+      return [];
+    }
+
+    const game = this.game;
+
+    const players = game.playerViews();
+    const grouped: Record<Team, PlayerView[]> = {};
+
+    for (const player of players) {
+      const team = player.team();
+      if (team === null) continue;
+      grouped[team] ??= [];
+      grouped[team].push(player);
+    }
+
+    return Object.entries(grouped)
+      .map(([teamName, teamPlayers]) => {
+        let totalGold = 0n;
+        let totalTroops = 0;
+        let ownedSort = 0;
+
+        for (const player of teamPlayers) {
+          if (player.isAlive()) {
+            totalTroops += player.troops();
+            totalGold += player.gold();
+            ownedSort += player.numTilesOwned();
+          }
+        }
+
+        const ownedPercent = formatPercentage(ownedSort / game.numLandTiles());
+
+        return {
+          teamName,
+          ownedPercent,
+          ownedSort,
+          totalGold: renderNumber(totalGold),
+          totalTroops: renderNumber(totalTroops / 10),
+        };
+      })
+      .sort((a, b) => {
+        if (b.ownedSort !== a.ownedSort) {
+          return b.ownedSort - a.ownedSort;
+        }
+
+        return a.teamName.localeCompare(b.teamName);
+      });
+  }
+
+  private isTeamMode(): boolean {
+    return this.game?.config().gameConfig().gameMode === GameMode.Team;
+  }
+
   private switchTab(tab: IntelTab): void {
     this.activeTab = tab;
     HapticFeedback.tap();
@@ -577,6 +740,12 @@ export class MobileIntelSidebar extends LitElement {
       this.open();
     }
   }
+}
+
+function formatPercentage(value: number): string {
+  const perc = value * 100;
+  if (Number.isNaN(perc)) return "0%";
+  return perc.toPrecision(2) + "%";
 }
 
 declare global {
