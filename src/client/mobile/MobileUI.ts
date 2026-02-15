@@ -38,6 +38,7 @@ import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
 import { MobileAllianceNotifications } from "./overlays/MobileAllianceNotifications";
 import { MobileAttackBar } from "./overlays/MobileAttackBar";
+import { MobileChatEmojiBar } from "./overlays/MobileChatEmojiBar";
 import { MobileEconomyOverlay } from "./overlays/MobileEconomyOverlay";
 import { MobileEventsDisplay } from "./overlays/MobileEventsDisplay";
 import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
@@ -79,6 +80,7 @@ export class MobileUI {
   private eventsDisplay: MobileEventsDisplay;
   private allianceNotifications: MobileAllianceNotifications;
   private attackBar: MobileAttackBar;
+  private chatEmojiBar: MobileChatEmojiBar;
 
   // Phase 5 components
   private researchSidebar: MobileResearchSidebar;
@@ -141,6 +143,10 @@ export class MobileUI {
     this.attackBar = document.createElement(
       "mobile-attack-bar",
     ) as MobileAttackBar;
+    this.chatEmojiBar = document.createElement(
+      "mobile-chat-emoji-bar",
+    ) as MobileChatEmojiBar;
+    this.chatEmojiBar.style.display = "none";
 
     // Create Phase 5 components
     this.researchSidebar = document.createElement(
@@ -245,6 +251,7 @@ export class MobileUI {
     // Phase 4 components
     import("./overlays/MobileAllianceNotifications");
     import("./overlays/MobileAttackBar");
+    import("./overlays/MobileChatEmojiBar");
     import("./overlays/MobileEventsDisplay");
     import("./overlays/MobileIntelSidebar");
     import("./overlays/MobilePlayerToast");
@@ -271,6 +278,7 @@ export class MobileUI {
     document.body.appendChild(this.techUnlockToast);
     document.body.appendChild(this.allianceNotifications);
     document.body.appendChild(this.attackBar);
+    document.body.appendChild(this.chatEmojiBar);
 
     // Attach Phase 5 components
     document.body.appendChild(this.researchSidebar);
@@ -303,6 +311,7 @@ export class MobileUI {
         this.componentsAttached = true;
       }
       this.topBar.style.display = "";
+      this.chatEmojiBar.style.display = "";
       document.body.classList.add("mobile-ui-enabled");
       this.injectMobileStyles();
       this.startStatsLoop();
@@ -318,6 +327,7 @@ export class MobileUI {
         this.economyTab.style.display = "none";
         this.intelTab.style.display = "none";
         this.researchTab.style.display = "none";
+        this.chatEmojiBar.style.display = "none";
         this.zoomInButton.style.display = "none";
         this.zoomCenterButton.style.display = "none";
         this.zoomOutButton.style.display = "none";
@@ -405,6 +415,7 @@ export class MobileUI {
     }
 
     this.updateAttackBarPosition();
+    this.updateChatEmojiBarPosition();
 
     // Update events display and alliance notifications only when game tick changes (not every frame)
     const currentTick = this.currentGame.ticks();
@@ -423,6 +434,9 @@ export class MobileUI {
       }
       if (this.attackBar && typeof this.attackBar.tick === "function") {
         this.attackBar.tick();
+      }
+      if (this.chatEmojiBar && typeof this.chatEmojiBar.tick === "function") {
+        this.chatEmojiBar.tick();
       }
       if (
         this.allianceNotifications &&
@@ -477,6 +491,16 @@ export class MobileUI {
 
     const topBarBottom = Math.ceil(this.topBar.getBoundingClientRect().bottom);
     this.attackBar.style.top = `${topBarBottom + 2}px`;
+  }
+
+  private updateChatEmojiBarPosition(): void {
+    if (!this.componentsAttached) {
+      return;
+    }
+
+    const topBarBottom = Math.ceil(this.topBar.getBoundingClientRect().bottom);
+    const attackOffset = this.attackBar.currentHeight;
+    this.chatEmojiBar.style.top = `${topBarBottom + attackOffset + 8}px`;
   }
 
   private closeAllOverlays(): void {
@@ -1060,6 +1084,8 @@ export class MobileUI {
     this.allianceNotifications.eventBus = this.eventBus;
     this.attackBar.game = game;
     this.attackBar.eventBus = this.eventBus;
+    this.chatEmojiBar.game = game;
+    this.chatEmojiBar.eventBus = this.eventBus;
 
     // Update Phase 5 components with game state
     this.researchSidebar.game = game;
@@ -1793,6 +1819,7 @@ export class MobileUI {
     this.intelSidebar.remove();
     this.playerToast.remove();
     this.techUnlockToast.remove();
+    this.chatEmojiBar.remove();
     this.researchSidebar.remove();
     this.settingsSidebar.remove();
     this.economyTab.remove();
