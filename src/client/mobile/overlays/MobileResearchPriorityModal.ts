@@ -57,8 +57,8 @@ export class MobileResearchPriorityModal extends LitElement {
       top: calc(
         env(safe-area-inset-top, 0px) + var(--research-panel-top, 48px)
       );
-      left: calc(50% - 30px);
-      transform: translateX(-50%) translateY(-6px);
+      left: max(14px, calc(env(safe-area-inset-left, 0px) + 10px));
+      transform: translateY(-6px);
       width: min(90vw, 336px);
       border-radius: 9px;
       border: 1px solid rgba(160, 171, 184, 0.24);
@@ -87,7 +87,7 @@ export class MobileResearchPriorityModal extends LitElement {
 
     :host([visible]) .panel {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0);
     }
 
     .close {

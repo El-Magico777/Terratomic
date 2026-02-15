@@ -21,8 +21,8 @@ export class MobileResearchPriorityToast extends LitElement {
       top: calc(
         env(safe-area-inset-top, 0px) + var(--research-toast-top, 56px)
       );
-      left: calc(50% - 30px);
-      transform: translateX(-50%) translateY(-8px);
+      left: max(14px, calc(env(safe-area-inset-left, 0px) + 10px));
+      transform: translateY(-8px);
       width: min(92vw, 320px);
       z-index: 4300;
       pointer-events: none;
@@ -34,7 +34,7 @@ export class MobileResearchPriorityToast extends LitElement {
 
     :host([visible]) {
       opacity: 1;
-      transform: translateX(-50%) translateY(0);
+      transform: translateY(0);
       pointer-events: auto;
     }
 
