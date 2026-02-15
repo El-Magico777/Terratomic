@@ -99,6 +99,7 @@ export class MobileUI {
   private zoomOutButton: HTMLButtonElement;
   private lastGameTick: number = -1; // Track last processed game tick
   private gameDurationSeconds: number = 0; // Track game time in seconds (only after spawn phase)
+  private currentGameId: string | null = null;
   private stackModeEnabled: boolean = false;
   private stackTargetUnitId: number | null = null;
 
@@ -1043,8 +1044,10 @@ export class MobileUI {
    * Update game state
    */
   updateGameState(game: GameView): void {
-    const isNewGame = this.currentGame !== game;
+    const nextGameId = game.gameID();
+    const isNewGame = this.currentGameId !== nextGameId;
     this.currentGame = game;
+    this.currentGameId = nextGameId;
 
     // Update Phase 4 components with game state
     this.intelSidebar.game = game;
@@ -1068,6 +1071,7 @@ export class MobileUI {
 
     if (isNewGame) {
       this.economyOverlay.resetInvestmentDefaults();
+      this.economyOverlay.applyPreferredCombatRatios();
     }
   }
 

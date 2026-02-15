@@ -11,6 +11,7 @@ import type { GameView } from "../../../core/game/GameView";
 import {
   INVESTMENT_REQUEST_EVENT,
   INVESTMENT_SYNC_EVENT,
+  INVESTMENT_SYNC_REQUEST_EVENT,
   type InvestmentRequestDetail,
   type InvestmentSlider,
   type InvestmentSyncDetail,
@@ -596,6 +597,7 @@ export class MobileEconomyOverlay extends LitElement {
 
   open(): void {
     this.ensureDefaults();
+    window.dispatchEvent(new CustomEvent(INVESTMENT_SYNC_REQUEST_EVENT));
     this.visible = true;
   }
 
@@ -632,9 +634,10 @@ export class MobileEconomyOverlay extends LitElement {
 
   resetInvestmentDefaults(): void {
     const defaultResearch =
-      this.game?.config()?.defaultResearchInvestment?.() ?? 0;
+      this.game?.config()?.defaultResearchInvestment?.() ?? 0.1;
+    const defaultRoad = this.game?.config()?.defaultRoadInvestment?.() ?? 0.1;
     this.production = 0;
-    this.road = 0;
+    this.road = this.isRoadsUnlocked() ? Math.round(defaultRoad * 100) : 0;
     this.research = Math.round(defaultResearch * 100);
     this.persistInvestmentDefaults();
   }
@@ -666,13 +669,13 @@ export class MobileEconomyOverlay extends LitElement {
     this.productionLocked = detail.lockProd;
     this.roadLocked = detail.lockRoad;
     this.researchLocked = detail.lockResearch;
+    this.persistInvestmentDefaults();
   };
 
   private handleTroopRatioChange = (event: Event): void => {
     const target = event.target as HTMLInputElement;
     const ratio = Math.max(0, Math.min(1, parseInt(target.value, 10) / 100));
     this.troopRatio = ratio;
-    localStorage.setItem("settings.troopRatio", ratio.toString());
     if (this.eventBus) {
       this.eventBus.emit(new SendSetTargetTroopRatioEvent(ratio));
     }
@@ -685,7 +688,6 @@ export class MobileEconomyOverlay extends LitElement {
       ratio = 0.1;
     }
     this.attackRatio = ratio;
-    localStorage.setItem("settings.attackRatio", ratio.toString());
     this.dispatchEvent(
       new CustomEvent("attack-ratio-changed", {
         detail: { ratio },
@@ -697,6 +699,11 @@ export class MobileEconomyOverlay extends LitElement {
 
   private ensureDefaults(): void {
     if (this.defaultsInitialized) return;
+
+    if (!this.game) {
+      return;
+    }
+
     this.defaultsInitialized = true;
 
     const storedProd = this.parseStoredRate("settings.investmentRate");
@@ -708,9 +715,10 @@ export class MobileEconomyOverlay extends LitElement {
     const storedTroop = this.parseStoredRate("settings.troopRatio", 0.6);
 
     const defaultResearch =
-      this.game?.config()?.defaultResearchInvestment?.() ?? 0;
+      this.game?.config()?.defaultResearchInvestment?.() ?? 0.1;
+    const defaultRoad = this.game?.config()?.defaultRoadInvestment?.() ?? 0.1;
     const productionRate = storedProd ?? 0;
-    const roadRate = storedRoad ?? 0;
+    const roadRate = storedRoad ?? defaultRoad;
     const researchRate = storedResearch ?? defaultResearch;
 
     this.production = Math.round(productionRate * 100);
@@ -724,8 +732,26 @@ export class MobileEconomyOverlay extends LitElement {
     this.troopRatio = storedTroop ?? 0.6;
 
     this.persistInvestmentDefaults();
-    localStorage.setItem("settings.attackRatio", this.attackRatio.toString());
-    localStorage.setItem("settings.troopRatio", this.troopRatio.toString());
+  }
+
+  applyPreferredCombatRatios(): void {
+    const preferredAttack = this.parseStoredRate("settings.attackRatio", 0.3);
+    const preferredTroop = this.parseStoredRate("settings.troopRatio", 0.6);
+
+    this.attackRatio = preferredAttack ?? 0.3;
+    this.troopRatio = preferredTroop ?? 0.6;
+
+    if (this.eventBus) {
+      this.eventBus.emit(new SendSetTargetTroopRatioEvent(this.troopRatio));
+    }
+
+    this.dispatchEvent(
+      new CustomEvent("attack-ratio-changed", {
+        detail: { ratio: this.attackRatio },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private persistInvestmentDefaults(): void {
