@@ -1,11 +1,12 @@
 /**
  * Gesture detection system for mobile touch interactions
- * Detects taps, double-taps, long-presses, drags, pinches, and edge swipes
+ * Detects taps, long-presses, drags, pinches, and edge swipes
  */
+
+import { HapticFeedback } from "../utils/HapticFeedback";
 
 export type GestureType =
   | "tap"
-  | "double-tap"
   | "long-press"
   | "drag"
   | "pinch"
@@ -25,7 +26,6 @@ export class GestureDetector {
   private touchStartTime: number = 0;
   private touchStartPos: { x: number; y: number } | null = null;
   private longPressTimer: NodeJS.Timeout | null = null;
-  private lastTapTime: number = 0;
   private callbacks: Map<GestureType, GestureCallback[]> = new Map();
   private initialPinchDistance: number = 0;
   private lastPinchScale: number = 1;
@@ -42,7 +42,6 @@ export class GestureDetector {
   // Configuration
   private readonly LONG_PRESS_DURATION = 600; // ms
   private readonly MOVEMENT_THRESHOLD = 10; // px
-  private readonly DOUBLE_TAP_THRESHOLD = 300; // ms
   private readonly EDGE_THRESHOLD = 20; // px from screen edge
   private readonly PALM_RADIUS_THRESHOLD = 30; // px
   private readonly EDGE_SWIPE_MIN_VELOCITY = 150; // px/s
@@ -234,23 +233,11 @@ export class GestureDetector {
         x: changedTouch.clientX,
         y: changedTouch.clientY,
       };
-
-      // Check for double-tap
-      const timeSinceLastTap = Date.now() - this.lastTapTime;
-      if (timeSinceLastTap < this.DOUBLE_TAP_THRESHOLD) {
-        this.emit({
-          type: "double-tap",
-          position: tapPosition,
-        });
-        this.lastTapTime = 0; // Reset to prevent triple-tap
-      } else {
-        this.emit({
-          type: "tap",
-          position: tapPosition,
-        });
-        this.lastTapTime = Date.now();
-        this.triggerHaptic(10); // Light vibration
-      }
+      this.emit({
+        type: "tap",
+        position: tapPosition,
+      });
+      this.triggerHaptic(10); // Light vibration
     }
 
     this.touchStartPos = null;
@@ -304,9 +291,7 @@ export class GestureDetector {
   }
 
   private triggerHaptic(duration: number): void {
-    if (navigator.vibrate) {
-      navigator.vibrate(duration);
-    }
+    HapticFeedback.custom(duration);
   }
 
   /**

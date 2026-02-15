@@ -6,6 +6,7 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { renderNumber, renderTroops } from "../Utils";
+import { HapticFeedback } from "./utils/HapticFeedback";
 
 export interface TopBarStats {
   population: number;
@@ -396,10 +397,7 @@ export class MobileTopBar extends LitElement {
       }),
     );
 
-    // Light haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    HapticFeedback.tap();
   }
 
   private handleStatsClick(): void {
@@ -412,10 +410,7 @@ export class MobileTopBar extends LitElement {
       }, 3000);
     }
 
-    // Light haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    HapticFeedback.tap();
   }
 
   /**

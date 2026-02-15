@@ -17,6 +17,7 @@ import {
   type InvestmentSyncDetail,
 } from "../../events/InvestmentEvents";
 import { SendSetTargetTroopRatioEvent } from "../../Transport";
+import { HapticFeedback } from "../utils/HapticFeedback";
 
 export interface EconomyStats {
   production: number; // 0-100
@@ -599,10 +600,7 @@ export class MobileEconomyOverlay extends LitElement {
       }),
     );
 
-    // Haptic feedback
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    HapticFeedback.tap();
   }
 
   open(): void {

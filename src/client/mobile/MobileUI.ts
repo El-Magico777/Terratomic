@@ -104,6 +104,9 @@ export class MobileUI {
   private currentGameId: string | null = null;
   private stackModeEnabled: boolean = false;
   private stackTargetUnitId: number | null = null;
+  private readonly orientationChangeHandler = (): void => {
+    this.handleOrientationChange();
+  };
 
   constructor(private eventBus: EventBus) {
     if (typeof window !== "undefined") {
@@ -371,6 +374,12 @@ export class MobileUI {
     const myPlayer = this.currentGame.myPlayer();
     if (!myPlayer) return;
 
+    const tick = this.currentGame.ticks();
+    if (tick === this.lastGameTick) {
+      return;
+    }
+    this.lastGameTick = tick;
+
     const gold = Number(myPlayer.gold());
     const population = myPlayer.population(); // Current population
     const maxPopulation = this.currentGame.config().maxPopulation(myPlayer); // Max population cap
@@ -379,7 +388,6 @@ export class MobileUI {
     const goldIncome = Number(
       this.currentGame.config().goldAdditionRate(myPlayer) * 10n,
     );
-    const tick = this.currentGame.ticks();
     const inSpawnPhase = this.currentGame.inSpawnPhase();
 
     if (inSpawnPhase) {
@@ -417,35 +425,29 @@ export class MobileUI {
     this.updateAttackBarPosition();
     this.updateChatEmojiBarPosition();
 
-    // Update events display and alliance notifications only when game tick changes (not every frame)
-    const currentTick = this.currentGame.ticks();
-    if (currentTick !== this.lastGameTick) {
-      this.lastGameTick = currentTick;
+    // Update game timer: increment every 10 ticks (1 second), reset during spawn phase
+    if (inSpawnPhase) {
+      this.gameDurationSeconds = 0;
+    } else if (tick % 10 === 0) {
+      this.gameDurationSeconds++;
+    }
 
-      // Update game timer: increment every 10 ticks (1 second), reset during spawn phase
-      if (inSpawnPhase) {
-        this.gameDurationSeconds = 0;
-      } else if (tick % 10 === 0) {
-        this.gameDurationSeconds++;
-      }
-
-      if (this.eventsDisplay && typeof this.eventsDisplay.tick === "function") {
-        this.eventsDisplay.tick();
-      }
-      if (this.attackBar && typeof this.attackBar.tick === "function") {
-        this.attackBar.tick();
-      }
-      if (this.chatEmojiBar && typeof this.chatEmojiBar.tick === "function") {
-        this.chatEmojiBar.tick();
-      }
-      if (
-        this.allianceNotifications &&
-        typeof this.allianceNotifications.tick === "function"
-      ) {
-        this.allianceNotifications.tick();
-        // Push alliance notifications below the attack bar if it has content
-        this.allianceNotifications.topOffset = this.attackBar.currentHeight;
-      }
+    if (this.eventsDisplay && typeof this.eventsDisplay.tick === "function") {
+      this.eventsDisplay.tick();
+    }
+    if (this.attackBar && typeof this.attackBar.tick === "function") {
+      this.attackBar.tick();
+    }
+    if (this.chatEmojiBar && typeof this.chatEmojiBar.tick === "function") {
+      this.chatEmojiBar.tick();
+    }
+    if (
+      this.allianceNotifications &&
+      typeof this.allianceNotifications.tick === "function"
+    ) {
+      this.allianceNotifications.tick();
+      // Push alliance notifications below the attack bar if it has content
+      this.allianceNotifications.topOffset = this.attackBar.currentHeight;
     }
   }
 
@@ -1007,9 +1009,7 @@ export class MobileUI {
     });
 
     // Handle orientation changes
-    window.addEventListener("orientationchange", () => {
-      this.handleOrientationChange();
-    });
+    window.addEventListener("orientationchange", this.orientationChangeHandler);
   }
 
   /**
@@ -1096,6 +1096,8 @@ export class MobileUI {
     this.economyOverlay.eventBus = this.eventBus;
 
     if (isNewGame) {
+      this.lastGameTick = -1;
+      this.gameDurationSeconds = 0;
       this.economyOverlay.resetInvestmentDefaults();
       this.economyOverlay.applyPreferredCombatRatios();
     }
@@ -1812,6 +1814,8 @@ export class MobileUI {
    * Clean up mobile UI
    */
   destroy(): void {
+    this.stopStatsLoop();
+
     // Remove components from DOM
     this.topBar.remove();
     this.actionGrid.remove();
@@ -1819,12 +1823,22 @@ export class MobileUI {
     this.intelSidebar.remove();
     this.playerToast.remove();
     this.techUnlockToast.remove();
+    this.allianceNotifications.remove();
+    this.attackBar.remove();
     this.chatEmojiBar.remove();
     this.researchSidebar.remove();
     this.settingsSidebar.remove();
     this.economyTab.remove();
     this.intelTab.remove();
     this.researchTab.remove();
+    this.zoomInButton.remove();
+    this.zoomCenterButton.remove();
+    this.zoomOutButton.remove();
+
+    window.removeEventListener(
+      "orientationchange",
+      this.orientationChangeHandler,
+    );
 
     // Clean up gesture detector
     if (this.gestureDetector) {
