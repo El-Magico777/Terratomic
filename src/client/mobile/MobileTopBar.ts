@@ -421,7 +421,7 @@ export class MobileTopBar extends LitElement {
           >
             ${populationGrowth >= 0 ? "+" : ""}${this.formatNumber(
               populationGrowth,
-            )}/tick
+            )}/s
           </span>
         </div>
         <div
@@ -438,7 +438,7 @@ export class MobileTopBar extends LitElement {
               ? "growth-positive"
               : "growth-negative"}"
           >
-            ${goldIncome >= 0 ? "+" : ""}${this.formatNumber(goldIncome)}/tick
+            ${goldIncome >= 0 ? "+" : ""}${this.formatNumber(goldIncome)}/s
           </span>
         </div>
       </div>

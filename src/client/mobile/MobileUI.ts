@@ -334,6 +334,11 @@ export class MobileUI {
     const gold = Number(myPlayer.gold());
     const population = myPlayer.population(); // Current population
     const maxPopulation = this.currentGame.config().maxPopulation(myPlayer); // Max population cap
+    const populationGrowth =
+      this.currentGame.config().populationIncreaseRate(myPlayer) * 10;
+    const goldIncome = Number(
+      this.currentGame.config().goldAdditionRate(myPlayer) * 10n,
+    );
     const tick = this.currentGame.ticks();
     const inSpawnPhase = this.currentGame.inSpawnPhase();
 
@@ -354,6 +359,8 @@ export class MobileUI {
       population,
       maxPopulation,
       gold,
+      populationGrowth,
+      goldIncome,
       gameDurationSeconds: this.gameDurationSeconds,
       inSpawnPhase,
     });
