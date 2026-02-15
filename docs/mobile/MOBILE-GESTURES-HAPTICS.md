@@ -1,103 +1,81 @@
-# Mobile Gestures + Haptics Audit
+# Mobile Gestures & Haptics
 
 > Last updated: 2026-02-15
-> Scope: Audit/documentation only (no runtime code changes)
 
-## Purpose
+Current gesture detection and haptic feedback behavior, sourced from code.
 
-This document defines current mobile gesture + haptic behavior and a normalized target behavior baseline for future implementation work.
+Related docs: [Architecture](MOBILE-ARCHITECTURE.md) · [Feature Matrix](MOBILE-FEATURE-MATRIX.md) · [Action Grid Catalog](MOBILE-ACTION-GRID-CATALOG.md)
 
-Goals for mobile .io gameplay:
+---
 
-- predictable touch semantics (no gesture ambiguity)
-- smooth interaction at 60fps (no gesture/haptic churn)
-- low battery impact (avoid unnecessary vibration calls)
-- consistent feedback semantics across map, overlays, and lobby flows
+## Gesture Detection
 
-## Current Gesture Mapping (Runtime)
+Source: `src/client/mobile/gestures/GestureDetector.ts` (332 lines)
 
-Source of truth:
+| Gesture          | Detection                                             | Fires              | Action in MobileUI                                    |
+| ---------------- | ----------------------------------------------------- | ------------------ | ----------------------------------------------------- |
+| Tap              | Single touch, `<200ms`, movement `<10px`              | `tap`              | Tile selection → ActionGrid or spawn                  |
+| Long press       | Hold `600ms`, movement `<10px` (cancelled on drag)    | `long-press`       | Player toast (player tile) or economy overlay (other) |
+| Drag             | Movement `>10px`, incremental delta                   | `drag(dx, dy)`     | Map pan via `DragEvent`                               |
+| Pinch            | 2+ fingers, scale from initial distance               | `pinch(scale)`     | Map zoom via `ZoomEvent`                              |
+| Edge swipe left  | Start `<20px` from left edge, `>50px` right, `<150ms` | `edge-swipe-left`  | Toggle Intel sidebar                                  |
+| Edge swipe right | Start `<20px` from right edge, `>50px` left, `<150ms` | `edge-swipe-right` | Toggle Research sidebar                               |
 
-- `src/client/mobile/gestures/GestureDetector.ts`
-- `src/client/mobile/MobileUI.ts`
+### Gesture Configuration
 
-| Gesture          | Detection                                  | Current Action Mapping                                                                         |
-| ---------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| Tap              | `<200ms` and movement `<10px`              | `MobileUI.handleMapTap()` → spawn, stack action, or ActionGrid open                            |
-| Double tap       | emitted by detector (`<300ms`)             | **No listener in `MobileUI`** (currently unused)                                               |
-| Long press       | `600ms` hold (cancelled on movement)       | `MobileUI.handleMapLongPress()` → player toast on owned/player tile, otherwise economy overlay |
-| Drag             | movement `>10px`, incremental delta        | emits `DragEvent(dx, dy)` for map pan                                                          |
-| Pinch            | two+ touches, scale from initial distance  | emits `ZoomEvent(centerX, centerY, delta)`                                                     |
-| Edge swipe left  | near left edge + fast horizontal movement  | toggles Intel sidebar                                                                          |
-| Edge swipe right | near right edge + fast horizontal movement | toggles Research sidebar                                                                       |
+| Constant                  | Value    |
+| ------------------------- | -------- |
+| `LONG_PRESS_DURATION`     | 600ms    |
+| `MOVEMENT_THRESHOLD`      | 10px     |
+| `EDGE_THRESHOLD`          | 20px     |
+| `PALM_RADIUS_THRESHOLD`   | 30px     |
+| `EDGE_SWIPE_MIN_VELOCITY` | 150 px/s |
 
-## Current Haptic Mapping (Runtime)
+Palm rejection filters touches with `radiusX` or `radiusY` > 30px (iOS contact-area data).
 
-### Core utility patterns
+---
 
-Source: `src/client/mobile/utils/HapticFeedback.ts`
+## Haptic Feedback
 
-- `TAP = 10ms`
-- `LONG_PRESS = 50ms`
-- `ERROR = 100ms`
-- `SUCCESS = 15ms`
-- `WARNING = 30ms`
+Source: `src/client/mobile/utils/HapticFeedback.ts` (124 lines)
 
-### Where haptics are currently triggered
+Centralized `navigator.vibrate()` wrapper with enable/disable toggle.
 
-| Area                                  | Current behavior                                                                                                                                          |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gesture detector                      | Direct `navigator.vibrate`: tap `10ms`, long-press `50ms`, edge-swipe `25ms`                                                                              |
-| ActionGrid                            | Disabled/locked tile => `ERROR`; valid tile tap => `TAP`; backdrop close => `TAP`                                                                         |
-| MobileUI action dispatch              | Build/attack/diplomacy/stack success paths => mostly `SUCCESS`; menu-type routes => `TAP`; stack miss => `ERROR`; long-press player toast => `LONG_PRESS` |
-| TopBar                                | direct `navigator.vibrate(10)` on settings/stats interactions                                                                                             |
-| Economy overlay                       | direct `navigator.vibrate(10)` on lock toggles                                                                                                            |
-| Intel / Settings / Research sidebars  | open/tab/player-select interactions => `TAP`                                                                                                              |
-| Settings / Research panels            | toggles and selections => mostly `TAP`; save replay => `SUCCESS`                                                                                          |
-| Player toast / alliance notifications | confirm actions => `SUCCESS`; dismiss/light actions => `TAP`; war action uses `ERROR`                                                                     |
-| Chat/emoji bubble bar                 | no haptic on bubble focus tap                                                                                                                             |
-| Attack bar / events display           | no haptic on attack-bubble cancel taps or event filter taps                                                                                               |
-| Lobby and lobby modals                | no `HapticFeedback` usage; click-only interactions                                                                                                        |
+### Patterns
 
-## Target Baseline (Documented Expected Behavior)
+| Pattern      | Duration | Semantic                             |
+| ------------ | -------- | ------------------------------------ |
+| `TAP`        | 10ms     | Button taps, toggles, menu opens     |
+| `LONG_PRESS` | 50ms     | Long-press trigger confirmation      |
+| `SUCCESS`    | 15ms     | Build/attack/diplomacy confirmations |
+| `WARNING`    | 30ms     | Warnings, confirmations              |
+| `ERROR`      | 100ms    | Invalid actions, locked tiles        |
 
-User preference baseline for this pass:
+Also supports `custom(duration)` and `pattern(number[])` for special cases.
 
-- haptics should be moderate overall
-- guaranteed haptics for successful action confirmations (build/attack/upgrade)
+### Current Haptic Usage by Area
 
-Target policy:
-
-1. **Success confirms**
-   - keep `SUCCESS` on successful gameplay intents (build/attack/upgrade/diplomacy confirmations)
-2. **Error feedback**
-   - keep `ERROR` for invalid/blocked attempts (locked action, invalid stack target)
-3. **Navigation + passive interactions**
-   - keep light/optional (`TAP`) only for major mode switches and panel opens
-   - avoid haptics for passive notification consumption (chat/emoji bubbles, scrolling, event reading)
-4. **Gesture-layer vibration**
-   - avoid unconditional vibration at low-level detector for every tap in future refactor
-   - prefer feature-level haptics to avoid duplicate pulses and improve battery efficiency
-
-## Inconsistencies / Gaps Found
-
-1. Mixed haptic APIs are used (`HapticFeedback` and direct `navigator.vibrate`).
-2. Gesture detector bypasses global haptics enable/disable (`HapticFeedback.enabled`).
-3. `double-tap` is detected but not bound in `MobileUI`.
-4. Some overlay actions are interactive but silent (no haptic), while less critical actions are haptic-enabled.
-5. Lobby flows currently do not implement mobile-specific haptic semantics.
-
-## Performance + UX Guardrails (for future implementation)
-
-- Never vibrate from high-frequency paths (`touchmove`, drag, pinch loop).
-- Avoid stacking multiple haptic triggers for one user intent.
-- Keep pulses short (`<=15ms`) for routine confirms.
-- Do not vibrate for purely informational UI updates.
-- Prefer centralized haptic routing through `HapticFeedback` only.
-
-## Future Implementation Checklist (No changes in this pass)
-
-1. Route all vibration calls through `HapticFeedback` (remove direct `navigator.vibrate` calls).
-2. Decide whether `double-tap` should be mapped or removed.
-3. Introduce one mobile interaction matrix in code comments/docs that maps gesture → intent → haptic.
-4. Add smoke tests/manual QA checklist for iOS Safari + Android Chrome gesture/haptic parity.
+| Area                         | Trigger                         | Pattern         |
+| ---------------------------- | ------------------------------- | --------------- |
+| GestureDetector              | Tap                             | custom(10)      |
+| GestureDetector              | Long press                      | custom(50)      |
+| GestureDetector              | Edge swipe                      | custom(25)      |
+| ActionGrid                   | Valid tile tap                  | `TAP`           |
+| ActionGrid                   | Disabled/locked tile tap        | `ERROR`         |
+| ActionGrid                   | Backdrop close                  | `TAP`           |
+| MobileUI build actions       | Successful build                | `SUCCESS`       |
+| MobileUI attack actions      | Successful attack intent        | `SUCCESS`       |
+| MobileUI diplomacy actions   | Alliance/peace/war confirmation | `SUCCESS`       |
+| MobileUI diplomacy actions   | Chat/emoji/view-player opens    | `TAP`           |
+| MobileUI stack mode          | Stack toggle / miss             | `TAP`/`ERROR`   |
+| MobileUI map tap             | Stack upgrade success           | `SUCCESS`       |
+| TopBar                       | Settings/stats tap              | `TAP`           |
+| EconomyOverlay               | Lock toggles                    | `TAP`           |
+| Intel/Settings/Research bars | Open/tab/player-select          | `TAP`           |
+| Settings panel               | Save replay                     | `SUCCESS`       |
+| Player toast                 | Confirm actions                 | `SUCCESS`       |
+| Player toast                 | Dismiss/light actions           | `TAP`           |
+| Alliance notifications       | Accept/reject                   | `SUCCESS`/`TAP` |
+| Chat/emoji bubble bar        | No haptic on bubble taps        | —               |
+| Attack bar                   | No haptic on bubble taps        | —               |
+| Lobby flows                  | No haptic                       | —               |

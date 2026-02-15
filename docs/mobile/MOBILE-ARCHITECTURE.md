@@ -1,205 +1,143 @@
 # Mobile UI Architecture
 
-> Last updated: 2026-02-12
+> Last updated: 2026-02-15
 
-## Overview
+Quick-reference architecture map for the mobile UI layer. All source lives under `src/client/mobile/`.
 
-The mobile UI is a touch-first layer that activates when `MobileDetector.isMobile()` returns true (based on `navigator.maxTouchPoints`, `ontouchstart`, or user-agent heuristics). It replaces the desktop right-click/keyboard interactions with gesture-driven components built as **Lit web components** with Shadow DOM encapsulation.
-
-**Total scope:** 13 files, ~5,294 lines under `src/client/mobile/`.
+Related docs: [Feature Matrix](MOBILE-FEATURE-MATRIX.md) · [Gestures & Haptics](MOBILE-GESTURES-HAPTICS.md) · [Action Grid Catalog](MOBILE-ACTION-GRID-CATALOG.md)
 
 ---
 
 ## Component Map
 
 ```
-MobileUI (orchestrator – 998 lines)
-├── MobileDetector            — device / orientation detection
-├── MobileTopBar              — status bar (pop, gold, menu/research/settings buttons)
-├── MobileActionGrid          — bottom sheet with context-aware action tiles (PRIMARY)
+MobileUI (orchestrator, 1830 lines)
+├── MobileDetector              — device / orientation / safe-area detection
+├── MobileTopBar                — fixed top status bar (population, gold, clock, settings)
+├── MobileActionGrid            — bottom-sheet context-aware action tiles
 │
-├── Gestures/
-│   └── GestureDetector       — touch-event state machine (tap, double-tap, long-press, drag, pinch, edge-swipe)
+├── gestures/
+│   └── GestureDetector         — touch state machine (tap, long-press, drag, pinch, edge-swipe)
 │
-├── Overlays/  (slide-in panels)
-│   ├── MobileEconomyOverlay      — left-slide economy panel (troop ratio, attack ratio, investments)
-│   ├── MobileIntelSidebar        — left-slide sidebar (Players leaderboard + Events stub)
-│   ├── MobilePlayerToast         — slide-down toast for player info – show() never called
-│   ├── MobileResearchSidebar     — right-slide sidebar hosting MobileResearchPanel
-│   └── MobileSettingsSidebar     — right-slide sidebar hosting MobileSettingsPanel
+├── overlays/
+│   ├── MobileEconomyOverlay         — full-screen economy panel (investment sliders, troop/attack ratios)
+│   ├── MobileIntelSidebar           — left-slide sidebar (Players leaderboard + Teams + Events tabs)
+│   ├── MobilePlayerToast            — slide-down player info toast (long-press trigger)
+│   ├── MobileAttackBar              — HUD bubbles for active attacks/boats/paratroopers/trade income
+│   ├── MobileChatEmojiBar           — HUD bubbles for chat + emoji messages
+│   ├── MobileAllianceNotifications  — alliance request + extension warning notifications
+│   ├── MobileEventsDisplay          — events log (embedded in Intel sidebar Events tab)
+│   ├── MobileResearchSidebar        — right-slide sidebar hosting MobileResearchPanel
+│   ├── MobileResearchPriorityModal  — research category priority picker
+│   ├── MobileResearchPriorityToast  — confirmation toast after priority selection
+│   ├── MobileSettingsSidebar        — right-slide sidebar hosting MobileSettingsPanel
+│   └── MobileTechUnlockToast        — tech unlock notification toast
 │
-├── Components/  (embedded panels)
-│   ├── MobileResearchPanel       — full research tech tree, investment slider, category filters
-│   └── MobileSettingsPanel       — settings toggles, replay save, exit game
+├── components/
+│   ├── MobileResearchPanel    — full research tech tree with category tabs
+│   └── MobileSettingsPanel    — settings toggles, replay controls, exit game
 │
-└── Utils/
-    └── HapticFeedback            — navigator.vibrate() wrapper with pattern presets
+└── utils/
+    ├── HapticFeedback         — navigator.vibrate() wrapper (TAP / LONG_PRESS / ERROR / SUCCESS / WARNING)
+    ├── Icons                  — unit type → icon path mappings
+    └── OverlayPositioning     — shared attack-bar anchoring helpers for toasts/modals
 ```
 
 ---
 
-## Integration Points
+## Activation
 
-### Entry: `Main.ts`
+Mobile UI activates when `MobileDetector.isMobile()` returns `true` (screen width, UA, touch capability). `MobileUI` is instantiated in `Main.ts` and stored on `window.__MOBILE_UI__`. `ClientGameRunner` wires it to the game canvas and renderer.
 
-```
-Game join → MobileDetector.isMobile() → mobileUI.setActive(true)
-Leave lobby → mobileUI.setActive(false)
-```
+Key lifecycle calls:
 
-`MobileUI` instance stored on `window.__MOBILE_UI__` for cross-module access (used by `ClientGameRunner`).
+| Method                         | Caller             | Purpose                                     |
+| ------------------------------ | ------------------ | ------------------------------------------- |
+| `setActive(true/false)`        | `Main.ts`          | Attach/detach components, toggle CSS class  |
+| `initializeGestureDetection()` | `ClientGameRunner` | Bind gesture detector to canvas             |
+| `setTransformHandler()`        | `ClientGameRunner` | Screen↔world coordinate conversion         |
+| `updateGameState(game)`        | `ClientGameRunner` | Propagate live `GameView` to all components |
 
-### Game loop: `ClientGameRunner.ts`
-
-Called once after game creation:
-
-```ts
-mobileUI.setTransformHandler(renderer.transformHandler);
-mobileUI.initializeGestureDetection(canvas);
-mobileUI.updateGameState(game);
-```
-
-### Input suppression: `InputHandler.ts`
-
-When `document.body.classList.contains("mobile-ui-enabled")`:
-
-- Right-click context menu is suppressed (3 guard checks)
-
-### EventBus events emitted by mobile UI
-
-| Event                              | Triggered by                             |
-| ---------------------------------- | ---------------------------------------- |
-| `SendSpawnIntentEvent`             | Tap on unclaimed land during spawn phase |
-| `BuildUnitIntentEvent`             | Action grid build item selection         |
-| `SendAttackIntentEvent`            | Action grid attack with troops           |
-| `SendBoatAttackIntentEvent`        | Action grid naval attack                 |
-| `SendBomberIntentEvent`            | Action grid air attack                   |
-| `SendParatrooperAttackIntentEvent` | Action grid paratroopers                 |
-| `SendAllianceRequestIntentEvent`   | Action grid alliance                     |
-| `SendPeaceRequestIntentEvent`      | Action grid peace                        |
-| `SendDeclareWarIntentEvent`        | Action grid declare war                  |
-| `SendBreakAllianceIntentEvent`     | Action grid break alliance               |
+When active, `body.mobile-ui-enabled` hides all desktop HUD elements (radial menu, control panels, desktop top bar, etc.).
 
 ---
 
-## User Interaction Flow
+## EventBus Events (mobile → server)
 
-### Primary flow (working)
-
-```
-1. User taps a tile on the map
-2. GestureDetector fires "tap" event
-3. MobileUI.handleMapTap() converts screen → tile via TransformHandler
-4. MobileActionGrid.showForTile() renders context-aware actions based on tile ownership:
-   - Own tile: build, economy
-   - Enemy tile: attack (troops/boat/air/nuke), diplomacy
-   - Unclaimed tile: expand
-   - Shore/water: appropriate water actions
-5. User taps an action tile in the grid
-6. MobileUI.handleActionSelected() routes by prefix:
-   - "build:*" → BuildUnitIntentEvent or enter placement mode
-   - "attack:*" → appropriate attack intent event
-   - "diplomacy:*" → alliance/peace/war events
-   - "economy" → open economy overlay
-7. EventBus delivers intent to Transport → server
-```
-
-### Sidebar flows (working)
-
-| Trigger                | Target                              |
-| ---------------------- | ----------------------------------- |
-| TopBar menu button     | MobileIntelSidebar (left slide)     |
-| TopBar research button | MobileResearchSidebar (right slide) |
-| TopBar settings button | MobileSettingsSidebar (right slide) |
-| Edge swipe from left   | MobileIntelSidebar                  |
-| Edge swipe from right  | MobileResearchSidebar               |
-| Long-press on map      | MobileEconomyOverlay (left slide)   |
-
-### Spawn phase flow (working)
-
-```
-1. Tap on unclaimed land tile
-2. MobileActionGrid shows "Spawn Here" action
-3. Tap action → SendSpawnIntentEvent
-```
+| Event                              | Source                         |
+| ---------------------------------- | ------------------------------ |
+| `SendSpawnIntentEvent`             | Tap unowned land (spawn phase) |
+| `BuildUnitIntentEvent`             | Action grid build tile         |
+| `SendUpgradeStructureIntentEvent`  | Stack mode tap                 |
+| `SendAttackIntentEvent`            | Ground attack action           |
+| `SendBoatAttackIntentEvent`        | Naval assault action           |
+| `SendParatrooperAttackIntentEvent` | Paratrooper action             |
+| `SendBomberIntentEvent`            | Bomber run action              |
+| `SendAllianceRequestIntentEvent`   | Propose alliance action        |
+| `SendBreakAllianceIntentEvent`     | Break alliance action          |
+| `SendPeaceRequestIntentEvent`      | Request peace action           |
+| `SendDeclareWarIntentEvent`        | Declare war action             |
+| `SendEmojiIntentEvent`             | Player toast → emoji table     |
+| `SendDonateTroopsIntentEvent`      | Player toast donate troops     |
+| `SendDonateGoldIntentEvent`        | Player toast donate gold       |
+| `ToggleUpgradeModeEvent`           | Stack mode toggle              |
+| `ZoomEvent`                        | Pinch gesture / zoom buttons   |
+| `DragEvent`                        | Drag gesture (map pan)         |
+| `CenterCameraEvent`                | Center zoom button             |
 
 ---
 
-## Gesture System
+## Interaction Flows
 
-`GestureDetector` is a touch-event state machine on the canvas element that detects:
+### Tap → Action Grid → Intent
 
-| Gesture              | Detection Logic                                              | Status                                                   |
-| -------------------- | ------------------------------------------------------------ | -------------------------------------------------------- |
-| **Tap**              | Single touch, < 200ms, < 10px movement                       | **Working** → tile selection                             |
-| **Double-tap**       | Two taps within 300ms                                        | **Detected** but unused                                  |
-| **Long-press**       | Single touch held > 500ms, < 10px movement                   | **Working** → economy overlay                            |
-| **Drag**             | Single touch moving > 10px threshold                         | **Partial** → placement mode only, map pan unimplemented |
-| **Pinch**            | Two-finger touch with scale change                           | **Detected** but zoom unimplemented                      |
-| **Edge swipe left**  | Touch starting within 20px of left edge, moving > 50px right | **Working** → intel sidebar                              |
-| **Edge swipe right** | Touch starting within 20px of right edge, moving > 50px left | **Working** → research sidebar                           |
+1. `GestureDetector` fires `tap` → `MobileUI.handleMapTap()` converts screen→tile
+2. `MobileActionGrid.showForTile()` resolves tile category and renders actions
+3. User taps an action tile → `MobileUI.handleActionSelected()` routes by prefix (`build:`, `attack:`, `diplomacy:`, `spawn`, `mode:`)
+4. Intent event emitted on `EventBus` → `Transport` → server
+
+### Sidebar Access
+
+| Trigger                   | Opens                         |
+| ------------------------- | ----------------------------- |
+| Economy tab button        | MobileEconomyOverlay          |
+| Intel tab button          | MobileIntelSidebar (left)     |
+| Research tab button       | MobileResearchSidebar (right) |
+| TopBar settings icon      | MobileSettingsSidebar (right) |
+| Edge swipe from left      | MobileIntelSidebar            |
+| Edge swipe from right     | MobileResearchSidebar         |
+| Long-press on player tile | MobilePlayerToast             |
+| Long-press on other tile  | MobileEconomyOverlay          |
+
+### Stack Mode
+
+Toggle in action grid enables upgrade-mode: subsequent taps upgrade the nearest stackable structure (City, Port, Factory, etc.) using sticky targeting.
 
 ---
 
 ## File Inventory
 
-| File                                | Lines | Status                                   |
-| ----------------------------------- | ----- | ---------------------------------------- |
-| `MobileActionGrid.ts`               | 1003  | Active, primary interaction surface      |
-| `MobileUI.ts`                       | 1086  | Active orchestrator                      |
-| `components/MobileResearchPanel.ts` | 683   | Active, embedded in ResearchSidebar      |
-| `overlays/MobileEconomyOverlay.ts`  | 647   | Active                                   |
-| `overlays/MobileIntelSidebar.ts`    | 362   | Active (Events tab stubbed)              |
-| `MobileTopBar.ts`                   | 307   | Active                                   |
-| `gestures/GestureDetector.ts`       | 280   | Active (pinch/drag partial)              |
-| `components/MobileSettingsPanel.ts` | 262   | Active                                   |
-| `overlays/MobileResearchSidebar.ts` | 154   | Active                                   |
-| `overlays/MobilePlayerToast.ts`     | 149   | Active – `show()` not yet called         |
-| `overlays/MobileSettingsSidebar.ts` | 147   | Active                                   |
-| `MobileDetector.ts`                 | 107   | Active                                   |
-| `utils/HapticFeedback.ts`           | 107   | Importable utility, not called currently |
-
----
-
-## Known Issues & TODOs
-
-### Critical (breaks expected behavior)
-
-1. **Pinch zoom unimplemented** – gesture detected but not forwarded to `TransformHandler`
-2. **Map drag/pan unimplemented** – only placement mode finger tracking works
-3. **GestureDetector.destroy() leaks listeners** – uses `.bind(this)` in `removeEventListener` (creates new references that don't match)
-4. **`updateGameState()` called once** – sidebars/overlays receive initial game ref only (works because `GameView` is a live proxy, but fragile)
-
-### Medium (missing features)
-
-5. **Events tab** in Intel sidebar is a placeholder
-6. **MobilePlayerToast** – `show()` is never called from anywhere
-7. **HapticFeedback** – imported but never invoked
-
-### Low (polish)
-
-8. **`console.log` statements** in MobileUI.ts should be removed or gated behind a debug flag
-9. **TODO comments** remain across several mobile files
-
----
-
-## Cleanup History
-
-The following dead/orphaned code was removed on 2026-02-12:
-
-| Removed File                          | Lines | Reason                                            |
-| ------------------------------------- | ----- | ------------------------------------------------- |
-| `gestures/LongPressDetector.ts`       | 84    | Never imported (logic inlined in GestureDetector) |
-| `gestures/EdgeSwipeDetector.ts`       | 57    | Never imported (logic inlined in GestureDetector) |
-| `utils/SkeletonLoader.ts`             | 147   | Never rendered                                    |
-| `MobileContextButton.ts`              | 187   | Always hidden, superseded by ActionGrid           |
-| `popups/MobileBasePopup.ts`           | 383   | Only used by deleted popups                       |
-| `popups/MobileBuildPopup.ts`          | 290   | Unreachable via hidden context button             |
-| `popups/MobileAttackPopup.ts`         | 291   | Unreachable via hidden context button             |
-| `popups/MobileDiplomacyPopup.ts`      | 174   | Unreachable via hidden context button             |
-| `popups/MobileUnitActionPopup.ts`     | 148   | Never opened (stub)                               |
-| `overlays/MobileAttackRatioSlider.ts` | 226   | Unreachable via hidden context button             |
-| `overlays/MobilePlacementMode.ts`     | 233   | Unreachable (ActionGrid always sets selectedTile) |
-
-~2,861 lines and ~618 lines of supporting code in MobileUI.ts were removed.
-24 files → 13 files, ~8,000 lines → ~5,294 lines.
+| File                                      | Lines |
+| ----------------------------------------- | ----- |
+| `MobileUI.ts`                             | 1830  |
+| `MobileActionGrid.ts`                     | 1597  |
+| `MobileTopBar.ts`                         | 446   |
+| `MobileDetector.ts`                       | 120   |
+| `gestures/GestureDetector.ts`             | 332   |
+| `components/MobileResearchPanel.ts`       | 679   |
+| `components/MobileSettingsPanel.ts`       | 542   |
+| `overlays/MobileEconomyOverlay.ts`        | 807   |
+| `overlays/MobileIntelSidebar.ts`          | 771   |
+| `overlays/MobileAttackBar.ts`             | 625   |
+| `overlays/MobileEventsDisplay.ts`         | 577   |
+| `overlays/MobilePlayerToast.ts`           | 572   |
+| `overlays/MobileAllianceNotifications.ts` | 492   |
+| `overlays/MobileResearchPriorityModal.ts` | 375   |
+| `overlays/MobileTechUnlockToast.ts`       | 284   |
+| `overlays/MobileChatEmojiBar.ts`          | 255   |
+| `overlays/MobileResearchPriorityToast.ts` | 234   |
+| `overlays/MobileResearchSidebar.ts`       | 209   |
+| `overlays/MobileSettingsSidebar.ts`       | 206   |
+| `utils/HapticFeedback.ts`                 | 124   |
+| `utils/Icons.ts`                          | 76    |
+| `utils/OverlayPositioning.ts`             | 48    |

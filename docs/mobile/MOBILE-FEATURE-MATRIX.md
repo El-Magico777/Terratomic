@@ -1,199 +1,87 @@
 # Mobile Feature Matrix
 
-> Last updated: 2026-02-12
+> Last updated: 2026-02-15
 
-## Desktop → Mobile Feature Mapping
+Desktop → mobile parity overview. All source under `src/client/mobile/`.
 
-| Desktop Feature              | Desktop Mechanism                                                                  | Mobile Equivalent                             | Mobile Trigger                                   |
-| ---------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| **Radial/Context Menu**      | Right-click on tile → D3 radial menu (6 slots + center)                            | `MobileActionGrid`                            | Tap any tile → bottom sheet                      |
-| **Ground Attack**            | Radial center button (sword) / `G` key                                             | ActionGrid `attack:ground`                    | Tap enemy tile → "Ground Attack" tile            |
-| **Boat / Naval Assault**     | Radial Boat slot                                                                   | ActionGrid `attack:naval`                     | Tap enemy tile → "Naval Assault" tile            |
-| **Alliance Request**         | Radial Ally slot (green)                                                           | ActionGrid `diplomacy:propose-ally`           | Tap enemy tile → "Propose Alliance"              |
-| **Break Alliance**           | Radial Ally slot (red)                                                             | ActionGrid `diplomacy:break-alliance`         | Tap allied tile → "Break Alliance"               |
-| **Request Peace**            | Radial Peace slot (dove)                                                           | ActionGrid `diplomacy:request-peace`          | Tap enemy-at-war tile → "Request Peace"          |
-| **Declare War**              | Radial Peace slot (war icon)                                                       | ActionGrid `attack:declare-war`               | Tap enemy tile → "Declare War"                   |
-| **Paratroopers**             | Radial AirAttack slot                                                              | Handler exists in MobileUI                    | **Not yet in ActionGrid**                        |
-| **Bomber Run**               | Radial Bomber slot                                                                 | Handler exists in MobileUI                    | **Not yet in ActionGrid**                        |
-| **Spawn**                    | Radial center button (spawn phase)                                                 | Direct tap or ActionGrid `spawn`              | Tap unclaimed land tile                          |
-| **Build Structures**         | Hotkeys (`Y`=City, `U`=Port, `I`=Airfield…) / Ctrl+click / ControlPanel2 Build tab | ActionGrid `build:*` tiles                    | Tap own tile → grid shows buildable structures   |
-| **Build Nukes**              | Hotkeys (`5`=Atom, `6`=H-Bomb, `7`=MIRV)                                           | ActionGrid `attack:nuke-*`                    | Tap enemy tile → nuke tiles (if silo + research) |
-| **Build Naval Units**        | Hotkeys (`9`=Warship, `0`=Sub) / ControlPanel2 Build tab                           | ActionGrid `build:Warship`, `build:Submarine` | Tap own water tile (requires Port)               |
-| **Build Fighter Jet**        | Hotkey `8` / ControlPanel2 Build tab                                               | ActionGrid `build:FighterJet`                 | Tap own tile (requires Airfield + Jet Engines)   |
-| **Build Artillery**          | Hotkey `4`                                                                         | —                                             | **Not yet in mobile**                            |
-| **Troop/Worker Ratio**       | ControlPanel slider                                                                | `MobileEconomyOverlay`                        | Long-press map or Economy edge-tab               |
-| **Attack Ratio**             | ControlPanel slider / `1`/`2` keys / Shift+scroll                                  | `MobileEconomyOverlay`                        | Economy overlay slider                           |
-| **Investment Sliders**       | ControlPanel / ControlPanel2 Economy tab                                           | `MobileEconomyOverlay`                        | Long-press or Economy edge-tab                   |
-| **Population & Gold**        | `TopBar` / ControlPanel stats                                                      | `MobileTopBar`                                | Always visible at top                            |
-| **Leaderboard**              | `GameLeftSidebar` → `leader-board`                                                 | `MobileIntelSidebar`                          | ≡ button or swipe from left edge                 |
-| **Player Info**              | Radial Info slot → `PlayerPanel`                                                   | `MobileIntelSidebar`                          | ≡ button or swipe from left edge                 |
-| **Events Log**               | `events-display`                                                                   | —                                             | **Not yet in mobile**                            |
-| **Chat**                     | `chat-display`                                                                     | —                                             | **Not yet in mobile**                            |
-| **Heads-Up Messages**        | `heads-up-message`                                                                 | —                                             | **Hidden on mobile**                             |
-| **Options / Settings**       | `options-menu`                                                                     | `MobileSettingsSidebar`                       | ⚙️ button or swipe from right edge               |
-| **Replay Panel**             | `replay-panel`                                                                     | —                                             | **Not yet in mobile**                            |
-| **Research Toggle**          | `research-toggle-button`                                                           | `MobileResearchSidebar`                       | 🔬 button or swipe from right edge               |
-| **Alternate View**           | Hold `Space` key                                                                   | —                                             | **Not available on mobile**                      |
-| **Center Camera**            | `C` key                                                                            | —                                             | **Not available on mobile**                      |
-| **Pan / Zoom**               | WASD/arrows + Q/E + scroll + pinch                                                 | GestureDetector drag + pinch                  | Touch drag/pinch (pan partial, zoom TODO)        |
-| **Emoji Table**              | Alt+click → `EmojiTable`                                                           | —                                             | **Not yet in mobile** (TODO)                     |
-| **Upgrade Mode**             | ControlPanel2 toggle                                                               | —                                             | **Not yet in mobile**                            |
-| **Multi-Build Mode**         | ControlPanel2 toggle                                                               | —                                             | **Not yet in mobile**                            |
-| **Tutorial Toast**           | `tutorial-toast` (desktop position)                                                | Same component, CSS overridden                | Auto-shown, repositioned top-center              |
-| **Tech Unlock Notification** | `tech-unlock-notification` (desktop position)                                      | Same component, CSS overridden                | Auto-shown, repositioned top-center              |
+Related docs: [Architecture](MOBILE-ARCHITECTURE.md) · [Gestures & Haptics](MOBILE-GESTURES-HAPTICS.md) · [Action Grid Catalog](MOBILE-ACTION-GRID-CATALOG.md)
 
 ---
 
-## ActionGrid: Tile-Tap → Actions Matrix
+## Desktop → Mobile Feature Parity
 
-### Spawn Phase
-
-| Tile Condition     | Actions                   |
-| ------------------ | ------------------------- |
-| Unclaimed land     | `spawn` 🎯 **Spawn Here** |
-| Water / owned tile | _(empty — no actions)_    |
-
-### Own Tiles
-
-#### Own Land
-
-All unlocked land structures shown. Disabled (greyed) if gold insufficient.
-
-| Action                 | Icon | Priority | Condition                         |
-| ---------------------- | ---- | -------- | --------------------------------- |
-| `build:City`           | 🏙️   | **high** | Always                            |
-| `build:Factory`        | 🏭   | **high** | Always                            |
-| `build:DefensePost`    | 🛡️   | normal   | Always                            |
-| `build:Airfield`       | ✈️   | **high** | Always                            |
-| `build:Hospital`       | 🏥   | normal   | Requires `HospitalResearch`       |
-| `build:MissileSilo`    | ⚛️   | normal   | Requires `NuclearFission`         |
-| `build:ResearchLab`    | 🔬   | normal   | Always                            |
-| `build:Academy`        | 🏛️   | normal   | Always                            |
-| `build:SAMLauncher`    | 🎯   | normal   | Always                            |
-| `build:DoomsdayDevice` | 💀   | normal   | Requires `DoomsdayDeviceResearch` |
-| `build:FighterJet`     | 🛩️   | normal   | Requires Airfield + `JetEngines`  |
-
-#### Own Shore
-
-Same as **Own Land** with Port prepended:
-
-| Action                   | Icon | Priority | Condition           |
-| ------------------------ | ---- | -------- | ------------------- |
-| `build:Port`             | ⚓   | **high** | Always (first item) |
-| _(all Own Land actions)_ |      |          |                     |
-
-#### Own Water
-
-Naval builds only. Requires a Port.
-
-| Action             | Icon | Priority | Condition                           |
-| ------------------ | ---- | -------- | ----------------------------------- |
-| `build:Warship`    | 🚢   | **high** | Requires Port                       |
-| `build:Submarine`  | 🔱   | **high** | Requires Port + `SubmarineResearch` |
-| `build:FighterJet` | 🛩️   | normal   | Requires Airfield + `JetEngines`    |
-
-### Enemy Tiles
-
-#### Enemy — Can Ground Attack
-
-Adjacent / reachable by land.
-
-| Action                     | Icon | Priority | Condition                     |
-| -------------------------- | ---- | -------- | ----------------------------- |
-| `attack:ground`            | 🪖   | **high** | Disabled if 0 troops          |
-| `diplomacy:request-peace`  | 🕊️   | normal   | Only if at war                |
-| `diplomacy:break-alliance` | 💔   | normal   | Only if allied                |
-| `diplomacy:propose-ally`   | 🤝   | normal   | Only if neutral relationship  |
-| `attack:declare-war`       | ⚔️   | normal   | Only if NOT at war            |
-| `attack:nuke-atom`         | ☢️   | normal   | Silo + `NuclearFission`       |
-| `attack:nuke-hbomb`        | 💥   | normal   | Silo + `ThermonuclearStaging` |
-| `attack:nuke-mirv`         | 🚀   | normal   | Silo + `MIRVTechnology`       |
-| `build:FighterJet`         | 🛩️   | normal   | Airfield + `JetEngines`       |
-
-#### Enemy — Can Boat Attack
-
-Land tile reachable only by transport ship.
-
-| Action                     | Icon | Priority | Condition                     |
-| -------------------------- | ---- | -------- | ----------------------------- |
-| `attack:naval`             | 🚢   | **high** | Disabled if 0 troops          |
-| `diplomacy:request-peace`  | 🕊️   | normal   | Only if at war                |
-| `diplomacy:break-alliance` | 💔   | normal   | Only if allied                |
-| `diplomacy:propose-ally`   | 🤝   | normal   | Only if neutral relationship  |
-| `attack:declare-war`       | ⚔️   | normal   | Only if NOT at war            |
-| `attack:nuke-atom`         | ☢️   | normal   | Silo + `NuclearFission`       |
-| `attack:nuke-hbomb`        | 💥   | normal   | Silo + `ThermonuclearStaging` |
-| `attack:nuke-mirv`         | 🚀   | normal   | Silo + `MIRVTechnology`       |
-
-#### Enemy — No Attack Possible
-
-Out of range for ground and naval. Diplomacy + nukes only.
-
-| Action                     | Icon | Priority | Condition                     |
-| -------------------------- | ---- | -------- | ----------------------------- |
-| `diplomacy:request-peace`  | 🕊️   | **high** | Only if at war                |
-| `diplomacy:propose-ally`   | 🤝   | **high** | Only if neutral relationship  |
-| `diplomacy:break-alliance` | 💔   | normal   | Only if allied                |
-| `attack:declare-war`       | ⚔️   | normal   | Only if NOT at war            |
-| `attack:nuke-atom`         | ☢️   | normal   | Silo + `NuclearFission`       |
-| `attack:nuke-hbomb`        | 💥   | normal   | Silo + `ThermonuclearStaging` |
-| `attack:nuke-mirv`         | 🚀   | normal   | Silo + `MIRVTechnology`       |
-
-### Neutral Tiles
-
-#### Neutral Land — Can Attack
-
-| Action          | Icon | Priority | Condition            |
-| --------------- | ---- | -------- | -------------------- |
-| `attack:ground` | 🪖   | **high** | Disabled if 0 troops |
-
-#### Neutral Land — Can Boat Attack
-
-| Action         | Icon | Priority | Condition            |
-| -------------- | ---- | -------- | -------------------- |
-| `attack:naval` | 🚢   | **high** | Disabled if 0 troops |
-
-#### Neutral Ocean
-
-| Action             | Icon | Priority | Condition                           |
-| ------------------ | ---- | -------- | ----------------------------------- |
-| `build:Warship`    | 🚢   | **high** | Requires Port                       |
-| `build:Submarine`  | 🔱   | **high** | Requires Port + `SubmarineResearch` |
-| `build:FighterJet` | 🛩️   | normal   | Requires Airfield + `JetEngines`    |
+| Desktop Feature             | Mobile Equivalent                             | Trigger                                        | Status        |
+| --------------------------- | --------------------------------------------- | ---------------------------------------------- | ------------- |
+| Radial/Context Menu         | `MobileActionGrid` (bottom sheet)             | Tap any tile                                   | ✅ Working    |
+| Ground Attack               | ActionGrid `attack:ground`                    | Tap enemy tile → "Ground Attack"               | ✅ Working    |
+| Boat / Naval Assault        | ActionGrid `attack:naval`                     | Tap enemy tile → "Naval Assault"               | ✅ Working    |
+| Paratroopers                | ActionGrid `attack:airstrike`                 | Tap enemy tile → "Paratroopers"                | ✅ Working    |
+| Bomber Run                  | ActionGrid `attack:bomber`                    | Tap enemy tile → "Bomber Run"                  | ✅ Working    |
+| Alliance Request            | ActionGrid `diplomacy:propose-ally`           | Tap enemy tile → "Propose Alliance"            | ✅ Working    |
+| Break Alliance              | ActionGrid `diplomacy:break-alliance`         | Tap allied tile → "Break Alliance"             | ✅ Working    |
+| Request Peace               | ActionGrid `diplomacy:request-peace`          | Tap enemy-at-war tile → "Request Peace"        | ✅ Working    |
+| Declare War                 | ActionGrid `attack:declare-war`               | Tap enemy tile → "Declare War"                 | ✅ Working    |
+| Spawn                       | Direct tap (spawn phase)                      | Tap unclaimed land                             | ✅ Working    |
+| Build Structures            | ActionGrid `build:*` tiles                    | Tap own tile → grid shows buildable structures | ✅ Working    |
+| Build Nukes                 | ActionGrid `attack:nuke-*`                    | Tap enemy tile (requires silo + research)      | ✅ Working    |
+| Build Naval Units           | ActionGrid `build:Warship`, `build:Submarine` | Tap own water tile (requires Port)             | ✅ Working    |
+| Build Fighter Jet           | ActionGrid `build:FighterJet`                 | Tap own tile (requires Airfield + Jet Engines) | ✅ Working    |
+| Build Artillery             | ActionGrid `build:Artillery`                  | Tap own tile (requires Factory + research)     | ✅ Working    |
+| Stack/Upgrade Structures    | ActionGrid stack mode toggle                  | Toggle in grid, tap structures to upgrade      | ✅ Working    |
+| Troop/Worker Ratio          | `MobileEconomyOverlay` slider                 | Economy overlay or long-press map              | ✅ Working    |
+| Attack Ratio                | `MobileEconomyOverlay` slider                 | Economy overlay                                | ✅ Working    |
+| Investment Sliders          | `MobileEconomyOverlay`                        | Economy overlay (production/road/research)     | ✅ Working    |
+| Population & Gold           | `MobileTopBar`                                | Always visible at top                          | ✅ Working    |
+| Game Clock                  | `MobileTopBar`                                | Always visible (counts after spawn phase)      | ✅ Working    |
+| Leaderboard                 | `MobileIntelSidebar` (Players tab)            | Intel tab button or edge swipe left            | ✅ Working    |
+| Team Leaderboard            | `MobileIntelSidebar` (Teams tab)              | Intel sidebar → Teams tab                      | ✅ Working    |
+| Player Info                 | `MobilePlayerToast`                           | Long-press any player-owned tile               | ✅ Working    |
+| Events Log                  | `MobileEventsDisplay` (in Intel sidebar)      | Intel sidebar → Events tab                     | ✅ Working    |
+| Chat                        | Opens desktop `chat-modal`                    | Player toast → chat button                     | ✅ Working    |
+| Emoji                       | Opens desktop `emoji-table`                   | Player toast → emoji button or ActionGrid      | ✅ Working    |
+| Donate Troops               | Player toast → donate troops                  | Long-press player tile → donate button         | ✅ Working    |
+| Donate Gold                 | Player toast → donate gold                    | Long-press player tile → donate button         | ✅ Working    |
+| Trade Income Indicator      | `MobileAttackBar` (trade bubble)              | Auto-shown on trade income ticks               | ✅ Working    |
+| Attack Notifications        | `MobileAttackBar` (attack bubbles)            | Auto-shown on active attacks                   | ✅ Working    |
+| Chat/Emoji Bubbles          | `MobileChatEmojiBar`                          | Auto-shown on incoming chat/emoji              | ✅ Working    |
+| Alliance Notifications      | `MobileAllianceNotifications`                 | Auto-shown on alliance requests/warnings       | ✅ Working    |
+| Tech Unlock Notification    | `MobileTechUnlockToast`                       | Auto-shown on tech unlock                      | ✅ Working    |
+| Research Toggle             | `MobileResearchSidebar`                       | Research tab button or edge swipe right        | ✅ Working    |
+| Research Priority Selection | `MobileResearchPriorityModal`                 | Research panel interaction                     | ✅ Working    |
+| Options / Settings          | `MobileSettingsSidebar`                       | TopBar settings icon                           | ✅ Working    |
+| Zoom In/Out                 | Zoom +/- buttons (left side)                  | Tap zoom buttons                               | ✅ Working    |
+| Center Camera               | Center button (left side)                     | Tap center button                              | ✅ Working    |
+| Pan / Zoom (touch)          | `GestureDetector` drag + pinch                | Touch drag / pinch                             | ✅ Working    |
+| Replay Panel                | `MobileSettingsPanel` (replay controls)       | Settings sidebar                               | ✅ Working    |
+| Alternate View (Space)      | —                                             | —                                              | ❌ Not ported |
+| Multi-Build Mode            | —                                             | —                                              | ❌ Not ported |
 
 ---
 
-## Category Resolution Logic
+## HUD Layout (top → bottom)
 
-`MobileActionGrid.determineTileCategory()` resolves which scenario applies:
-
-1. **Spawn phase** → `spawn-phase`
-2. **Own tile** → `own-water` / `own-shore` / `own-land` (via `isLand()` + `isShoreline()`)
-3. **Neutral (no player owner)** → fetch `myPlayer.actions(tile)`:
-   - Ocean → `neutral-can-attack` (ship building)
-   - Land + `canAttack` → `neutral-can-attack`
-   - Land + transport ship buildable → `neutral-can-boat-attack`
-   - Fallback → `neutral-can-attack`
-4. **Enemy player** → fetch `myPlayer.actions(tile)`:
-   - `canAttack` → `enemy-can-attack`
-   - Transport ship buildable on land → `enemy-can-boat-attack`
-   - Otherwise → `enemy-no-attack`
+| Layer           | Z-Index | Component                                |
+| --------------- | ------- | ---------------------------------------- |
+| Top bar         | 1650    | `MobileTopBar`                           |
+| Attack bar      | 1760    | `MobileAttackBar`                        |
+| Chat/emoji bar  | 1758    | `MobileChatEmojiBar`                     |
+| Alliance notes  | 1500    | `MobileAllianceNotifications`            |
+| Tab buttons     | 1700    | Economy / Intel / Research tabs          |
+| Zoom buttons    | 1700    | +/−/center (left side)                   |
+| Action grid     | 2000    | `MobileActionGrid` (bottom)              |
+| Player toast    | 2500    | `MobilePlayerToast`                      |
+| Sidebars        | 3000    | Intel / Research / Settings              |
+| Economy overlay | 1800    | `MobileEconomyOverlay`                   |
+| Tech toasts     | 4050+   | `MobileTechUnlockToast` / priority modal |
 
 ---
 
-## Gaps (Desktop features not yet in ActionGrid)
+## Tab Buttons (right side)
 
-| Feature                   | Status                                  |
-| ------------------------- | --------------------------------------- |
-| Paratroopers (air attack) | Handler in MobileUI, no ActionGrid tile |
-| Bomber run                | Handler in MobileUI, no ActionGrid tile |
-| Artillery                 | Not in mobile at all                    |
-| Emoji sending             | TODO stub                               |
-| Troop donation            | TODO stub                               |
-| Upgrade mode              | Not in mobile                           |
-| Multi-build mode          | Not in mobile                           |
-| Center camera             | Not in mobile                           |
-| Alternate view (Space)    | Not in mobile                           |
-| Events log                | Not in mobile                           |
-| Chat                      | Not in mobile                           |
-| Replay panel              | Not in mobile                           |
+Three fixed buttons appear during gameplay (hidden during spawn phase):
+
+| Button   | Position | Color  | Opens                   |
+| -------- | -------- | ------ | ----------------------- |
+| Economy  | Top      | Gold   | `MobileEconomyOverlay`  |
+| Research | Middle   | Purple | `MobileResearchSidebar` |
+| Intel    | Bottom   | Blue   | `MobileIntelSidebar`    |

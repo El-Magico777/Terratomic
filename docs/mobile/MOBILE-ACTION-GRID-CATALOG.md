@@ -1,219 +1,179 @@
-# Mobile Action Grid - Complete Action Catalog
+# Mobile Action Grid Catalog
 
-This document catalogs all actions available in the mobile action grid, organized by category.
+> Last updated: 2026-02-15
 
-## Overview
+Complete action inventory for `MobileActionGrid`, sourced directly from code.
 
-The mobile action grid displays context-appropriate actions based on:
-
-- Tile ownership (own, enemy, neutral)
-- Tile type (land, shore, water)
-- Player research progress
-- Available resources (gold, troops)
-- Diplomatic relationships
+Related docs: [Architecture](MOBILE-ARCHITECTURE.md) · [Feature Matrix](MOBILE-FEATURE-MATRIX.md) · [Gestures & Haptics](MOBILE-GESTURES-HAPTICS.md)
 
 ---
 
-## Action Categories
+## Category Resolution
 
-### 1. Initial Spawn
+`MobileActionGrid.determineTileCategory()` maps each tile tap to one of these categories:
 
-| Action     | ID      | Icon | Cost | Requirements                   | Priority |
-| ---------- | ------- | ---- | ---- | ------------------------------ | -------- |
-| Spawn Here | `spawn` | 🏳️   | -    | Unowned land tile, spawn phase | High     |
+| Category                  | Condition                                                      |
+| ------------------------- | -------------------------------------------------------------- |
+| `spawn-phase`             | Game in spawn phase                                            |
+| `own-land`                | Own tile, land (includes shore — shore uses same land actions) |
+| `own-shore`               | Own tile, shoreline (delegates to own-land actions)            |
+| `own-water`               | Own tile, water                                                |
+| `enemy-can-attack`        | Enemy/player tile, `canAttack` is true                         |
+| `enemy-can-boat-attack`   | Enemy/player land tile, reachable by transport ship only       |
+| `enemy-no-attack`         | Enemy/player tile, no ground or boat attack possible           |
+| `neutral-can-attack`      | Neutral tile, ocean (ship building) or land with `canAttack`   |
+| `neutral-can-boat-attack` | Neutral land tile, reachable by transport ship only            |
 
----
-
-### 2. Infrastructure & Buildings
-
-#### Land Structures (High Priority)
-
-| Action   | ID               | Icon | Cost    | Requirements                   | Priority |
-| -------- | ---------------- | ---- | ------- | ------------------------------ | -------- |
-| City     | `build:City`     | 🏙️   | Dynamic | Owned land                     | High     |
-| Factory  | `build:Factory`  | 🏭   | Dynamic | Owned land                     | High     |
-| Airfield | `build:Airfield` | ✈️   | Dynamic | Owned land                     | High     |
-| Port     | `build:Port`     | ⚓   | Dynamic | Nearby ocean shore (≤10 tiles) | High     |
-
-#### Land Structures (Standard Priority)
-
-| Action       | ID                  | Icon | Cost    | Requirements | Priority |
-| ------------ | ------------------- | ---- | ------- | ------------ | -------- |
-| Defense Post | `build:DefensePost` | 🛡️   | Dynamic | Owned land   | Normal   |
-| Research Lab | `build:ResearchLab` | 🔬   | Dynamic | Owned land   | Normal   |
-| Academy      | `build:Academy`     | 🏛️   | Dynamic | Owned land   | Normal   |
-| SAM Launcher | `build:SAMLauncher` | 🎯   | Dynamic | Owned land   | Normal   |
-
-#### Research-Locked Structures
-
-| Action          | ID                     | Icon | Cost    | Requirements             | Priority |
-| --------------- | ---------------------- | ---- | ------- | ------------------------ | -------- |
-| Hospital        | `build:Hospital`       | 🏥   | Dynamic | Hospital Research        | Normal   |
-| Missile Silo    | `build:MissileSilo`    | ⚛️   | Dynamic | Nuclear Fission          | Normal   |
-| Doomsday Device | `build:DoomsdayDevice` | 💀   | Dynamic | Doomsday Device Research | Normal   |
+Own-land/own-shore/own-water also append a **Stack Mode toggle** at the end of the actions list.
 
 ---
 
-### 3. Military Units
-
-#### Land Units
-
-| Action    | ID                | Icon | Cost    | Requirements                 | Priority |
-| --------- | ----------------- | ---- | ------- | ---------------------------- | -------- |
-| Artillery | `build:Artillery` | 🎯   | Dynamic | Factory + Artillery Research | Normal   |
-
-#### Naval Units
-
-| Action    | ID                | Icon | Cost    | Requirements              | Priority |
-| --------- | ----------------- | ---- | ------- | ------------------------- | -------- |
-| Warship   | `build:Warship`   | 🚢   | Dynamic | Port exists               | High     |
-| Submarine | `build:Submarine` | 🔱   | Dynamic | Port + Submarine Research | High     |
-
-#### Air Units
-
-| Action      | ID                 | Icon | Cost    | Requirements           | Priority |
-| ----------- | ------------------ | ---- | ------- | ---------------------- | -------- |
-| Fighter Jet | `build:FighterJet` | ✈️   | Dynamic | Airfield + Jet Engines | Normal   |
-
----
-
-### 4. Combat Actions
-
-#### Direct Attacks
-
-| Action        | ID                 | Icon | Cost | Requirements                          | Priority      |
-| ------------- | ------------------ | ---- | ---- | ------------------------------------- | ------------- |
-| Ground Attack | `attack:ground`    | ⚔️   | -    | Troops > 0, adjacent enemy/neutral    | High          |
-| Naval Assault | `attack:naval`     | ⚓   | -    | Troops > 0, transport ships available | High          |
-| Paratroopers  | `attack:airstrike` | 🪂   | -    | Airfield + Jet Engines + Troops       | Normal/High\* |
-| Bomber Run    | `attack:bomber`    | 💣   | -    | Airfield + War declared               | Normal/High\* |
-
-\*Priority varies by context (enemy-no-attack vs enemy-can-attack)
-
----
-
-### 5. Nuclear Weapons
-
-| Action    | ID                  | Icon | Cost   | Requirements                                | Priority |
-| --------- | ------------------- | ---- | ------ | ------------------------------------------- | -------- |
-| Atom Bomb | `attack:nuke-atom`  | ⚛️   | 5,000  | Missile Silo + Nuclear Fission + Gold       | Normal   |
-| H-Bomb    | `attack:nuke-hbomb` | 💥   | 15,000 | Missile Silo + Thermonuclear Staging + Gold | Normal   |
-| MIRV      | `attack:nuke-mirv`  | 🚀   | 50,000 | Missile Silo + MIRV Technology + Gold       | Normal   |
-
----
-
-### 6. Diplomacy
-
-| Action           | ID                         | Icon | Cost | Requirements                             | Priority      |
-| ---------------- | -------------------------- | ---- | ---- | ---------------------------------------- | ------------- |
-| Propose Alliance | `diplomacy:propose-ally`   | 🤝   | -    | Target is player, not allied, not at war | Normal/High\* |
-| Break Alliance   | `diplomacy:break-alliance` | 💔   | -    | Currently allied with target             | Normal        |
-| Request Peace    | `diplomacy:request-peace`  | 🕊️   | -    | Currently at war with target             | Normal/High\* |
-| Declare War      | `attack:declare-war`       | ⚔️   | -    | Target is player, not at war             | Normal        |
-
-\*Priority is High in enemy-no-attack scenarios
-
----
-
-## Context-Based Action Availability
+## Actions by Category
 
 ### Spawn Phase
 
-- **Spawn Here** (on unowned land tiles)
-
-### Own Territory - Land
-
-- All infrastructure buildings
-- Artillery (if factory exists)
-- Fighter Jet (if airfield + research)
-- Port (if ocean shore nearby)
-
-### Own Territory - Shore
-
-- Same as land (includes port by default)
-
-### Own Territory - Water
-
-- Port (if shore nearby)
-- Warship (if port exists)
-- Submarine (if port + research)
-- Fighter Jet (if airfield + research)
-
-### Enemy Territory - Can Attack
-
-- Ground Attack
-- Paratroopers (if airfield + jets)
-- Bomber Run (if at war + airfield)
-- Fighter Jet (buildable)
-- All diplomacy options
-- All nukes (if unlocked)
-
-### Enemy Territory - Can Boat Attack
-
-- Naval Assault
-- Paratroopers (if airfield + jets)
-- Bomber Run (if at war + airfield)
-- All diplomacy options
-- All nukes (if unlocked)
-
-### Enemy Territory - Cannot Attack
-
-- Paratroopers (if airfield + jets) - HIGH PRIORITY
-- Bomber Run (if at war + airfield) - HIGH PRIORITY
-- Propose Alliance / Request Peace - HIGH PRIORITY
-- All other diplomacy
-- All nukes (if unlocked)
-
-### Neutral Territory - Can Attack
-
-- Ground Attack (land only)
-- Port + Water units (ocean only)
-- Fighter Jet (if airfield + research)
-
-### Neutral Territory - Boat Attack
-
-- Naval Assault
+| Action     | ID      | Priority | Condition         |
+| ---------- | ------- | -------- | ----------------- |
+| Spawn Here | `spawn` | high     | Unowned land tile |
 
 ---
 
-## Design Patterns
+### Own Land / Own Shore
 
-### Priority System
+All unlocked land structures. Disabled (greyed) if gold insufficient. Research-locked structures hidden until prerequisite unlocked.
 
-- **High Priority**: Larger tiles (2-column span), larger icons/text
-- **Normal Priority**: Standard tile size
+| Action          | ID                     | Priority | Requirement                    |
+| --------------- | ---------------------- | -------- | ------------------------------ |
+| Port            | `build:Port`           | high     | Nearby ocean shore (≤10 tiles) |
+| City            | `build:City`           | high     | —                              |
+| Factory         | `build:Factory`        | high     | —                              |
+| Defense Post    | `build:DefensePost`    | normal   | —                              |
+| Airfield        | `build:Airfield`       | high     | —                              |
+| Hospital        | `build:Hospital`       | normal   | `HospitalResearch`             |
+| Missile Silo    | `build:MissileSilo`    | normal   | `NuclearFission`               |
+| Research Lab    | `build:ResearchLab`    | normal   | —                              |
+| Academy         | `build:Academy`        | normal   | —                              |
+| SAM Launcher    | `build:SAMLauncher`    | normal   | —                              |
+| Doomsday Device | `build:DoomsdayDevice` | normal   | `DoomsdayDeviceResearch`       |
+| Artillery       | `build:Artillery`      | normal   | Factory + `ArtilleryResearch`  |
+| Fighter Jet     | `build:FighterJet`     | normal   | Airfield + `JetEngines`        |
+| Stack Mode      | `mode:stack-toggle`    | —        | Always (last item)             |
 
-### Cost Display
-
-- Shown in gold (💰) with K/M abbreviations
-- Updates based on tech level and stack count
-
-### Disabled States
-
-- Grayed out with reason displayed
-- Haptic error feedback on tap
-
-### Locked States
-
-- Red tint with 🔒 icon
-- Shows research requirement
-
-### Dynamic Costs
-
-- Calculated based on:
-  - Base unit cost
-  - Stack count (for stackable structures)
-  - Tech level (for upgradeable units)
-  - Upgrade cost multipliers
+Port only appears when a BFS within 10 tiles finds an owned ocean-shore tile.
 
 ---
 
-## Implementation Notes
+### Own Water
 
-- Actions dispatch `action-selected` custom events with action ID
-- Closing dispatches `grid-closed` events
+| Action      | ID                  | Priority | Requirement                |
+| ----------- | ------------------- | -------- | -------------------------- |
+| Port        | `build:Port`        | high     | Nearby ocean shore (≤10)   |
+| Warship     | `build:Warship`     | high     | Owns a Port                |
+| Submarine   | `build:Submarine`   | high     | Port + `SubmarineResearch` |
+| Fighter Jet | `build:FighterJet`  | normal   | Airfield + `JetEngines`    |
+| Stack Mode  | `mode:stack-toggle` | —        | Always (last item)         |
+
+---
+
+### Enemy — Can Ground Attack
+
+| Action           | ID                         | Priority | Requirement                         |
+| ---------------- | -------------------------- | -------- | ----------------------------------- |
+| Ground Attack    | `attack:ground`            | high     | Troops > 0                          |
+| Paratroopers     | `attack:airstrike`         | normal   | Airfield + `JetEngines`             |
+| Bomber Run       | `attack:bomber`            | normal   | Airfield + at war                   |
+| Fighter Jet      | `build:FighterJet`         | normal   | Airfield + `JetEngines`             |
+| Request Peace    | `diplomacy:request-peace`  | normal   | At war with target                  |
+| Break Alliance   | `diplomacy:break-alliance` | normal   | Allied with target                  |
+| Propose Alliance | `diplomacy:propose-ally`   | normal   | Neutral relationship                |
+| Declare War      | `attack:declare-war`       | normal   | Not at war                          |
+| Atom Bomb        | `attack:nuke-atom`         | normal   | Silo + `NuclearFission` + 5K gold   |
+| H-Bomb           | `attack:nuke-hbomb`        | normal   | Silo + `ThermonuclearStaging` + 15K |
+| MIRV             | `attack:nuke-mirv`         | normal   | Silo + `MIRVTechnology` + 50K       |
+
+---
+
+### Enemy — Can Boat Attack
+
+| Action           | ID                         | Priority | Requirement                         |
+| ---------------- | -------------------------- | -------- | ----------------------------------- |
+| Naval Assault    | `attack:naval`             | high     | Troops > 0                          |
+| Paratroopers     | `attack:airstrike`         | normal   | Airfield + `JetEngines`             |
+| Bomber Run       | `attack:bomber`            | normal   | Airfield + at war                   |
+| Request Peace    | `diplomacy:request-peace`  | normal   | At war with target                  |
+| Break Alliance   | `diplomacy:break-alliance` | normal   | Allied with target                  |
+| Propose Alliance | `diplomacy:propose-ally`   | normal   | Neutral relationship                |
+| Declare War      | `attack:declare-war`       | normal   | Not at war                          |
+| Atom Bomb        | `attack:nuke-atom`         | normal   | Silo + `NuclearFission` + 5K gold   |
+| H-Bomb           | `attack:nuke-hbomb`        | normal   | Silo + `ThermonuclearStaging` + 15K |
+| MIRV             | `attack:nuke-mirv`         | normal   | Silo + `MIRVTechnology` + 50K       |
+
+---
+
+### Enemy — No Attack Possible
+
+Diplomacy + air + nukes only. Peace and alliance are promoted to high priority.
+
+| Action           | ID                         | Priority | Requirement                         |
+| ---------------- | -------------------------- | -------- | ----------------------------------- |
+| Paratroopers     | `attack:airstrike`         | **high** | Airfield + `JetEngines`             |
+| Bomber Run       | `attack:bomber`            | **high** | Airfield + at war                   |
+| Request Peace    | `diplomacy:request-peace`  | **high** | At war with target                  |
+| Propose Alliance | `diplomacy:propose-ally`   | **high** | Neutral relationship                |
+| Break Alliance   | `diplomacy:break-alliance` | normal   | Allied with target                  |
+| Declare War      | `attack:declare-war`       | normal   | Not at war                          |
+| Atom Bomb        | `attack:nuke-atom`         | normal   | Silo + `NuclearFission` + 5K gold   |
+| H-Bomb           | `attack:nuke-hbomb`        | normal   | Silo + `ThermonuclearStaging` + 15K |
+| MIRV             | `attack:nuke-mirv`         | normal   | Silo + `MIRVTechnology` + 50K       |
+
+---
+
+### Neutral — Can Attack (Land)
+
+| Action | ID              | Priority | Requirement |
+| ------ | --------------- | -------- | ----------- |
+| Attack | `attack:ground` | high     | Troops > 0  |
+
+---
+
+### Neutral — Can Attack (Ocean)
+
+| Action      | ID                 | Priority | Requirement                |
+| ----------- | ------------------ | -------- | -------------------------- |
+| Port        | `build:Port`       | high     | Nearby ocean shore (≤10)   |
+| Warship     | `build:Warship`    | high     | Owns a Port                |
+| Submarine   | `build:Submarine`  | high     | Port + `SubmarineResearch` |
+| Fighter Jet | `build:FighterJet` | normal   | Airfield + `JetEngines`    |
+
+---
+
+### Neutral — Boat Attack
+
+| Action        | ID             | Priority | Requirement |
+| ------------- | -------------- | -------- | ----------- |
+| Naval Assault | `attack:naval` | high     | Troops > 0  |
+
+---
+
+## Grid Layout
+
+- Bottom-anchored sheet, max 60vh, auto-fill grid with 65px min column width
+- High-priority items sorted first
+- Top row items auto-expand to fill incomplete rows (percentage-based column spans)
+- Disabled tiles: greyed + reason text
+- Locked tiles: hidden (research-locked structures not shown until prerequisite met)
+- Nukes: only shown when silo + research + gold requirements are all met
+- Diplomacy: exactly one of peace/alliance/break-alliance shown based on current relationship; declare-war shown when not at war
 - 300ms debounce prevents accidental backdrop closure
-- Haptic feedback for all interactions
-- Grid has 60vh max height with touch scrolling
-- Auto-fill grid with 65px minimum tile width
-- Safe area inset padding for notched devices
+- Haptic: `TAP` on valid action, `ERROR` on disabled/locked
+
+---
+
+## Stack Mode
+
+When stack mode is toggled ON:
+
+- Action grid collapses to a single full-width "Stack ON" toggle button
+- Map taps upgrade the nearest stackable structure within hit radius (28px screen, 72px sticky)
+- Stackable types: City, Port, Airfield, Hospital, Academy, ResearchLab, Factory, MissileSilo, SAMLauncher
+- Sticky targeting remembers the last upgraded structure for easier repeated taps
