@@ -29,6 +29,9 @@ export class MobileSettingsPanel extends LitElement {
   @state()
   private replaySpeedMultiplier: number = defaultReplaySpeedMultiplier;
 
+  @state()
+  private showExitConfirm: boolean = false;
+
   private userSettings = new UserSettings();
 
   static styles = css`
@@ -205,6 +208,76 @@ export class MobileSettingsPanel extends LitElement {
       padding: 0 10px 10px;
     }
 
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.48);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+      padding: 16px;
+    }
+
+    .confirm-dialog {
+      width: min(90vw, 320px);
+      border-radius: 12px;
+      border: 1px solid rgba(152, 163, 177, 0.32);
+      background: linear-gradient(
+        180deg,
+        rgba(23, 30, 39, 0.95) 0%,
+        rgba(12, 17, 24, 0.98) 100%
+      );
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+      padding: 14px;
+    }
+
+    .confirm-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(237, 243, 250, 0.98);
+      margin-bottom: 8px;
+    }
+
+    .confirm-text {
+      font-size: 12px;
+      color: rgba(208, 217, 229, 0.88);
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .confirm-btn {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(139, 151, 167, 0.3);
+      background: linear-gradient(
+        180deg,
+        rgba(20, 26, 35, 0.9) 0%,
+        rgba(12, 17, 24, 0.95) 100%
+      );
+      color: rgba(228, 236, 246, 0.95);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .confirm-btn.danger {
+      border-color: rgba(248, 113, 113, 0.55);
+      background: linear-gradient(
+        180deg,
+        rgba(185, 38, 38, 0.78) 0%,
+        rgba(124, 25, 25, 0.88) 100%
+      );
+      color: rgba(255, 238, 238, 0.96);
+    }
+
     .speed-controls {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -301,11 +374,26 @@ export class MobileSettingsPanel extends LitElement {
   private handleExitGame(): void {
     const isAlive = this.game?.myPlayer()?.isAlive();
     if (isAlive) {
-      const isConfirmed = confirm(
-        translateText("help_modal.exit_confirmation"),
-      );
-      if (!isConfirmed) return;
+      this.showExitConfirm = true;
+      HapticFeedback.tap();
+      return;
     }
+
+    this.exitGame();
+  }
+
+  private handleCancelExit = (): void => {
+    this.showExitConfirm = false;
+    HapticFeedback.tap();
+  };
+
+  private handleConfirmExit = (): void => {
+    this.showExitConfirm = false;
+    HapticFeedback.success();
+    this.exitGame();
+  };
+
+  private exitGame(): void {
     window.location.href = "/";
   }
 
@@ -415,6 +503,32 @@ export class MobileSettingsPanel extends LitElement {
         ${isReplay
           ? html`<div class="muted-note">Replay mode: saving is disabled.</div>`
           : ""}
+        ${this.showExitConfirm
+          ? html`
+              <div class="confirm-overlay" @click=${this.handleCancelExit}>
+                <div
+                  class="confirm-dialog"
+                  @click=${(e: Event) => e.stopPropagation()}
+                >
+                  <div class="confirm-title">Exit Game?</div>
+                  <div class="confirm-text">
+                    ${translateText("help_modal.exit_confirmation")}
+                  </div>
+                  <div class="confirm-actions">
+                    <button class="confirm-btn" @click=${this.handleCancelExit}>
+                      Cancel
+                    </button>
+                    <button
+                      class="confirm-btn danger"
+                      @click=${this.handleConfirmExit}
+                    >
+                      Exit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `
+          : null}
       </div>
     `;
   }

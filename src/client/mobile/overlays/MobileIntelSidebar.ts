@@ -37,6 +37,11 @@ export class MobileIntelSidebar extends LitElement {
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) eventsDisplay: MobileEventsDisplay | null = null;
   @state() private activeTab: IntelTab = "players";
+  private leaderboardCacheTick: number | null = null;
+  private leaderboardCache: {
+    leaderboardEntries: PlayerListEntry[];
+    pinnedCurrentPlayer: PlayerListEntry | null;
+  } | null = null;
 
   static styles = css`
     :host {
@@ -587,6 +592,11 @@ export class MobileIntelSidebar extends LitElement {
       };
     }
 
+    const tick = this.game.ticks();
+    if (this.leaderboardCache && this.leaderboardCacheTick === tick) {
+      return this.leaderboardCache;
+    }
+
     const allPlayers = this.game.players();
     const rankedEntries = allPlayers
       .map((player, originalIndex) => {
@@ -637,10 +647,15 @@ export class MobileIntelSidebar extends LitElement {
       ? null
       : (rankedEntries.find((entry) => entry.isCurrentPlayer) ?? null);
 
-    return {
+    const result = {
       leaderboardEntries,
       pinnedCurrentPlayer,
     };
+
+    this.leaderboardCacheTick = tick;
+    this.leaderboardCache = result;
+
+    return result;
   }
 
   private getTeamLeaderboardData(): TeamListEntry[] {

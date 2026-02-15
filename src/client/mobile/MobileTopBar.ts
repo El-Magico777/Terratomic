@@ -28,6 +28,8 @@ export class MobileTopBar extends LitElement {
 
   @property({ type: Boolean }) showDetails: boolean = false;
 
+  private detailsHideTimeout: number | null = null;
+
   static styles = css`
     :host {
       display: block;
@@ -403,14 +405,29 @@ export class MobileTopBar extends LitElement {
   private handleStatsClick(): void {
     this.showDetails = !this.showDetails;
 
+    if (this.detailsHideTimeout !== null) {
+      window.clearTimeout(this.detailsHideTimeout);
+      this.detailsHideTimeout = null;
+    }
+
     // Auto-hide after 3 seconds
     if (this.showDetails) {
-      setTimeout(() => {
+      this.detailsHideTimeout = window.setTimeout(() => {
         this.showDetails = false;
+        this.detailsHideTimeout = null;
       }, 3000);
     }
 
     HapticFeedback.tap();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+
+    if (this.detailsHideTimeout !== null) {
+      window.clearTimeout(this.detailsHideTimeout);
+      this.detailsHideTimeout = null;
+    }
   }
 
   /**

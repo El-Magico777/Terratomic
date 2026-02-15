@@ -12,6 +12,12 @@ import {
   type TechNode,
 } from "../../../core/tech/ResearchTree";
 import { SendResearchTreeSelectIntentEvent } from "../../Transport";
+import {
+  computeAnchoredTop,
+  getMobileAttackBarBottom,
+  startRepositionInterval,
+  stopRepositionInterval,
+} from "../utils/OverlayPositioning";
 import "./MobileResearchPriorityToast";
 import type { MobileResearchPriorityToast } from "./MobileResearchPriorityToast";
 
@@ -27,6 +33,7 @@ export class MobileResearchPriorityModal extends LitElement {
   private techs: TechNode[] = [...getTechNodes()];
   private categories: Category[] = ["Land", "Sea", "Air", "Nuclear"];
   private repositionTimer: number | null = null;
+  private ownedToast: MobileResearchPriorityToast | null = null;
 
   static styles = css`
     :host {
@@ -216,6 +223,11 @@ export class MobileResearchPriorityModal extends LitElement {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this.stopRepositionLoop();
+
+    if (this.ownedToast) {
+      this.ownedToast.remove();
+      this.ownedToast = null;
+    }
   }
 
   private researchedIDsFromGame(): Set<string> {
@@ -327,54 +339,31 @@ export class MobileResearchPriorityModal extends LitElement {
         "mobile-research-priority-toast",
       ) as MobileResearchPriorityToast;
       document.body.appendChild(toast);
+      this.ownedToast = toast;
     }
 
     return toast;
   }
 
   private updateTopOffset(): void {
-    const attackBottom = this.getAttackBarBottom();
-    const topPx =
-      attackBottom > 0
-        ? Math.max(BASE_TOP_PX, attackBottom + STACK_GAP_PX)
-        : BASE_TOP_PX;
+    const attackBottom = getMobileAttackBarBottom();
+    const topPx = computeAnchoredTop(BASE_TOP_PX, attackBottom, STACK_GAP_PX);
 
     this.style.setProperty("--research-panel-top", `${topPx}px`);
   }
 
   private startRepositionLoop(): void {
-    this.stopRepositionLoop();
-    this.repositionTimer = window.setInterval(() => {
-      this.updateTopOffset();
-    }, 180);
+    this.repositionTimer = startRepositionInterval(
+      this.repositionTimer,
+      () => {
+        this.updateTopOffset();
+      },
+      180,
+    );
   }
 
   private stopRepositionLoop(): void {
-    if (this.repositionTimer !== null) {
-      window.clearInterval(this.repositionTimer);
-      this.repositionTimer = null;
-    }
-  }
-
-  private getAttackBarBottom(): number {
-    const attackBar = document.querySelector(
-      "mobile-attack-bar",
-    ) as HTMLElement | null;
-    if (!attackBar) return 0;
-
-    const container = attackBar.shadowRoot?.querySelector(
-      ".container",
-    ) as HTMLElement | null;
-
-    if (!container) {
-      return 0;
-    }
-
-    if (container.children.length === 0 || container.offsetHeight <= 0) {
-      return 0;
-    }
-
-    return container.getBoundingClientRect().bottom;
+    this.repositionTimer = stopRepositionInterval(this.repositionTimer);
   }
 }
 

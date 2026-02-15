@@ -8,6 +8,7 @@ import { customElement, property } from "lit/decorators.js";
 import { UnitType, UpgradeType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
 import type { GameView, PlayerView } from "../../core/game/GameView";
+import { renderNumber } from "../Utils";
 import { HapticFeedback, HapticPattern } from "./utils/HapticFeedback";
 import { getActionIcon, getUnitIcon } from "./utils/Icons";
 
@@ -490,13 +491,9 @@ export class MobileActionGrid extends LitElement {
   }
 
   private formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + "M";
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + "K";
-    }
-    return num.toString();
+    return renderNumber(num)
+      .replace(/\.00([KM])$/, "$1")
+      .replace(/(\.\d)0([KM])$/, "$1$2");
   }
 
   private handleActionClick(item: ActionGridItem): void {
@@ -705,7 +702,7 @@ export class MobileActionGrid extends LitElement {
         );
       case "own-shore":
         return this.appendStackModeToggle(
-          this.getOwnShoreActions(tile, game, myPlayer),
+          this.getOwnLandActions(tile, game, myPlayer),
         );
       case "own-water":
         return this.appendStackModeToggle(
@@ -905,15 +902,6 @@ export class MobileActionGrid extends LitElement {
     return actions;
   }
 
-  private getOwnShoreActions(
-    tile: TileRef,
-    game: GameView,
-    myPlayer: PlayerView,
-  ): ActionGridItem[] {
-    // Shore is also land - use regular land actions (which already includes port if shore nearby)
-    return this.getOwnLandActions(tile, game, myPlayer);
-  }
-
   private getOwnWaterActions(
     tile: TileRef,
     game: GameView,
@@ -1052,74 +1040,11 @@ export class MobileActionGrid extends LitElement {
       });
     }
 
-    // Diplomacy actions
     if (targetPlayer) {
-      const isAllied = myPlayer.isAlliedWith(targetPlayer);
-      const isAtWar = myPlayer.isAtWarWith(targetPlayer);
-
-      if (isAtWar) {
-        actions.push({
-          id: "diplomacy:request-peace",
-          icon: getActionIcon("peace"),
-          label: "Request Peace",
-        });
-      } else if (isAllied) {
-        actions.push({
-          id: "diplomacy:break-alliance",
-          icon: getActionIcon("breakAlliance"),
-          label: "Break Alliance",
-        });
-      } else {
-        actions.push({
-          id: "diplomacy:propose-ally",
-          icon: getActionIcon("alliance"),
-          label: "Propose Alliance",
-        });
-      }
-
-      if (!isAtWar) {
-        actions.push({
-          id: "attack:declare-war",
-          icon: getActionIcon("declareWar"),
-          label: "Declare War",
-        });
-      }
+      this.pushDiplomacyActions(actions, myPlayer, targetPlayer);
     }
 
-    // Nuclear options (if player has missile silo)
-    const gold = Number(myPlayer.gold());
-    if (this.canLaunchNuke(myPlayer, "atom")) {
-      actions.push({
-        id: "attack:nuke-atom",
-        icon: getActionIcon("atomBomb"),
-        label: "Atom Bomb",
-        cost: 5000,
-        disabled: gold < 5000,
-        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    if (this.canLaunchNuke(myPlayer, "hbomb")) {
-      actions.push({
-        id: "attack:nuke-hbomb",
-        icon: getActionIcon("hBomb"),
-        label: "H-Bomb",
-        cost: 15000,
-        disabled: gold < 15000,
-        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    if (this.canLaunchNuke(myPlayer, "mirv")) {
-      actions.push({
-        id: "attack:nuke-mirv",
-        icon: getActionIcon("mirv"),
-        label: "MIRV",
-        cost: 50000,
-        disabled: gold < 50000,
-        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
-      });
-    }
+    this.pushNukeActions(actions, myPlayer);
 
     return actions;
   }
@@ -1169,74 +1094,11 @@ export class MobileActionGrid extends LitElement {
       });
     }
 
-    // Diplomacy actions
     if (targetPlayer) {
-      const isAllied = myPlayer.isAlliedWith(targetPlayer);
-      const isAtWar = myPlayer.isAtWarWith(targetPlayer);
-
-      if (isAtWar) {
-        actions.push({
-          id: "diplomacy:request-peace",
-          icon: getActionIcon("peace"),
-          label: "Request Peace",
-        });
-      } else if (isAllied) {
-        actions.push({
-          id: "diplomacy:break-alliance",
-          icon: getActionIcon("breakAlliance"),
-          label: "Break Alliance",
-        });
-      } else {
-        actions.push({
-          id: "diplomacy:propose-ally",
-          icon: getActionIcon("alliance"),
-          label: "Propose Alliance",
-        });
-      }
-
-      if (!isAtWar) {
-        actions.push({
-          id: "attack:declare-war",
-          icon: getActionIcon("declareWar"),
-          label: "Declare War",
-        });
-      }
+      this.pushDiplomacyActions(actions, myPlayer, targetPlayer);
     }
 
-    // Nuclear options (if player has missile silo)
-    const gold = Number(myPlayer.gold());
-    if (this.canLaunchNuke(myPlayer, "atom")) {
-      actions.push({
-        id: "attack:nuke-atom",
-        icon: getActionIcon("atomBomb"),
-        label: "Atom Bomb",
-        cost: 5000,
-        disabled: gold < 5000,
-        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    if (this.canLaunchNuke(myPlayer, "hbomb")) {
-      actions.push({
-        id: "attack:nuke-hbomb",
-        icon: getActionIcon("hBomb"),
-        label: "H-Bomb",
-        cost: 15000,
-        disabled: gold < 15000,
-        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    if (this.canLaunchNuke(myPlayer, "mirv")) {
-      actions.push({
-        id: "attack:nuke-mirv",
-        icon: getActionIcon("mirv"),
-        label: "MIRV",
-        cost: 50000,
-        disabled: gold < 50000,
-        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
-      });
-    }
+    this.pushNukeActions(actions, myPlayer);
 
     return actions;
   }
@@ -1279,73 +1141,13 @@ export class MobileActionGrid extends LitElement {
     }
 
     if (targetPlayer) {
-      const isAllied = myPlayer.isAlliedWith(targetPlayer);
-      const isAtWar = myPlayer.isAtWarWith(targetPlayer);
-
-      if (isAtWar) {
-        actions.push({
-          id: "diplomacy:request-peace",
-          icon: getActionIcon("peace"),
-          label: "Request Peace",
-          priority: "high",
-        });
-      } else if (isAllied) {
-        actions.push({
-          id: "diplomacy:break-alliance",
-          icon: getActionIcon("breakAlliance"),
-          label: "Break Alliance",
-        });
-      } else {
-        actions.push({
-          id: "diplomacy:propose-ally",
-          icon: getActionIcon("alliance"),
-          label: "Propose Alliance",
-          priority: "high",
-        });
-      }
-
-      if (!isAtWar) {
-        actions.push({
-          id: "attack:declare-war",
-          icon: getActionIcon("declareWar"),
-          label: "Declare War",
-        });
-      }
-    }
-    // Nuclear options (if player has missile silo)
-    const gold = Number(myPlayer.gold());
-    if (this.canLaunchNuke(myPlayer, "atom")) {
-      actions.push({
-        id: "attack:nuke-atom",
-        icon: getActionIcon("atomBomb"),
-        label: "Atom Bomb",
-        cost: 5000,
-        disabled: gold < 5000,
-        disabledReason: gold < 5000 ? "Not enough gold" : undefined,
+      this.pushDiplomacyActions(actions, myPlayer, targetPlayer, {
+        prioritizePeace: true,
+        prioritizeProposeAlliance: true,
       });
     }
 
-    if (this.canLaunchNuke(myPlayer, "hbomb")) {
-      actions.push({
-        id: "attack:nuke-hbomb",
-        icon: getActionIcon("hBomb"),
-        label: "H-Bomb",
-        cost: 15000,
-        disabled: gold < 15000,
-        disabledReason: gold < 15000 ? "Not enough gold" : undefined,
-      });
-    }
-
-    if (this.canLaunchNuke(myPlayer, "mirv")) {
-      actions.push({
-        id: "attack:nuke-mirv",
-        icon: getActionIcon("mirv"),
-        label: "MIRV",
-        cost: 50000,
-        disabled: gold < 50000,
-        disabledReason: gold < 50000 ? "Not enough gold" : undefined,
-      });
-    }
+    this.pushNukeActions(actions, myPlayer);
     return actions;
   }
 
@@ -1507,6 +1309,101 @@ export class MobileActionGrid extends LitElement {
   private playerHasFactory(myPlayer: PlayerView): boolean {
     // Only count completed factories, not factories under construction
     return myPlayer.units(UnitType.Factory).length > 0;
+  }
+
+  private pushNukeActions(
+    actions: ActionGridItem[],
+    myPlayer: PlayerView,
+  ): void {
+    const gold = Number(myPlayer.gold());
+
+    const nukeOptions: Array<{
+      type: "atom" | "hbomb" | "mirv";
+      id: string;
+      icon: string;
+      label: string;
+      cost: number;
+    }> = [
+      {
+        type: "atom",
+        id: "attack:nuke-atom",
+        icon: getActionIcon("atomBomb"),
+        label: "Atom Bomb",
+        cost: 5000,
+      },
+      {
+        type: "hbomb",
+        id: "attack:nuke-hbomb",
+        icon: getActionIcon("hBomb"),
+        label: "H-Bomb",
+        cost: 15000,
+      },
+      {
+        type: "mirv",
+        id: "attack:nuke-mirv",
+        icon: getActionIcon("mirv"),
+        label: "MIRV",
+        cost: 50000,
+      },
+    ];
+
+    for (const option of nukeOptions) {
+      if (!this.canLaunchNuke(myPlayer, option.type)) {
+        continue;
+      }
+
+      actions.push({
+        id: option.id,
+        icon: option.icon,
+        label: option.label,
+        cost: option.cost,
+        disabled: gold < option.cost,
+        disabledReason: gold < option.cost ? "Not enough gold" : undefined,
+      });
+    }
+  }
+
+  private pushDiplomacyActions(
+    actions: ActionGridItem[],
+    myPlayer: PlayerView,
+    targetPlayer: PlayerView,
+    options?: {
+      prioritizePeace?: boolean;
+      prioritizeProposeAlliance?: boolean;
+    },
+  ): void {
+    const isAllied = myPlayer.isAlliedWith(targetPlayer);
+    const isAtWar = myPlayer.isAtWarWith(targetPlayer);
+
+    if (isAtWar) {
+      actions.push({
+        id: "diplomacy:request-peace",
+        icon: getActionIcon("peace"),
+        label: "Request Peace",
+        priority: options?.prioritizePeace ? "high" : undefined,
+      });
+    } else if (isAllied) {
+      actions.push({
+        id: "diplomacy:break-alliance",
+        icon: getActionIcon("breakAlliance"),
+        label: "Break Alliance",
+      });
+    } else {
+      actions.push({
+        id: "diplomacy:propose-ally",
+        icon: getActionIcon("alliance"),
+        label: "Propose Alliance",
+        priority: options?.prioritizeProposeAlliance ? "high" : undefined,
+      });
+    }
+
+    if (!isAtWar) {
+      actions.push({
+        id: "attack:declare-war",
+        icon: getActionIcon("declareWar"),
+        label: "Declare War",
+      });
+    }
   }
 
   private canLaunchNuke(

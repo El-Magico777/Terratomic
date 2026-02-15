@@ -10,7 +10,6 @@ import {
 import {
   AllianceExpiredUpdate,
   AllianceRequestReplyUpdate,
-  AllianceRequestUpdate,
   BrokeAllianceUpdate,
   DisplayChatMessageUpdate,
   DisplayMessageUpdate,
@@ -202,8 +201,6 @@ export class MobileEventsDisplay extends LitElement {
   private updateMap = [
     [GameUpdateType.DisplayEvent, this.onDisplayMessageEvent.bind(this)],
     [GameUpdateType.DisplayChatEvent, this.onDisplayChatEvent.bind(this)],
-    // Alliance requests now shown as notifications, not in events log
-    // [GameUpdateType.AllianceRequest, this.onAllianceRequestEvent.bind(this)],
     [
       GameUpdateType.AllianceRequestReply,
       this.onAllianceRequestReplyEvent.bind(this),
@@ -298,27 +295,6 @@ export class MobileEventsDisplay extends LitElement {
       createdAt: this.game.ticks(),
       playerID: event.playerID ?? undefined,
       icon: "💬",
-    });
-  }
-
-  private onAllianceRequestEvent(event: AllianceRequestUpdate) {
-    const myPlayer = this.game.myPlayer();
-    if (!myPlayer || event.recipientID !== myPlayer.smallID()) {
-      return;
-    }
-
-    const requestor = this.game.playerBySmallID(event.requestorID);
-    if (!requestor || !(requestor instanceof PlayerView)) return;
-
-    this.addEvent({
-      description: translateText("events_display.alliance_request", {
-        name: requestor.name(),
-      }),
-      type: MessageType.ALLIANCE_REQUEST,
-      category: MessageCategory.ALLIANCE,
-      createdAt: this.game.ticks(),
-      playerID: event.requestorID,
-      icon: "🤝",
     });
   }
 
@@ -498,11 +474,11 @@ export class MobileEventsDisplay extends LitElement {
   private formatTimeAgo(createdAt: Tick): string {
     const currentTick = this.game.ticks();
     const ticksAgo = currentTick - createdAt;
+    const secondsAgo = Math.max(0, Math.floor(ticksAgo / 10));
 
-    // 1 tick = 1 second approx
-    if (ticksAgo < 60) return `${ticksAgo}s ago`;
-    if (ticksAgo < 3600) return `${Math.floor(ticksAgo / 60)}m ago`;
-    return `${Math.floor(ticksAgo / 3600)}h ago`;
+    if (secondsAgo < 60) return `${secondsAgo}s ago`;
+    if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+    return `${Math.floor(secondsAgo / 3600)}h ago`;
   }
 
   private toggleEventFilter(filterName: MessageCategory) {

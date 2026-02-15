@@ -18,6 +18,8 @@ export interface SafeAreaInsets {
 }
 
 export class MobileDetector {
+  private static readonly SAFE_AREA_STYLE_ID = "mobile-safe-area-insets";
+
   /**
    * Detects if the current device is a mobile device
    * Checks for touch capability, screen size, and user agent
@@ -86,36 +88,33 @@ export class MobileDetector {
    * Gets safe area insets for notched devices (iPhone X+, etc.)
    */
   static getSafeAreaInsets(): SafeAreaInsets {
+    this.ensureSafeAreaStyle();
     const style = getComputedStyle(document.documentElement);
 
     const parseInset = (property: string): number => {
       const value = style.getPropertyValue(property);
-      return parseInt(value) || 0;
+      return Number.parseFloat(value) || 0;
     };
 
     return {
-      top: parseInset("env(safe-area-inset-top)"),
-      bottom: parseInset("env(safe-area-inset-bottom)"),
-      left: parseInset("env(safe-area-inset-left)"),
-      right: parseInset("env(safe-area-inset-right)"),
+      top: parseInset("--mobile-safe-area-top"),
+      bottom: parseInset("--mobile-safe-area-bottom"),
+      left: parseInset("--mobile-safe-area-left"),
+      right: parseInset("--mobile-safe-area-right"),
     };
   }
 
-  /**
-   * Gets the appropriate button size based on device screen size
-   */
-  static getContextButtonSize(): number {
-    const { screenSize } = this.getDeviceInfo();
+  private static ensureSafeAreaStyle(): void {
+    if (document.getElementById(this.SAFE_AREA_STYLE_ID)) return;
 
-    switch (screenSize) {
-      case "small":
-        return 56; // iPhone SE, small phones
-      case "medium":
-        return 64; // Standard phones
-      case "large":
-        return 72; // Tablets
-      default:
-        return 64;
-    }
+    const style = document.createElement("style");
+    style.id = this.SAFE_AREA_STYLE_ID;
+    style.textContent = `:root {
+      --mobile-safe-area-top: env(safe-area-inset-top, 0px);
+      --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+      --mobile-safe-area-left: env(safe-area-inset-left, 0px);
+      --mobile-safe-area-right: env(safe-area-inset-right, 0px);
+    }`;
+    document.head.appendChild(style);
   }
 }

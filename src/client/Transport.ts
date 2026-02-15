@@ -123,6 +123,10 @@ export class SendResearchTreeSelectIntentEvent implements GameEvent {
   constructor(public readonly techId: string) {}
 }
 
+export class SendResearchTreeSelectBatchIntentEvent implements GameEvent {
+  constructor(public readonly techIds: string[]) {}
+}
+
 export class SendTargetPlayerIntentEvent implements GameEvent {
   constructor(public readonly targetID: PlayerID) {}
 }
@@ -361,6 +365,9 @@ export class Transport {
 
     this.eventBus.on(SendResearchTreeSelectIntentEvent, (e) =>
       this.onSendResearchTreeSelectIntent(e),
+    );
+    this.eventBus.on(SendResearchTreeSelectBatchIntentEvent, (e) =>
+      this.onSendResearchTreeSelectBatchIntent(e),
     );
 
     this.eventBus.on(BuildUnitIntentEvent, (e) => this.onBuildUnitIntent(e));
@@ -813,6 +820,18 @@ export class Transport {
       clientID: this.lobbyConfig.clientID,
       techId: event.techId,
     });
+  }
+
+  private onSendResearchTreeSelectBatchIntent(
+    event: SendResearchTreeSelectBatchIntentEvent,
+  ) {
+    for (const techId of event.techIds) {
+      this.sendIntent({
+        type: "research_tree_select",
+        clientID: this.lobbyConfig.clientID,
+        techId,
+      });
+    }
   }
 
   private onPauseGameEvent(event: PauseGameEvent) {

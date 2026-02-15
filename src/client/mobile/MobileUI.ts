@@ -33,7 +33,6 @@ import {
 import { ToggleUpgradeModeEvent } from "../events/ToggleUpgradeModeEvent";
 import type { TransformHandler } from "../graphics/TransformHandler";
 import { MobileActionGrid } from "./MobileActionGrid";
-import { MobileDetector } from "./MobileDetector";
 import { MobileTopBar, TopBarStats } from "./MobileTopBar";
 import { GestureDetector } from "./gestures/GestureDetector";
 import { MobileAllianceNotifications } from "./overlays/MobileAllianceNotifications";
@@ -939,25 +938,9 @@ export class MobileUI {
       this.handleZoomOut();
     });
 
-    // Economy overlay closed
-    this.economyOverlay.addEventListener("overlay-closed", () => {
-      // Economy overlay closed
-    });
-
     this.economyOverlay.addEventListener("attack-ratio-changed", (e: Event) => {
       const event = e as CustomEvent<{ ratio: number }>;
       this.attackRatio = event.detail.ratio;
-    });
-
-    // Phase 4: Intel sidebar closed
-    this.intelSidebar.addEventListener("sidebar-closed", () => {
-      // Intel sidebar closed
-    });
-
-    // Phase 4: Player selected from sidebar
-    this.intelSidebar.addEventListener("player-selected", (e: Event) => {
-      const event = e as CustomEvent<{ player: any }>;
-      // Player selected from sidebar
     });
 
     // Phase 4: Player toast clicked
@@ -991,21 +974,6 @@ export class MobileUI {
     this.actionGrid.addEventListener("action-selected", (e: Event) => {
       const event = e as CustomEvent<{ action: string }>;
       this.handleActionSelected(event.detail.action);
-    });
-
-    // Action grid: Grid closed
-    this.actionGrid.addEventListener("grid-closed", () => {
-      // Action grid closed
-    });
-
-    // Phase 5: Research sidebar closed
-    this.researchSidebar.addEventListener("sidebar-closed", () => {
-      // Research sidebar closed
-    });
-
-    // Phase 5: Settings sidebar closed
-    this.settingsSidebar.addEventListener("sidebar-closed", () => {
-      // Settings sidebar closed
     });
 
     // Handle orientation changes
@@ -1806,8 +1774,8 @@ export class MobileUI {
    * Handle orientation changes
    */
   private handleOrientationChange(): void {
-    const orientation = MobileDetector.getOrientation();
-    // Orientation changed
+    this.updateAttackBarPosition();
+    this.updateChatEmojiBarPosition();
   }
 
   /**

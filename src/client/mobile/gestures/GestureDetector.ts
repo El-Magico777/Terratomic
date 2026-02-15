@@ -25,7 +25,7 @@ export type GestureCallback = (gesture: Gesture) => void;
 export class GestureDetector {
   private touchStartTime: number = 0;
   private touchStartPos: { x: number; y: number } | null = null;
-  private longPressTimer: NodeJS.Timeout | null = null;
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null;
   private callbacks: Map<GestureType, GestureCallback[]> = new Map();
   private initialPinchDistance: number = 0;
   private lastPinchScale: number = 1;
@@ -198,7 +198,7 @@ export class GestureDetector {
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
     // Check for edge swipe
-    if (this.isEdgeTouch(changedTouch) && duration < 150) {
+    if (duration < 150) {
       const velocity = Math.abs(deltaX) / (duration / 1000);
 
       if (velocity >= this.EDGE_SWIPE_MIN_VELOCITY) {

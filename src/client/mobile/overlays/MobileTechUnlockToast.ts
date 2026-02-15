@@ -1,6 +1,11 @@
 import { LitElement, css, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { notificationQueue } from "../../NotificationQueue";
+import {
+  getMobileAttackBarBottom,
+  startRepositionInterval,
+  stopRepositionInterval,
+} from "../utils/OverlayPositioning";
 
 type TechNotificationPayload = {
   id: string;
@@ -189,30 +194,21 @@ export class MobileTechUnlockToast extends LitElement {
 
   private startRepositionLoop(): void {
     this.stopRepositionLoop();
-    this.repositionTimer = window.setInterval(() => {
-      this.updateTopOffset();
-    }, 180);
+    this.repositionTimer = startRepositionInterval(
+      this.repositionTimer,
+      () => {
+        this.updateTopOffset();
+      },
+      180,
+    );
   }
 
   private stopRepositionLoop(): void {
-    if (this.repositionTimer !== null) {
-      window.clearInterval(this.repositionTimer);
-      this.repositionTimer = null;
-    }
+    this.repositionTimer = stopRepositionInterval(this.repositionTimer);
   }
 
   private getAttackBarBottom(): number {
-    const attackBar = document.querySelector("mobile-attack-bar") as
-      | (HTMLElement & { currentHeight?: number })
-      | null;
-
-    if (!attackBar) return 0;
-
-    const knownHeight = attackBar.currentHeight ?? 0;
-    if (knownHeight <= 0) return 0;
-
-    const rect = attackBar.getBoundingClientRect();
-    return rect.top + knownHeight;
+    return getMobileAttackBarBottom();
   }
 
   private getAllianceBottom(): number {

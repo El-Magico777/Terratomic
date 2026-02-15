@@ -691,10 +691,11 @@ export class MobileEconomyOverlay extends LitElement {
 
   private handleAttackRatioChange = (event: Event): void => {
     const target = event.target as HTMLInputElement;
-    let ratio = Math.max(0.01, Math.min(1, parseInt(target.value, 10) / 100));
-    if (ratio === 0.11 && this.attackRatio === 0.01) {
-      ratio = 0.1;
-    }
+    const rawRatio = Math.max(
+      0.01,
+      Math.min(1, Number.parseInt(target.value, 10) / 100),
+    );
+    const ratio = Math.round(rawRatio * 100) / 100;
     this.attackRatio = ratio;
     this.dispatchEvent(
       new CustomEvent("attack-ratio-changed", {

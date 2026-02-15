@@ -25,6 +25,15 @@ export class MobilePlayerToast extends LitElement {
 
   private autoHideTimeout: number | null = null;
 
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+
+    if (this.autoHideTimeout !== null) {
+      window.clearTimeout(this.autoHideTimeout);
+      this.autoHideTimeout = null;
+    }
+  }
+
   static styles = css`
     :host {
       display: block;

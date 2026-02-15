@@ -1,6 +1,12 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { translateText } from "../../Utils";
+import {
+  computeAnchoredTop,
+  getMobileAttackBarBottom,
+  startRepositionInterval,
+  stopRepositionInterval,
+} from "../utils/OverlayPositioning";
 
 const TOAST_AUTO_HIDE_MS = 4600;
 const BASE_TOP_PX = 56;
@@ -199,48 +205,24 @@ export class MobileResearchPriorityToast extends LitElement {
   }
 
   private updateTopOffset(): void {
-    const attackBottom = this.getAttackBarBottom();
-    const topPx =
-      attackBottom > 0
-        ? Math.max(BASE_TOP_PX, attackBottom + STACK_GAP_PX)
-        : BASE_TOP_PX;
+    const attackBottom = getMobileAttackBarBottom();
+    const topPx = computeAnchoredTop(BASE_TOP_PX, attackBottom, STACK_GAP_PX);
 
     this.style.setProperty("--research-toast-top", `${topPx}px`);
   }
 
   private startRepositionLoop(): void {
-    this.stopRepositionLoop();
-    this.repositionTimer = window.setInterval(() => {
-      this.updateTopOffset();
-    }, 180);
+    this.repositionTimer = startRepositionInterval(
+      this.repositionTimer,
+      () => {
+        this.updateTopOffset();
+      },
+      180,
+    );
   }
 
   private stopRepositionLoop(): void {
-    if (this.repositionTimer !== null) {
-      window.clearInterval(this.repositionTimer);
-      this.repositionTimer = null;
-    }
-  }
-
-  private getAttackBarBottom(): number {
-    const attackBar = document.querySelector("mobile-attack-bar") as
-      | (HTMLElement & { currentHeight?: number })
-      | null;
-    if (!attackBar) return 0;
-
-    const container = attackBar.shadowRoot?.querySelector(
-      ".container",
-    ) as HTMLElement | null;
-
-    if (!container) {
-      return 0;
-    }
-
-    if (container.children.length === 0 || container.offsetHeight <= 0) {
-      return 0;
-    }
-
-    return container.getBoundingClientRect().bottom;
+    this.repositionTimer = stopRepositionInterval(this.repositionTimer);
   }
 }
 

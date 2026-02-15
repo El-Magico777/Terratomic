@@ -18,7 +18,10 @@ import {
   type TechNode,
 } from "../../../core/tech/ResearchTree";
 import { getTechMeta } from "../../../core/tech/TechEffects";
-import { SendResearchTreeSelectIntentEvent } from "../../Transport";
+import {
+  SendResearchTreeSelectBatchIntentEvent,
+  SendResearchTreeSelectIntentEvent,
+} from "../../Transport";
 import { HapticFeedback } from "../utils/HapticFeedback";
 
 const categoryIconSources: Record<Category, string> = {
@@ -476,16 +479,24 @@ export class MobileResearchPanel extends LitElement {
     const alreadyPrioritized = nonResearched.every((t) => priorities.has(t.id));
     if (alreadyPrioritized) return;
 
+    const techIdsToToggle: string[] = [];
+
     for (const tech of this.techs) {
       if (tech.category !== category && priorities.has(tech.id)) {
-        this.eventBus.emit(new SendResearchTreeSelectIntentEvent(tech.id));
+        techIdsToToggle.push(tech.id);
       }
     }
 
     for (const tech of nonResearched) {
       if (!priorities.has(tech.id)) {
-        this.eventBus.emit(new SendResearchTreeSelectIntentEvent(tech.id));
+        techIdsToToggle.push(tech.id);
       }
+    }
+
+    if (techIdsToToggle.length > 0) {
+      this.eventBus.emit(
+        new SendResearchTreeSelectBatchIntentEvent(techIdsToToggle),
+      );
     }
 
     HapticFeedback.tap();
