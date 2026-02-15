@@ -13,16 +13,17 @@ import {
   CancelBoatIntentEvent,
   CancelParatrooperIntentEvent,
 } from "../../Transport";
-import { renderTroops } from "../../Utils";
+import { renderNumber, renderTroops } from "../../Utils";
 import {
   GoToPlayerEvent,
   GoToPositionEvent,
 } from "../../graphics/layers/Leaderboard";
 
 interface AttackBubble {
-  type: "incoming" | "outgoing" | "land" | "boat" | "paratrooper";
+  type: "incoming" | "outgoing" | "land" | "boat" | "paratrooper" | "trade";
   id: string | number;
   troops: number;
+  tradeAmount?: number;
   playerName?: string;
   retreating?: boolean;
   // For camera focus
@@ -38,6 +39,12 @@ export class MobileAttackBar extends LitElement {
   @property({ type: Object }) game!: GameView;
 
   @state() private bubbles: AttackBubble[] = [];
+  @state() private tradeIncomeAmount: number | null = null;
+  @state() private tradeIncomeAnimating: boolean = false;
+
+  private tradeIncomeHideTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private tradeIncomeAnimationTimeoutId: ReturnType<typeof setTimeout> | null =
+    null;
 
   // Expose current height for other components to position below
   get currentHeight(): number {
@@ -169,6 +176,34 @@ export class MobileAttackBar extends LitElement {
       border-left: 3px solid rgba(144, 154, 167, 0.9);
     }
 
+    .bubble.trade {
+      border-left: 3px solid rgba(74, 222, 128, 0.95);
+      background: linear-gradient(
+        180deg,
+        rgba(16, 42, 24, 0.92) 0%,
+        rgba(10, 28, 17, 0.94) 100%
+      );
+    }
+
+    .bubble.trade.animating {
+      animation: tradeBubblePulse 0.6s ease-out;
+    }
+
+    @keyframes tradeBubblePulse {
+      0% {
+        transform: scale(1);
+      }
+      30% {
+        transform: scale(1.06);
+      }
+      60% {
+        transform: scale(1.02);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
     .bubble.retreating {
       opacity: 0.7;
     }
@@ -219,6 +254,7 @@ export class MobileAttackBar extends LitElement {
       if (this.bubbles.length > 0) {
         this.bubbles = [];
       }
+      this.clearTradeIncomeIndicator();
       return;
     }
 
@@ -314,8 +350,89 @@ export class MobileAttackBar extends LitElement {
     }
 
     // Only update if changed (shallow comparison of length and IDs)
-    if (this.hasBubblesChanged(newBubbles)) {
-      this.bubbles = newBubbles;
+    const finalBubbles = this.withTradeBubbleFirst(newBubbles);
+
+    if (this.hasBubblesChanged(finalBubbles)) {
+      this.bubbles = finalBubbles;
+    }
+  }
+
+  showTradeIncomeIndicator(amount: number | bigint): void {
+    const normalized = Number(amount);
+    if (!Number.isFinite(normalized) || normalized <= 0) {
+      return;
+    }
+
+    this.tradeIncomeAmount = normalized;
+
+    if (this.tradeIncomeHideTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeHideTimeoutId);
+    }
+    this.tradeIncomeHideTimeoutId = setTimeout(() => {
+      this.tradeIncomeAmount = null;
+      this.tradeIncomeAnimating = false;
+      this.tradeIncomeHideTimeoutId = null;
+      this.rebuildBubbles();
+    }, 5000);
+
+    this.tradeIncomeAnimating = false;
+    this.rebuildBubbles();
+    requestAnimationFrame(() => {
+      this.tradeIncomeAnimating = true;
+      this.rebuildBubbles();
+    });
+
+    if (this.tradeIncomeAnimationTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeAnimationTimeoutId);
+    }
+    this.tradeIncomeAnimationTimeoutId = setTimeout(() => {
+      this.tradeIncomeAnimating = false;
+      this.tradeIncomeAnimationTimeoutId = null;
+      this.rebuildBubbles();
+    }, 650);
+  }
+
+  clearTradeIncomeIndicator(): void {
+    this.tradeIncomeAmount = null;
+    this.tradeIncomeAnimating = false;
+
+    if (this.tradeIncomeHideTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeHideTimeoutId);
+      this.tradeIncomeHideTimeoutId = null;
+    }
+    if (this.tradeIncomeAnimationTimeoutId !== null) {
+      clearTimeout(this.tradeIncomeAnimationTimeoutId);
+      this.tradeIncomeAnimationTimeoutId = null;
+    }
+
+    this.rebuildBubbles();
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.clearTradeIncomeIndicator();
+  }
+
+  private withTradeBubbleFirst(base: AttackBubble[]): AttackBubble[] {
+    if (this.tradeIncomeAmount === null) {
+      return base;
+    }
+
+    const tradeBubble: AttackBubble = {
+      type: "trade",
+      id: "trade-income",
+      troops: 0,
+      tradeAmount: this.tradeIncomeAmount,
+    };
+
+    return [tradeBubble, ...base];
+  }
+
+  private rebuildBubbles(): void {
+    const nonTrade = this.bubbles.filter((bubble) => bubble.type !== "trade");
+    const rebuilt = this.withTradeBubbleFirst(nonTrade);
+    if (this.hasBubblesChanged(rebuilt)) {
+      this.bubbles = rebuilt;
     }
   }
 
@@ -339,6 +456,8 @@ export class MobileAttackBar extends LitElement {
 
   private getIcon(type: AttackBubble["type"]): string {
     switch (type) {
+      case "trade":
+        return "💰";
       case "incoming":
         return "⚔️";
       case "outgoing":
@@ -404,6 +523,22 @@ export class MobileAttackBar extends LitElement {
   }
 
   private renderBubble(bubble: AttackBubble): TemplateResult {
+    if (bubble.type === "trade") {
+      return html`
+        <div
+          class="bubble trade ${this.tradeIncomeAnimating ? "animating" : ""}"
+        >
+          <span class="bubble-content">
+            <span class="icon">${this.getIcon(bubble.type)}</span>
+            <span class="troops"
+              >+${renderNumber(bubble.tradeAmount ?? 0)}</span
+            >
+            <span class="name">Trade</span>
+          </span>
+        </div>
+      `;
+    }
+
     const canCancel = bubble.type !== "incoming" && !bubble.retreating;
 
     if (canCancel) {

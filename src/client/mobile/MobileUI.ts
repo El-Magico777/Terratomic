@@ -383,7 +383,7 @@ export class MobileUI {
     const inSpawnPhase = this.currentGame.inSpawnPhase();
 
     if (inSpawnPhase) {
-      this.topBar.clearTradeIncomeIndicator();
+      this.attackBar.clearTradeIncomeIndicator();
     }
 
     // Toggle menu buttons visibility based on spawn phase
@@ -410,7 +410,7 @@ export class MobileUI {
         myPlayer.smallID(),
       );
       if (tradeIncomeAmount !== null && tradeIncomeAmount > 0n) {
-        this.topBar.showTradeIncomeIndicator(tradeIncomeAmount);
+        this.attackBar.showTradeIncomeIndicator(tradeIncomeAmount);
       }
     }
 
