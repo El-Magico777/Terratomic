@@ -1,0 +1,251 @@
+import { LitElement, css, html } from "lit";
+import { customElement, property } from "lit/decorators.js";
+import { translateText } from "../../Utils";
+
+const TOAST_AUTO_HIDE_MS = 4600;
+const BASE_TOP_PX = 56;
+const STACK_GAP_PX = 8;
+
+@customElement("mobile-research-priority-toast")
+export class MobileResearchPriorityToast extends LitElement {
+  @property({ type: Boolean, reflect: true }) visible = false;
+  @property({ type: String }) title = "";
+  @property({ type: String }) message = "";
+
+  private hideTimer: number | null = null;
+  private repositionTimer: number | null = null;
+
+  static styles = css`
+    :host {
+      position: fixed;
+      top: calc(
+        env(safe-area-inset-top, 0px) + var(--research-toast-top, 56px)
+      );
+      left: calc(50% - 30px);
+      transform: translateX(-50%) translateY(-8px);
+      width: min(92vw, 320px);
+      z-index: 4300;
+      pointer-events: none;
+      opacity: 0;
+      transition:
+        transform 0.22s ease,
+        opacity 0.22s ease;
+    }
+
+    :host([visible]) {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      position: relative;
+      padding: 10px;
+      padding-right: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(142, 154, 169, 0.3);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(128, 138, 151, 0.12) 0%,
+          rgba(75, 85, 96, 0.08) 38%,
+          rgba(22, 27, 34, 0.04) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(34, 40, 49, 0.97) 0%,
+          rgba(21, 27, 35, 0.98) 56%,
+          rgba(14, 19, 25, 0.98) 100%
+        );
+      box-shadow:
+        inset 0 1px 0 rgba(232, 239, 247, 0.1),
+        0 8px 20px rgba(0, 0, 0, 0.42);
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .close {
+      position: absolute;
+      top: 7px;
+      right: 7px;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      border: 1px solid rgba(129, 141, 156, 0.3);
+      color: rgba(244, 188, 122, 0.95);
+      background: linear-gradient(
+        180deg,
+        rgba(18, 24, 33, 0.9) 0%,
+        rgba(11, 15, 22, 0.94) 100%
+      );
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .close:active {
+      transform: translateY(1px);
+      filter: brightness(1.08);
+    }
+
+    .icon {
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: rgba(234, 245, 235, 0.96);
+      background: linear-gradient(
+        180deg,
+        rgba(45, 116, 79, 0.88) 0%,
+        rgba(23, 62, 42, 0.92) 100%
+      );
+      border: 1px solid rgba(108, 188, 147, 0.44);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .title {
+      color: rgba(239, 245, 252, 0.96);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.18px;
+      margin-bottom: 2px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .message {
+      color: rgba(203, 214, 226, 0.9);
+      font-size: 11px;
+      line-height: 1.3;
+    }
+  `;
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.clearTimer();
+    this.stopRepositionLoop();
+  }
+
+  show(category: string): void {
+    this.title = translateText("research_priority.confirm_title");
+    this.message = translateText("research_priority.confirm_text", {
+      category,
+    });
+
+    this.updateTopOffset();
+    this.startRepositionLoop();
+    this.visible = true;
+    this.clearTimer();
+    this.hideTimer = window.setTimeout(() => {
+      this.dismiss();
+    }, TOAST_AUTO_HIDE_MS);
+  }
+
+  private dismiss = (): void => {
+    this.visible = false;
+    this.clearTimer();
+    this.stopRepositionLoop();
+  };
+
+  private handleCloseClick = (event: Event): void => {
+    event.stopPropagation();
+    this.dismiss();
+  };
+
+  render() {
+    return html`
+      <div
+        class="toast"
+        role="status"
+        aria-live="polite"
+        @click=${this.dismiss}
+      >
+        <button
+          class="close"
+          @click=${this.handleCloseClick}
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <div class="icon">✓</div>
+        <div class="content">
+          <div class="title">${this.title}</div>
+          <div class="message">${this.message}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  private clearTimer(): void {
+    if (this.hideTimer !== null) {
+      window.clearTimeout(this.hideTimer);
+      this.hideTimer = null;
+    }
+  }
+
+  private updateTopOffset(): void {
+    const attackBottom = this.getAttackBarBottom();
+    const topPx =
+      attackBottom > 0
+        ? Math.max(BASE_TOP_PX, attackBottom + STACK_GAP_PX)
+        : BASE_TOP_PX;
+
+    this.style.setProperty("--research-toast-top", `${topPx}px`);
+  }
+
+  private startRepositionLoop(): void {
+    this.stopRepositionLoop();
+    this.repositionTimer = window.setInterval(() => {
+      this.updateTopOffset();
+    }, 180);
+  }
+
+  private stopRepositionLoop(): void {
+    if (this.repositionTimer !== null) {
+      window.clearInterval(this.repositionTimer);
+      this.repositionTimer = null;
+    }
+  }
+
+  private getAttackBarBottom(): number {
+    const attackBar = document.querySelector("mobile-attack-bar") as
+      | (HTMLElement & { currentHeight?: number })
+      | null;
+    if (!attackBar) return 0;
+
+    const container = attackBar.shadowRoot?.querySelector(
+      ".container",
+    ) as HTMLElement | null;
+
+    if (!container) {
+      return 0;
+    }
+
+    if (container.children.length === 0 || container.offsetHeight <= 0) {
+      return 0;
+    }
+
+    return container.getBoundingClientRect().bottom;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "mobile-research-priority-toast": MobileResearchPriorityToast;
+  }
+}

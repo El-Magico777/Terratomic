@@ -57,21 +57,31 @@ export class MobileEventsDisplay extends LitElement {
     .events-container {
       height: 100%;
       overflow-y: auto;
-      padding: 0.5rem;
-      background: #1a1a1a;
+      padding: 8px;
+      background: linear-gradient(
+        180deg,
+        rgba(12, 16, 22, 0.76) 0%,
+        rgba(9, 13, 18, 0.82) 100%
+      );
     }
 
     .event-item {
       display: flex;
       align-items: flex-start;
       gap: 0.5rem;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
-      background: #2a2a2a;
-      border-radius: 0.375rem;
-      border-left: 3px solid var(--event-color, #666);
-      font-size: 0.875rem;
+      padding: 9px 10px;
+      margin-bottom: 7px;
+      background: linear-gradient(
+        180deg,
+        rgba(22, 29, 38, 0.84) 0%,
+        rgba(13, 18, 25, 0.92) 100%
+      );
+      border-radius: 8px;
+      border: 1px solid rgba(124, 135, 149, 0.24);
+      border-left: 3px solid var(--event-color, #748294);
+      font-size: 12px;
       line-height: 1.4;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .event-icon {
@@ -86,14 +96,14 @@ export class MobileEventsDisplay extends LitElement {
     }
 
     .event-description {
-      color: #e0e0e0;
+      color: rgba(232, 238, 246, 0.95);
       word-wrap: break-word;
     }
 
     .event-time {
-      color: #888;
-      font-size: 0.75rem;
-      margin-top: 0.25rem;
+      color: rgba(184, 194, 206, 0.74);
+      font-size: 11px;
+      margin-top: 3px;
     }
 
     .empty-state {
@@ -102,7 +112,7 @@ export class MobileEventsDisplay extends LitElement {
       align-items: center;
       justify-content: center;
       height: 100%;
-      color: #888;
+      color: rgba(176, 187, 200, 0.7);
       text-align: center;
       padding: 2rem;
     }
@@ -110,42 +120,60 @@ export class MobileEventsDisplay extends LitElement {
     .empty-icon {
       font-size: 3rem;
       margin-bottom: 1rem;
-      opacity: 0.5;
+      opacity: 0.45;
     }
 
     /* Filter buttons */
     .filter-bar {
       display: flex;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      background: rgba(0, 0, 0, 0.3);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      gap: 6px;
+      padding: 7px 8px;
+      background: linear-gradient(
+        180deg,
+        rgba(16, 21, 28, 0.82) 0%,
+        rgba(11, 16, 22, 0.9) 100%
+      );
+      border-bottom: 1px solid rgba(150, 160, 173, 0.2);
       justify-content: center;
       flex-wrap: wrap;
     }
 
     .filter-btn {
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 0.25rem;
-      padding: 0.375rem 0.5rem;
-      color: white;
-      font-size: 0.75rem;
+      background: linear-gradient(
+        180deg,
+        rgba(19, 25, 34, 0.86) 0%,
+        rgba(11, 16, 23, 0.92) 100%
+      );
+      border: 1px solid rgba(123, 134, 147, 0.28);
+      border-radius: 6px;
+      padding: 5px 7px;
+      color: rgba(220, 228, 238, 0.9);
+      font-size: 11px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition:
+        transform 0.12s ease,
+        filter 0.12s ease,
+        border-color 0.15s ease;
       display: flex;
       align-items: center;
       gap: 0.25rem;
       line-height: 1;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .filter-btn:active {
-      transform: scale(0.95);
+      transform: translateY(1px) scale(0.97);
+      filter: brightness(1.08);
     }
 
     .filter-btn.active {
-      background: rgba(74, 158, 255, 0.3);
-      border-color: rgba(74, 158, 255, 0.5);
+      background: linear-gradient(
+        180deg,
+        rgba(34, 62, 100, 0.64) 0%,
+        rgba(16, 28, 43, 0.9) 100%
+      );
+      border-color: rgba(95, 157, 236, 0.48);
+      color: rgba(240, 246, 252, 0.97);
     }
 
     .filter-btn.filtered {

@@ -272,12 +272,6 @@ export class MobileSettingsPanel extends LitElement {
     HapticFeedback.tap();
   }
 
-  private handleToggleTutorials(): void {
-    this.userSettings.toggleTutorialEnabled();
-    this.requestUpdate();
-    HapticFeedback.tap();
-  }
-
   private handleToggleLobbyNotifications(): void {
     this.userSettings.toggleLobbyNotifications();
     this.requestUpdate();
@@ -391,12 +385,6 @@ export class MobileSettingsPanel extends LitElement {
             "🌙",
             this.userSettings.darkMode(),
             () => this.handleToggleDarkMode(),
-          )}
-          ${this.renderToggle(
-            "Tutorial Tips",
-            "💡",
-            this.userSettings.tutorialEnabled(),
-            () => this.handleToggleTutorials(),
           )}
           ${this.renderToggle(
             "Lobby Notifications",

@@ -54,32 +54,45 @@ export class MobileAllianceNotifications extends LitElement {
     }
 
     .notification {
-      background: linear-gradient(
-        135deg,
-        rgba(74, 222, 128, 0.95) 0%,
-        rgba(34, 197, 94, 0.95) 100%
-      );
-      border: 1.5px solid rgba(74, 222, 128, 0.8);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(120, 192, 155, 0.14) 0%,
+          rgba(71, 123, 99, 0.08) 38%,
+          rgba(24, 33, 38, 0.05) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(31, 46, 40, 0.96) 0%,
+          rgba(18, 28, 24, 0.98) 52%,
+          rgba(12, 20, 17, 0.98) 100%
+        );
+      border: 1px solid rgba(135, 199, 166, 0.32);
       border-radius: 8px;
-      padding: 0.5rem;
-      margin-bottom: 0.5rem;
+      padding: 8px;
+      margin-bottom: 8px;
       box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.3),
-        0 0 12px rgba(74, 222, 128, 0.25);
+        inset 0 1px 0 rgba(232, 241, 236, 0.08),
+        0 3px 10px rgba(0, 0, 0, 0.38);
       pointer-events: all;
       animation: slideDown 0.3s ease-out;
     }
 
     .notification.warning {
-      background: linear-gradient(
-        135deg,
-        rgba(251, 191, 36, 0.95) 0%,
-        rgba(245, 158, 11, 0.95) 100%
-      );
-      border: 1.5px solid rgba(251, 191, 36, 0.8);
-      box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.3),
-        0 0 12px rgba(251, 191, 36, 0.25);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(212, 167, 96, 0.14) 0%,
+          rgba(130, 94, 41, 0.08) 38%,
+          rgba(30, 24, 18, 0.05) 100%
+        ),
+        linear-gradient(
+          180deg,
+          rgba(49, 38, 23, 0.96) 0%,
+          rgba(31, 24, 15, 0.98) 52%,
+          rgba(22, 17, 11, 0.98) 100%
+        );
+      border-color: rgba(221, 179, 108, 0.36);
     }
 
     @keyframes slideDown {
@@ -107,88 +120,114 @@ export class MobileAllianceNotifications extends LitElement {
 
     .notification-title {
       flex: 1;
-      font-size: 0.75rem;
+      font-size: 11px;
       font-weight: 700;
-      color: white;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      color: rgba(237, 244, 251, 0.95);
+      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+      letter-spacing: 0.2px;
     }
 
     .notification-close {
-      background: rgba(0, 0, 0, 0.2);
-      border: none;
-      border-radius: 50%;
+      background: linear-gradient(
+        180deg,
+        rgba(22, 30, 40, 0.86) 0%,
+        rgba(12, 18, 26, 0.92) 100%
+      );
+      border: 1px solid rgba(128, 140, 154, 0.3);
+      border-radius: 5px;
       width: 20px;
       height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: rgba(238, 185, 122, 0.95);
       font-size: 14px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       flex-shrink: 0;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .notification-close:active {
-      background: rgba(0, 0, 0, 0.4);
+      filter: brightness(1.08);
+      transform: translateY(1px);
     }
 
     .notification-message {
-      color: rgba(255, 255, 255, 0.95);
-      font-size: 0.7rem;
-      margin-bottom: 0.4rem;
+      color: rgba(221, 230, 240, 0.9);
+      font-size: 11px;
+      margin-bottom: 6px;
       line-height: 1.3;
     }
 
     .notification-actions {
       display: flex;
-      gap: 0.35rem;
+      gap: 6px;
     }
 
     .action-btn {
       flex: 1;
-      padding: 0.4rem 0.5rem;
-      border: none;
+      padding: 5px 7px;
+      border: 1px solid rgba(126, 137, 150, 0.3);
       border-radius: 5px;
-      font-size: 0.65rem;
+      font-size: 10px;
       font-weight: 600;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
-      transition: all 0.2s;
+      transition:
+        transform 0.12s ease,
+        filter 0.12s ease,
+        border-color 0.15s ease;
       text-transform: uppercase;
       letter-spacing: 0.3px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .action-btn:active {
-      transform: scale(0.96);
+      transform: translateY(1px) scale(0.97);
+      filter: brightness(1.08);
     }
 
     .action-accept {
-      background: white;
-      color: #16a34a;
+      background: linear-gradient(
+        180deg,
+        rgba(44, 114, 78, 0.88) 0%,
+        rgba(24, 62, 42, 0.92) 100%
+      );
+      color: rgba(224, 246, 234, 0.96);
+      border-color: rgba(112, 198, 156, 0.4);
     }
 
     .action-accept:active {
-      background: rgba(255, 255, 255, 0.9);
+      filter: brightness(1.1);
     }
 
     .action-reject {
-      background: rgba(0, 0, 0, 0.3);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: linear-gradient(
+        180deg,
+        rgba(53, 63, 75, 0.86) 0%,
+        rgba(27, 35, 45, 0.92) 100%
+      );
+      color: rgba(230, 236, 244, 0.94);
+      border-color: rgba(144, 154, 168, 0.34);
     }
 
     .action-reject:active {
-      background: rgba(0, 0, 0, 0.5);
+      filter: brightness(1.08);
     }
 
     .action-renew {
-      background: white;
-      color: #d97706;
+      background: linear-gradient(
+        180deg,
+        rgba(141, 99, 46, 0.88) 0%,
+        rgba(85, 54, 22, 0.92) 100%
+      );
+      color: rgba(255, 241, 221, 0.96);
+      border-color: rgba(217, 172, 101, 0.44);
     }
 
     .action-renew:active {
-      background: rgba(255, 255, 255, 0.9);
+      filter: brightness(1.1);
     }
   `;
 

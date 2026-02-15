@@ -37,6 +37,7 @@ import { MobileIntelSidebar } from "./overlays/MobileIntelSidebar";
 import { MobilePlayerToast } from "./overlays/MobilePlayerToast";
 import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
 import { MobileSettingsSidebar } from "./overlays/MobileSettingsSidebar";
+import { MobileTechUnlockToast } from "./overlays/MobileTechUnlockToast";
 import { HapticFeedback } from "./utils/HapticFeedback";
 
 export class MobileUI {
@@ -52,6 +53,7 @@ export class MobileUI {
   // Phase 4 components
   private intelSidebar: MobileIntelSidebar;
   private playerToast: MobilePlayerToast;
+  private techUnlockToast: MobileTechUnlockToast;
   private eventsDisplay: MobileEventsDisplay;
   private allianceNotifications: MobileAllianceNotifications;
   private attackBar: MobileAttackBar;
@@ -102,6 +104,9 @@ export class MobileUI {
     this.playerToast = document.createElement(
       "mobile-player-toast",
     ) as MobilePlayerToast;
+    this.techUnlockToast = document.createElement(
+      "mobile-tech-unlock-toast",
+    ) as MobileTechUnlockToast;
     this.eventsDisplay = document.createElement(
       "mobile-events-display",
     ) as MobileEventsDisplay;
@@ -218,6 +223,7 @@ export class MobileUI {
     import("./overlays/MobileEventsDisplay");
     import("./overlays/MobileIntelSidebar");
     import("./overlays/MobilePlayerToast");
+    import("./overlays/MobileTechUnlockToast");
 
     // Phase 5 components
     import("./overlays/MobileResearchSidebar");
@@ -237,6 +243,7 @@ export class MobileUI {
     // Attach Phase 4 components
     document.body.appendChild(this.intelSidebar);
     document.body.appendChild(this.playerToast);
+    document.body.appendChild(this.techUnlockToast);
     document.body.appendChild(this.allianceNotifications);
     document.body.appendChild(this.attackBar);
 
@@ -506,46 +513,14 @@ export class MobileUI {
       body.mobile-ui-enabled options-menu,
       body.mobile-ui-enabled replay-panel,
       body.mobile-ui-enabled player-info-overlay,
+      body.mobile-ui-enabled tutorial-toast,
+      body.mobile-ui-enabled tech-unlock-notification,
       /* Hide desktop research button on mobile */
       body.mobile-ui-enabled research-toggle-button,
       body.mobile-ui-enabled game-left-sidebar,
       body.mobile-ui-enabled top-bar,
       body.mobile-ui-enabled .desktop-hud {
         display: none !important;
-      }
-
-      /* Compact tutorial and tech notifications on mobile */
-      body.mobile-ui-enabled tutorial-toast .tutorial-toast,
-      body.mobile-ui-enabled tech-unlock-notification .tech-toast {
-        left: 50% !important;
-        right: auto !important;
-        top: calc(env(safe-area-inset-top, 0px) + 56px) !important;
-        bottom: auto !important;
-        width: min(92vw, 320px) !important;
-        max-height: 28vh !important;
-        padding: 10px 32px 10px 12px !important;
-        border-radius: 10px !important;
-        font-size: 13px !important;
-        overflow: hidden !important;
-        transform: translate(-50%, -8px) !important;
-        pointer-events: none !important;
-      }
-
-      body.mobile-ui-enabled tutorial-toast .tutorial-toast.visible,
-      body.mobile-ui-enabled tech-unlock-notification .tech-toast.visible {
-        transform: translate(-50%, 0) !important;
-      }
-
-      body.mobile-ui-enabled tutorial-toast .tutorial-toast__title,
-      body.mobile-ui-enabled tech-unlock-notification .tech-toast__title {
-        font-size: 14px !important;
-      }
-
-      body.mobile-ui-enabled tutorial-toast .tutorial-toast__body,
-      body.mobile-ui-enabled tech-unlock-notification .tech-toast__body {
-        max-height: 10vh !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
       }
       
       /* Game canvas touch optimization */
@@ -562,12 +537,48 @@ export class MobileUI {
         border-radius: 12px !important;
         font-size: 13px !important;
         z-index: 1700 !important;
+        border: 1px solid rgba(157, 168, 182, 0.26) !important;
+        background:
+          linear-gradient(
+            180deg,
+            rgba(128, 138, 151, 0.12) 0%,
+            rgba(74, 84, 96, 0.09) 38%,
+            rgba(21, 26, 34, 0.04) 100%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(34, 40, 49, 0.97) 0%,
+            rgba(22, 27, 35, 0.98) 56%,
+            rgba(14, 18, 24, 0.98) 100%
+          ) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(231, 238, 246, 0.1),
+          0 10px 24px rgba(0, 0, 0, 0.48) !important;
       }
       body.mobile-ui-enabled .banner-header {
         padding: 0.6rem 0.9rem !important;
+        background: linear-gradient(
+          180deg,
+          rgba(16, 20, 28, 0.88) 0%,
+          rgba(11, 15, 21, 0.92) 100%
+        ) !important;
+        border-bottom: 1px solid rgba(149, 159, 173, 0.22) !important;
       }
       body.mobile-ui-enabled .banner-title {
         font-size: 15px !important;
+        color: rgba(234, 241, 249, 0.95) !important;
+      }
+      body.mobile-ui-enabled .banner-close-btn {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 6px !important;
+        border: 1px solid rgba(129, 140, 154, 0.3) !important;
+        color: rgba(245, 188, 122, 0.95) !important;
+        background: linear-gradient(
+          180deg,
+          rgba(18, 24, 33, 0.9) 0%,
+          rgba(11, 15, 22, 0.94) 100%
+        ) !important;
       }
       body.mobile-ui-enabled .banner-content {
         padding: 0.75rem 0.9rem !important;
@@ -589,6 +600,9 @@ export class MobileUI {
         flex-direction: row !important;
         align-items: center !important;
         text-align: left !important;
+        border-width: 1px !important;
+        border-color: rgba(124, 136, 151, 0.28) !important;
+        border-radius: 8px !important;
       }
       body.mobile-ui-enabled .category-tile-icon {
         width: 28px !important;
@@ -607,6 +621,8 @@ export class MobileUI {
       body.mobile-ui-enabled .category-tile-badge {
         margin-left: auto !important;
         font-size: 0.65em !important;
+        padding: 2px 7px !important;
+        border-radius: 999px !important;
       }
       body.mobile-ui-enabled .banner-footer {
         font-size: 0.75em !important;
@@ -623,9 +639,44 @@ export class MobileUI {
         font-size: 13px !important;
         z-index: 1700 !important;
         pointer-events: none !important;
+        border: 1px solid rgba(145, 157, 172, 0.28) !important;
+        border-radius: 10px !important;
+        background:
+          linear-gradient(
+            180deg,
+            rgba(125, 136, 149, 0.12) 0%,
+            rgba(71, 81, 93, 0.08) 42%,
+            rgba(19, 25, 33, 0.04) 100%
+          ),
+          linear-gradient(
+            180deg,
+            rgba(32, 38, 47, 0.97) 0%,
+            rgba(20, 26, 35, 0.98) 100%
+          ) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(233, 240, 248, 0.09),
+          0 8px 20px rgba(0, 0, 0, 0.44) !important;
       }
       body.mobile-ui-enabled .research-priority-confirmation-toast.show {
         transform: translateX(-50%) translateY(0) !important;
+      }
+
+      body.mobile-ui-enabled .research-priority-confirmation-toast .toast-icon {
+        width: 22px !important;
+        height: 22px !important;
+        min-width: 22px !important;
+        border-radius: 999px !important;
+        font-size: 13px !important;
+      }
+
+      body.mobile-ui-enabled .research-priority-confirmation-toast .toast-title {
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+      }
+
+      body.mobile-ui-enabled .research-priority-confirmation-toast .toast-message {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
       }
 
       body.mobile-ui-enabled .mobile-economy-tab,
@@ -1463,6 +1514,7 @@ export class MobileUI {
     this.economyOverlay.remove();
     this.intelSidebar.remove();
     this.playerToast.remove();
+    this.techUnlockToast.remove();
     this.researchSidebar.remove();
     this.settingsSidebar.remove();
     this.economyTab.remove();

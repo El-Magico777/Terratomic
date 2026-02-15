@@ -67,6 +67,11 @@ export class MobileAttackBar extends LitElement {
       pointer-events: none;
       position: relative;
       z-index: 1;
+      background: linear-gradient(
+        180deg,
+        rgba(12, 16, 22, 0.28) 0%,
+        rgba(9, 13, 18, 0) 100%
+      );
     }
 
     .container:empty {
@@ -78,10 +83,12 @@ export class MobileAttackBar extends LitElement {
       align-items: stretch;
       height: 32px;
       padding: 0;
-      border: none;
-      background: rgba(15, 15, 20, 0.8);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(128, 139, 153, 0.24);
+      background: linear-gradient(
+        180deg,
+        rgba(25, 31, 40, 0.9) 0%,
+        rgba(13, 18, 25, 0.94) 100%
+      );
       border-radius: 16px;
       font-size: 12px;
       font-family:
@@ -92,9 +99,12 @@ export class MobileAttackBar extends LitElement {
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 2px 8px rgba(0, 0, 0, 0.36);
       transition:
         transform 0.1s ease,
+        filter 0.12s ease,
         opacity 0.15s ease;
       user-select: none;
       overflow: hidden;
@@ -102,7 +112,8 @@ export class MobileAttackBar extends LitElement {
     }
 
     .bubble:active {
-      transform: scale(0.95);
+      transform: translateY(1px) scale(0.96);
+      filter: brightness(1.08);
     }
 
     .bubble.cancelable {
@@ -112,7 +123,11 @@ export class MobileAttackBar extends LitElement {
     }
 
     .bubble.cancelable:active {
-      background: rgba(239, 68, 68, 0.28);
+      background: linear-gradient(
+        180deg,
+        rgba(124, 48, 48, 0.78) 0%,
+        rgba(74, 25, 25, 0.86) 100%
+      );
     }
 
     .bubble-main,
@@ -132,7 +147,7 @@ export class MobileAttackBar extends LitElement {
     }
 
     .bubble-main:active {
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .bubble-content {
@@ -141,17 +156,17 @@ export class MobileAttackBar extends LitElement {
 
     /* Color coding */
     .bubble.incoming {
-      border-left: 3px solid #ef4444;
+      border-left: 3px solid rgba(231, 117, 117, 0.95);
     }
 
     .bubble.outgoing,
     .bubble.boat,
     .bubble.paratrooper {
-      border-left: 3px solid #3b82f6;
+      border-left: 3px solid rgba(109, 175, 247, 0.95);
     }
 
     .bubble.land {
-      border-left: 3px solid #6b7280;
+      border-left: 3px solid rgba(144, 154, 167, 0.9);
     }
 
     .bubble.retreating {
@@ -166,6 +181,7 @@ export class MobileAttackBar extends LitElement {
     .troops {
       font-weight: 600;
       font-variant-numeric: tabular-nums;
+      color: rgba(236, 243, 251, 0.95);
     }
 
     .name {
@@ -173,21 +189,21 @@ export class MobileAttackBar extends LitElement {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      opacity: 0.9;
+      color: rgba(202, 212, 225, 0.86);
     }
 
     .retreating-label {
       font-size: 10px;
-      opacity: 0.7;
+      opacity: 0.78;
       font-style: italic;
     }
 
     .cancel-hint {
       margin-left: 4px;
-      color: rgba(255, 255, 255, 0.95);
+      color: rgba(245, 183, 117, 0.96);
       font-size: 13px;
       font-weight: 700;
-      opacity: 0.95;
+      opacity: 0.98;
       flex-shrink: 0;
     }
   `;
