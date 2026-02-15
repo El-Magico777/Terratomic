@@ -20,6 +20,8 @@ export class MobilePlayerToast extends LitElement {
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Object }) player: PlayerView | null = null;
   @property({ type: Object }) eventBus: EventBus | null = null;
+  @property({ type: Boolean }) canDonate: boolean = false;
+  @property({ type: Boolean }) canSendEmoji: boolean = false;
 
   private autoHideTimeout: number | null = null;
 
@@ -142,6 +144,7 @@ export class MobilePlayerToast extends LitElement {
 
     .actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 6px;
       margin-top: 8px;
       padding-top: 8px;
@@ -164,6 +167,72 @@ export class MobilePlayerToast extends LitElement {
         filter 0.12s ease,
         border-color 0.15s ease;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .action-btn.utility {
+      background: linear-gradient(
+        180deg,
+        rgba(56, 67, 82, 0.9) 0%,
+        rgba(29, 38, 50, 0.94) 100%
+      );
+      color: rgba(236, 242, 249, 0.95);
+      border-color: rgba(133, 149, 171, 0.4);
+    }
+
+    .action-btn.chat {
+      background: linear-gradient(
+        180deg,
+        rgba(63, 87, 130, 0.9) 0%,
+        rgba(34, 52, 83, 0.94) 100%
+      );
+      border-color: rgba(122, 156, 216, 0.42);
+    }
+
+    .action-btn.emoji {
+      background: linear-gradient(
+        180deg,
+        rgba(116, 88, 171, 0.9) 0%,
+        rgba(63, 42, 102, 0.94) 100%
+      );
+      border-color: rgba(173, 140, 240, 0.42);
+    }
+
+    .action-btn.donate-troops {
+      background: linear-gradient(
+        180deg,
+        rgba(181, 105, 47, 0.9) 0%,
+        rgba(116, 63, 25, 0.94) 100%
+      );
+      border-color: rgba(234, 164, 99, 0.45);
+    }
+
+    .action-btn.donate-gold {
+      background: linear-gradient(
+        180deg,
+        rgba(49, 126, 72, 0.9) 0%,
+        rgba(24, 82, 44, 0.94) 100%
+      );
+      border-color: rgba(110, 197, 140, 0.45);
+    }
+
+    .btn-content {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .btn-icon {
+      width: 12px;
+      height: 12px;
+      object-fit: contain;
+      filter: brightness(1.12);
+      flex: 0 0 auto;
+    }
+
+    .btn-label {
+      white-space: nowrap;
     }
 
     .action-btn:active {
@@ -240,34 +309,191 @@ export class MobilePlayerToast extends LitElement {
     const isAllied = myPlayer.isAlliedWith(this.player);
     const isAtWar = myPlayer.isAtWarWith(this.player);
 
-    // Can't interact with yourself
-    if (this.player === myPlayer) return null;
+    const isSelf = this.player === myPlayer;
+
+    if (isSelf) {
+      if (!this.canSendEmoji) {
+        return null;
+      }
+
+      return html`
+        <div class="actions" @click="${(e: Event) => e.stopPropagation()}">
+          <button
+            class="action-btn utility emoji"
+            @click="${this.handleEmojiAction}"
+          >
+            <span class="btn-content">
+              <img class="btn-icon" src="/images/EmojiIconWhite.svg" alt="" />
+              <span class="btn-label">Public Emoji</span>
+            </span>
+          </button>
+        </div>
+      `;
+    }
 
     return html`
       <div class="actions" @click="${(e: Event) => e.stopPropagation()}">
+        <button
+          class="action-btn utility chat"
+          @click="${this.handleChatAction}"
+        >
+          <span class="btn-content">
+            <img class="btn-icon" src="/images/ChatIconWhite.svg" alt="" />
+            <span class="btn-label">Chat</span>
+          </span>
+        </button>
+
+        ${this.canSendEmoji
+          ? html`
+              <button
+                class="action-btn utility emoji"
+                @click="${this.handleEmojiAction}"
+              >
+                <span class="btn-content">
+                  <img
+                    class="btn-icon"
+                    src="/images/EmojiIconWhite.svg"
+                    alt=""
+                  />
+                  <span class="btn-label">Emoji</span>
+                </span>
+              </button>
+            `
+          : null}
+        ${this.canDonate
+          ? html`
+              <button
+                class="action-btn utility donate-troops"
+                @click="${this.handleDonateTroopsAction}"
+              >
+                <span class="btn-content">
+                  <img
+                    class="btn-icon"
+                    src="/images/DonateTroopIconWhite.svg"
+                    alt=""
+                  />
+                  <span class="btn-label">Donate Troops</span>
+                </span>
+              </button>
+              <button
+                class="action-btn utility donate-gold"
+                @click="${this.handleDonateGoldAction}"
+              >
+                <span class="btn-content">
+                  <img
+                    class="btn-icon"
+                    src="/images/DonateGoldIconWhite.svg"
+                    alt=""
+                  />
+                  <span class="btn-label">Donate Gold</span>
+                </span>
+              </button>
+            `
+          : null}
         ${isAtWar
           ? html`
               <button class="action-btn peace" @click="${this.handlePeace}">
-                ⚔️ Peace
+                <span class="btn-content">
+                  <img
+                    class="btn-icon"
+                    src="/images/dove.b5af4f12b19e5773feee.png"
+                    alt=""
+                  />
+                  <span class="btn-label">Peace</span>
+                </span>
               </button>
             `
           : !isAllied
             ? html`
                 <button class="action-btn peace" @click="${this.handlePeace}">
-                  🕊️ Peace
+                  <span class="btn-content">
+                    <img
+                      class="btn-icon"
+                      src="/images/dove.b5af4f12b19e5773feee.png"
+                      alt=""
+                    />
+                    <span class="btn-label">Peace</span>
+                  </span>
                 </button>
               `
             : null}
         ${!isAtWar && !isAllied
           ? html`
               <button class="action-btn war" @click="${this.handleWar}">
-                ☠️ War
+                <span class="btn-content">
+                  <img
+                    class="btn-icon"
+                    src="/images/SwordIconWhite.svg"
+                    alt=""
+                  />
+                  <span class="btn-label">War</span>
+                </span>
               </button>
             `
           : null}
       </div>
     `;
   }
+
+  private handleChatAction = () => {
+    if (!this.player) return;
+
+    this.dispatchEvent(
+      new CustomEvent("chat-clicked", {
+        detail: { player: this.player },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    HapticFeedback.tap();
+    this.hide();
+  };
+
+  private handleEmojiAction = () => {
+    if (!this.player) return;
+
+    this.dispatchEvent(
+      new CustomEvent("emoji-clicked", {
+        detail: { player: this.player },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    HapticFeedback.tap();
+    this.hide();
+  };
+
+  private handleDonateTroopsAction = () => {
+    if (!this.player) return;
+
+    this.dispatchEvent(
+      new CustomEvent("donate-troops-clicked", {
+        detail: { player: this.player },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    HapticFeedback.success();
+    this.hide();
+  };
+
+  private handleDonateGoldAction = () => {
+    if (!this.player) return;
+
+    this.dispatchEvent(
+      new CustomEvent("donate-gold-clicked", {
+        detail: { player: this.player },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    HapticFeedback.success();
+    this.hide();
+  };
 
   private handlePeace = () => {
     if (!this.player || !this.game || !this.eventBus) return;

@@ -4,13 +4,14 @@
  */
 
 import { EventBus } from "../../core/EventBus";
-import { MessageType, UnitType } from "../../core/game/Game";
+import { flattenedEmojiTable } from "../../core/Util";
+import { AllPlayers, MessageType, UnitType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
 import {
   DisplayMessageUpdate,
   GameUpdateType,
 } from "../../core/game/GameUpdates";
-import type { GameView } from "../../core/game/GameView";
+import type { GameView, PlayerView } from "../../core/game/GameView";
 import { CenterCameraEvent, DragEvent, ZoomEvent } from "../InputHandler";
 import {
   BuildUnitIntentEvent,
@@ -20,6 +21,9 @@ import {
   SendBomberIntentEvent,
   SendBreakAllianceIntentEvent,
   SendDeclareWarIntentEvent,
+  SendDonateGoldIntentEvent,
+  SendDonateTroopsIntentEvent,
+  SendEmojiIntentEvent,
   SendParatrooperAttackIntentEvent,
   SendPeaceRequestIntentEvent,
   SendSpawnIntentEvent,
@@ -911,6 +915,26 @@ export class MobileUI {
       this.intelSidebar.open();
     });
 
+    this.playerToast.addEventListener("chat-clicked", (e: Event) => {
+      const event = e as CustomEvent<{ player: PlayerView }>;
+      this.openChatModalForPlayer(event.detail.player);
+    });
+
+    this.playerToast.addEventListener("emoji-clicked", (e: Event) => {
+      const event = e as CustomEvent<{ player: PlayerView }>;
+      this.openEmojiTableForPlayer(event.detail.player);
+    });
+
+    this.playerToast.addEventListener("donate-troops-clicked", (e: Event) => {
+      const event = e as CustomEvent<{ player: PlayerView }>;
+      this.sendTroopDonationToPlayer(event.detail.player);
+    });
+
+    this.playerToast.addEventListener("donate-gold-clicked", (e: Event) => {
+      const event = e as CustomEvent<{ player: PlayerView }>;
+      this.sendGoldDonationToPlayer(event.detail.player);
+    });
+
     // Action grid: Action selected
     this.actionGrid.addEventListener("action-selected", (e: Event) => {
       const event = e as CustomEvent<{ action: string }>;
@@ -1312,11 +1336,23 @@ export class MobileUI {
         break;
 
       case "diplomacy:send-emoji":
-        // TODO: Show emoji picker
+        this.openEmojiTableForPlayer(targetPlayer);
+        HapticFeedback.tap();
         break;
 
       case "diplomacy:donate-troops":
-        // TODO: Show troop donation picker
+        this.sendTroopDonationToPlayer(targetPlayer);
+        HapticFeedback.success();
+        break;
+
+      case "diplomacy:donate-gold":
+        this.sendGoldDonationToPlayer(targetPlayer);
+        HapticFeedback.success();
+        break;
+
+      case "diplomacy:chat":
+        this.openChatModalForPlayer(targetPlayer);
+        HapticFeedback.tap();
         break;
 
       case "diplomacy:view-player":
@@ -1382,6 +1418,12 @@ export class MobileUI {
    * Handle map tap (for tile selection)
    */
   private handleMapTap(position: { x: number; y: number }): void {
+    if (this.playerToast.visible) {
+      this.playerToast.hide();
+      this.actionGrid.close();
+      return;
+    }
+
     const tile = this.screenToTile(position);
     if (!tile) {
       return;
@@ -1404,22 +1446,41 @@ export class MobileUI {
 
   /**
    * Handle long-press on map
-   * Shows player toast for enemy/ally tiles, economy overlay otherwise
+   * Shows player toast for any owned tile, economy overlay otherwise
    */
-  private handleMapLongPress(position: { x: number; y: number }): void {
+  private async handleMapLongPress(position: {
+    x: number;
+    y: number;
+  }): Promise<void> {
     const tile = this.screenToTile(position);
     if (!tile || !this.currentGame) {
       return;
     }
 
-    // Show player toast for enemy/ally tiles
+    this.selectedTile = tile;
+
+    // Show player toast for owned tiles
     const myPlayer = this.currentGame.myPlayer();
     if (myPlayer) {
       const owner = this.currentGame.owner(tile);
-      if (owner.isPlayer() && owner !== myPlayer) {
-        // Long-press on enemy/ally: show toast with diplomacy options
+      if (owner.isPlayer()) {
+        const actions = await myPlayer.actions(tile);
+        const targetPlayer =
+          owner as import("../../core/game/GameView").PlayerView;
+
+        this.playerToast.canDonate =
+          targetPlayer === myPlayer
+            ? false
+            : (actions.interaction?.canDonate ?? false);
+
+        this.playerToast.canSendEmoji =
+          targetPlayer === myPlayer
+            ? (actions.canSendEmojiAllPlayers ?? false)
+            : (actions.interaction?.canSendEmoji ?? false);
+
+        // Long-press on owned tile: show player toast with contextual options
         this.playerToast.show(
-          owner as import("../../core/game/GameView").PlayerView,
+          targetPlayer,
           5000, // Show longer on long-press
         );
         HapticFeedback.longPress();
@@ -1429,6 +1490,61 @@ export class MobileUI {
 
     // Long-press on own/neutral tiles: open economy overlay
     this.economyOverlay.open();
+  }
+
+  private sendTroopDonationToPlayer(targetPlayer: PlayerView): void {
+    if (!this.currentGame) return;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    this.eventBus.emit(
+      new SendDonateTroopsIntentEvent(
+        targetPlayer,
+        myPlayer.troops() * this.attackRatio,
+      ),
+    );
+  }
+
+  private sendGoldDonationToPlayer(targetPlayer: PlayerView): void {
+    this.eventBus.emit(new SendDonateGoldIntentEvent(targetPlayer, null));
+  }
+
+  private openChatModalForPlayer(targetPlayer: PlayerView): void {
+    if (!this.currentGame) return;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    const chatModal = document.querySelector("chat-modal") as {
+      open: (sender?: PlayerView, recipient?: PlayerView) => void;
+    } | null;
+
+    if (!chatModal) return;
+
+    chatModal.open(myPlayer, targetPlayer);
+  }
+
+  private openEmojiTableForPlayer(targetPlayer: PlayerView): void {
+    if (!this.currentGame) return;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    const emojiTable = document.querySelector("emoji-table") as {
+      showTable: (onEmojiClicked: (emoji: string) => void) => void;
+      hideTable: () => void;
+    } | null;
+
+    if (!emojiTable) return;
+
+    emojiTable.showTable((emoji: string) => {
+      const recipient = targetPlayer === myPlayer ? AllPlayers : targetPlayer;
+      this.eventBus.emit(
+        new SendEmojiIntentEvent(recipient, flattenedEmojiTable.indexOf(emoji)),
+      );
+      emojiTable.hideTable();
+    });
   }
 
   /**
