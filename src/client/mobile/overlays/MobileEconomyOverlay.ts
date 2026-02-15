@@ -351,6 +351,10 @@ export class MobileEconomyOverlay extends LitElement {
     const attackPercent = Math.round(this.attackRatio * 100);
     const productionMax = this.productionMaxPercent();
     const roadEnabled = this.isRoadsUnlocked();
+    const me = this.game?.myPlayer?.();
+    const productivityPct = Math.round((me?.productivity?.() ?? 1) * 100);
+    const productivityGrowthPerMinute =
+      (me?.productivityGrowthPerMinute?.() ?? 0) * 100;
 
     return html`
       <div class="backdrop" @click="${this.close}"></div>
@@ -437,6 +441,12 @@ export class MobileEconomyOverlay extends LitElement {
                 .value="${this.production.toString()}"
                 @input="${(e: Event) => this.handleSliderChange("prod", e)}"
               />
+            </div>
+            <div class="subtitle">
+              Prod: ${productivityPct}%
+              (${productivityGrowthPerMinute >= 0
+                ? "+"
+                : ""}${productivityGrowthPerMinute.toFixed(1)}%/min)
             </div>
           </div>
 
