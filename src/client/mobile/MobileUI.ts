@@ -5,13 +5,14 @@
 
 import { EventBus } from "../../core/EventBus";
 import { flattenedEmojiTable } from "../../core/Util";
-import { AllPlayers, MessageType, UnitType } from "../../core/game/Game";
+import { AllPlayers, Cell, MessageType, UnitType } from "../../core/game/Game";
 import type { TileRef } from "../../core/game/GameMap";
 import {
   DisplayMessageUpdate,
   GameUpdateType,
 } from "../../core/game/GameUpdates";
-import type { GameView, PlayerView } from "../../core/game/GameView";
+import type { GameView, PlayerView, UnitView } from "../../core/game/GameView";
+import { isUpgradeableStructure } from "../../core/game/Upgradeables";
 import { CenterCameraEvent, DragEvent, ZoomEvent } from "../InputHandler";
 import {
   BuildUnitIntentEvent,
@@ -27,7 +28,9 @@ import {
   SendParatrooperAttackIntentEvent,
   SendPeaceRequestIntentEvent,
   SendSpawnIntentEvent,
+  SendUpgradeStructureIntentEvent,
 } from "../Transport";
+import { ToggleUpgradeModeEvent } from "../events/ToggleUpgradeModeEvent";
 import type { TransformHandler } from "../graphics/TransformHandler";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { MobileDetector } from "./MobileDetector";
@@ -43,6 +46,21 @@ import { MobileResearchSidebar } from "./overlays/MobileResearchSidebar";
 import { MobileSettingsSidebar } from "./overlays/MobileSettingsSidebar";
 import { MobileTechUnlockToast } from "./overlays/MobileTechUnlockToast";
 import { HapticFeedback } from "./utils/HapticFeedback";
+
+const STACKABLE_STRUCTURE_TYPES: UnitType[] = [
+  UnitType.City,
+  UnitType.Port,
+  UnitType.Airfield,
+  UnitType.Hospital,
+  UnitType.Academy,
+  UnitType.ResearchLab,
+  UnitType.Factory,
+  UnitType.MissileSilo,
+  UnitType.SAMLauncher,
+];
+
+const STACK_TAP_SCREEN_HIT_RADIUS_PX = 28;
+const STACK_TAP_STICKY_RADIUS_PX = 72;
 
 export class MobileUI {
   private actionGrid: MobileActionGrid;
@@ -81,6 +99,8 @@ export class MobileUI {
   private zoomOutButton: HTMLButtonElement;
   private lastGameTick: number = -1; // Track last processed game tick
   private gameDurationSeconds: number = 0; // Track game time in seconds (only after spawn phase)
+  private stackModeEnabled: boolean = false;
+  private stackTargetUnitId: number | null = null;
 
   constructor(private eventBus: EventBus) {
     if (typeof window !== "undefined") {
@@ -288,6 +308,11 @@ export class MobileUI {
     } else {
       // Only manipulate components if they've been attached
       if (this.componentsAttached) {
+        if (this.stackModeEnabled) {
+          this.stackModeEnabled = false;
+          this.eventBus.emit(new ToggleUpgradeModeEvent(false));
+          this.actionGrid.setStackModeEnabled(false);
+        }
         this.topBar.style.display = "none";
         this.economyTab.style.display = "none";
         this.intelTab.style.display = "none";
@@ -1371,6 +1396,11 @@ export class MobileUI {
    * Routes to appropriate handlers based on action prefix
    */
   private async handleActionSelected(action: string): Promise<void> {
+    if (action === "mode:stack-toggle") {
+      this.handleStackModeToggle();
+      return;
+    }
+
     // Close the action grid
     this.actionGrid.close();
 
@@ -1414,6 +1444,16 @@ export class MobileUI {
     }
   }
 
+  private handleStackModeToggle(): void {
+    this.stackModeEnabled = !this.stackModeEnabled;
+    if (!this.stackModeEnabled) {
+      this.stackTargetUnitId = null;
+    }
+    this.eventBus.emit(new ToggleUpgradeModeEvent(this.stackModeEnabled));
+    this.actionGrid.setStackModeEnabled(this.stackModeEnabled);
+    HapticFeedback.tap();
+  }
+
   /**
    * Handle map tap (for tile selection)
    */
@@ -1440,8 +1480,119 @@ export class MobileUI {
       return;
     }
 
+    if (this.stackModeEnabled) {
+      this.tryStackStructureAtTile(tile, position);
+      return;
+    }
+
     // For all tiles, show action grid
     this.actionGrid.showForTile(tile, this.currentGame, this.attackRatio);
+  }
+
+  private tryStackStructureAtTile(
+    tile: TileRef,
+    position?: { x: number; y: number },
+  ): void {
+    if (!this.currentGame) return;
+
+    const myPlayer = this.currentGame.myPlayer();
+    if (!myPlayer) return;
+
+    const structure = this.findMyUpgradeableStructureAtTile(
+      tile,
+      myPlayer,
+      position,
+    );
+    if (!structure) {
+      HapticFeedback.error();
+      return;
+    }
+
+    this.stackTargetUnitId = structure.id();
+
+    this.eventBus.emit(
+      new SendUpgradeStructureIntentEvent(structure.id(), structure.type()),
+    );
+    HapticFeedback.success();
+  }
+
+  private findMyUpgradeableStructureAtTile(
+    tile: TileRef,
+    myPlayer: PlayerView,
+    position?: { x: number; y: number },
+  ): UnitView | null {
+    if (!this.currentGame || !position) {
+      return null;
+    }
+
+    const stickyTarget = this.getStickyStackTarget(myPlayer);
+    if (
+      stickyTarget &&
+      this.screenDistanceSquaredToUnit(position, stickyTarget) <=
+        STACK_TAP_STICKY_RADIUS_PX * STACK_TAP_STICKY_RADIUS_PX
+    ) {
+      return stickyTarget;
+    }
+
+    const byScreenDistance = myPlayer
+      .units(...STACKABLE_STRUCTURE_TYPES)
+      .filter((unit) => unit.isActive() && isUpgradeableStructure(unit.type()))
+      .map((unit) => ({
+        unit,
+        screenDistSquared: this.screenDistanceSquaredToUnit(position, unit),
+      }))
+      .sort((a, b) => a.screenDistSquared - b.screenDistSquared);
+
+    const withinHitRadius = byScreenDistance.find(
+      (entry) =>
+        entry.screenDistSquared <=
+        STACK_TAP_SCREEN_HIT_RADIUS_PX * STACK_TAP_SCREEN_HIT_RADIUS_PX,
+    );
+
+    if (withinHitRadius) {
+      return (withinHitRadius.unit as UnitView) ?? null;
+    }
+
+    return null;
+  }
+
+  private getStickyStackTarget(myPlayer: PlayerView): UnitView | null {
+    if (this.stackTargetUnitId === null) {
+      return null;
+    }
+
+    const target = this.currentGame?.unit(this.stackTargetUnitId);
+    if (!target) {
+      this.stackTargetUnitId = null;
+      return null;
+    }
+
+    if (
+      !target.isActive() ||
+      target.owner().id() !== myPlayer.id() ||
+      !isUpgradeableStructure(target.type())
+    ) {
+      this.stackTargetUnitId = null;
+      return null;
+    }
+
+    return target;
+  }
+
+  private screenDistanceSquaredToUnit(
+    position: { x: number; y: number },
+    unit: UnitView,
+  ): number {
+    if (!this.currentGame || !this.transformHandler) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    const tile = unit.tile();
+    const cell = new Cell(this.currentGame.x(tile), this.currentGame.y(tile));
+    const screenPos = this.transformHandler.worldToScreenCoordinates(cell);
+    const dx = screenPos.x - position.x;
+    const dy = screenPos.y - position.y;
+    return dx * dx + dy * dy;
   }
 
   /**

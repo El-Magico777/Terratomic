@@ -230,18 +230,23 @@ export class GestureDetector {
 
     // Only emit tap if touch was quick and didn't move much
     if (duration < 200 && distance < this.MOVEMENT_THRESHOLD) {
+      const tapPosition = {
+        x: changedTouch.clientX,
+        y: changedTouch.clientY,
+      };
+
       // Check for double-tap
       const timeSinceLastTap = Date.now() - this.lastTapTime;
       if (timeSinceLastTap < this.DOUBLE_TAP_THRESHOLD) {
         this.emit({
           type: "double-tap",
-          position: this.touchStartPos,
+          position: tapPosition,
         });
         this.lastTapTime = 0; // Reset to prevent triple-tap
       } else {
         this.emit({
           type: "tap",
-          position: this.touchStartPos,
+          position: tapPosition,
         });
         this.lastTapTime = Date.now();
         this.triggerHaptic(10); // Light vibration

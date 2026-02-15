@@ -39,6 +39,7 @@ export type ActionCategory =
 export class MobileActionGrid extends LitElement {
   @property({ type: Boolean, reflect: true }) visible: boolean = false;
   @property({ type: Boolean, reflect: true }) ready: boolean = false; // Items calculated and ready to show
+  @property({ type: Boolean }) stackModeEnabled: boolean = false;
   @property({ type: Object }) tile: TileRef | null = null;
   @property({ type: Object }) game: GameView | null = null;
   @property({ type: Array }) items: ActionGridItem[] = [];
@@ -70,6 +71,11 @@ export class MobileActionGrid extends LitElement {
     :host([visible]) .backdrop {
       opacity: 1;
       pointer-events: all;
+    }
+
+    .backdrop.no-backdrop {
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
 
     .grid-container {
@@ -432,26 +438,18 @@ export class MobileActionGrid extends LitElement {
       min-height: 18px;
       padding: 0 6px;
     }
-
-    .close-hint {
-      text-align: center;
-      color: rgba(198, 206, 216, 0.6);
-      font-size: 11px;
-      margin-top: 4px;
-      padding: 2px 0 0;
-      line-height: 1.1;
-      letter-spacing: 0.2px;
-    }
   `;
 
   render() {
     return html`
-      <div class="backdrop" @click=${this.handleBackdropClick}></div>
+      <div
+        class="backdrop ${this.stackModeEnabled ? "no-backdrop" : ""}"
+        @click=${this.handleBackdropClick}
+      ></div>
       <div class="grid-container">
         <div class="grid">
           ${this.items.map((item) => this.renderActionTile(item))}
         </div>
-        <div class="close-hint">Tap outside to close</div>
       </div>
     `;
   }
@@ -518,6 +516,10 @@ export class MobileActionGrid extends LitElement {
   }
 
   private handleBackdropClick(): void {
+    if (this.stackModeEnabled) {
+      return;
+    }
+
     // Prevent immediate closure if grid just opened (within 300ms)
     const timeSinceOpen = Date.now() - this.lastOpenedTime;
     if (timeSinceOpen < 300) {
@@ -544,6 +546,13 @@ export class MobileActionGrid extends LitElement {
     this.ready = false;
     this.visible = true;
     this.lastOpenedTime = Date.now();
+
+    if (this.stackModeEnabled) {
+      this.items = [this.getStackModeToggleItem(true)];
+      this.ready = true;
+      this.requestUpdate();
+      return;
+    }
 
     // Wait for grid container to render and establish layout
     await this.updateComplete;
@@ -583,6 +592,25 @@ export class MobileActionGrid extends LitElement {
         composed: true,
       }),
     );
+  }
+
+  setStackModeEnabled(enabled: boolean): void {
+    this.stackModeEnabled = enabled;
+
+    if (enabled) {
+      this.visible = true;
+      this.ready = true;
+      this.items = [this.getStackModeToggleItem(true)];
+      this.requestUpdate();
+      return;
+    }
+
+    if (this.tile && this.game) {
+      void this.showForTile(this.tile, this.game, this.attackRatio);
+      return;
+    }
+
+    this.requestUpdate();
   }
 
   /**
@@ -672,11 +700,17 @@ export class MobileActionGrid extends LitElement {
       case "spawn-phase":
         return this.getSpawnActions(tile, game, myPlayer);
       case "own-land":
-        return this.getOwnLandActions(tile, game, myPlayer);
+        return this.appendStackModeToggle(
+          this.getOwnLandActions(tile, game, myPlayer),
+        );
       case "own-shore":
-        return this.getOwnShoreActions(tile, game, myPlayer);
+        return this.appendStackModeToggle(
+          this.getOwnShoreActions(tile, game, myPlayer),
+        );
       case "own-water":
-        return this.getOwnWaterActions(tile, game, myPlayer);
+        return this.appendStackModeToggle(
+          this.getOwnWaterActions(tile, game, myPlayer),
+        );
       case "enemy-can-attack":
         return this.getEnemyCanAttackActions(tile, game, myPlayer);
       case "enemy-can-boat-attack":
@@ -690,6 +724,19 @@ export class MobileActionGrid extends LitElement {
       default:
         return [];
     }
+  }
+
+  private appendStackModeToggle(actions: ActionGridItem[]): ActionGridItem[] {
+    return [...actions, this.getStackModeToggleItem()];
+  }
+
+  private getStackModeToggleItem(fullWidth: boolean = false): ActionGridItem {
+    return {
+      id: "mode:stack-toggle",
+      icon: "/images/UpgradeArrowIcon.svg",
+      label: this.stackModeEnabled ? "Stack ON" : "Stack Mode",
+      columnSpan: fullWidth ? 100 : undefined,
+    };
   }
 
   private getSpawnActions(
@@ -1521,12 +1568,21 @@ export class MobileActionGrid extends LitElement {
     items: ActionGridItem[],
     columns: number,
   ): ActionGridItem[] {
+    const stackToggle = items.find((item) => item.id === "mode:stack-toggle");
+    const sortableItems = items.filter(
+      (item) => item.id !== "mode:stack-toggle",
+    );
+
     // Sort: high priority first, then normal
-    const sorted = [...items].sort((a, b) => {
+    const sortedWithoutToggle = [...sortableItems].sort((a, b) => {
       const aPriority = a.priority === "high" ? 1 : 0;
       const bPriority = b.priority === "high" ? 1 : 0;
       return bPriority - aPriority;
     });
+
+    const sorted = stackToggle
+      ? [...sortedWithoutToggle, stackToggle]
+      : sortedWithoutToggle;
 
     const totalItems = sorted.length;
     const remainder = totalItems % columns;
@@ -1602,6 +1658,10 @@ export class MobileActionGrid extends LitElement {
         return "military";
       }
       // Everything else is infrastructure
+      return "infrastructure";
+    }
+
+    if (actionId === "mode:stack-toggle") {
       return "infrastructure";
     }
 
