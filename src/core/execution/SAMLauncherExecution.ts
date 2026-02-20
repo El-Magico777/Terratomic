@@ -26,7 +26,6 @@ class SAMTargetingSystem {
 
   constructor(
     private mg: Game,
-    private player: Player,
     private sam: Unit,
   ) {}
 
@@ -106,17 +105,17 @@ class SAMTargetingSystem {
         }
 
         const nukeOwner = unit.owner();
-        if (nukeOwner === this.player) {
+        if (nukeOwner === this.sam.owner()) {
           return false;
         }
-        if (this.player.isFriendly(nukeOwner)) {
+        if (this.sam.owner().isFriendly(nukeOwner)) {
           return false;
         }
 
         // Only intercept neutral nukes if they are actually threatening us.
         return (
-          this.player.isAtWarWith(nukeOwner) ||
-          this.nukeThreatensPlayerTerritory(unit, this.player)
+          this.sam.owner().isAtWarWith(nukeOwner) ||
+          this.nukeThreatensPlayerTerritory(unit, this.sam.owner())
         );
       },
     );
@@ -292,11 +291,7 @@ export class SAMLauncherExecution implements Execution {
         }
       }
     }
-    this.targetingSystem ??= new SAMTargetingSystem(
-      this.mg,
-      this.player,
-      this.sam,
-    );
+    this.targetingSystem ??= new SAMTargetingSystem(this.mg, this.sam);
 
     if (this.sam.isInCooldown()) {
       return;
