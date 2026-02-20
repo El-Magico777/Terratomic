@@ -269,6 +269,9 @@ export function createRenderer(
 
   const structureLayer = new StructureLayer(game, eventBus, transformHandler);
 
+  // When updating these layers please be mindful of the order.
+  // Try to group layers by the return value of shouldTransform.
+  // Not grouping the layers may cause excessive calls to context.save() and context.restore().
   const layers: Layer[] = [
     new TerrainLayer(game, transformHandler),
     new TerritoryLayer(game, eventBus, transformHandler),
@@ -279,12 +282,13 @@ export function createRenderer(
     structureLayer,
     new ArtilleryLayer(game, eventBus, transformHandler),
     new UnitLayer(game, eventBus, transformHandler, uiState),
+    // UILayer placed right after UnitLayer: both use shouldTransform=true,
+    // keeping them adjacent avoids extra context.save/restore transitions.
+    new UILayer(game, eventBus, transformHandler),
     new AABulletLayer(game, transformHandler),
     new FxLayer(game, transformHandler),
-    // Draw name labels in world space along with other transformed layers
+    // Draw name labels in world space (handles transforms manually)
     new NameLayer(game, transformHandler, eventBus),
-    // UI layer comes after world-space drawing to minimize save/restore
-    new UILayer(game, eventBus, transformHandler),
     // Pointer coordinates (screen-space, debug only)
     ...(DEBUG_SHOW_POINTER_COORDS
       ? [new PointerCoordsLayer(game, eventBus, transformHandler)]
