@@ -304,20 +304,19 @@ export class PlayerPanel extends LitElement implements Layer {
               <!-- Flag -->
               ${country
                 ? html`
-                    <div>
-                      <div class="text-white text-opacity-80 text-sm px-2">
+                    <div class="flex flex-col gap-1">
+                      <div class="player-panel__label text-sm px-2">
                         ${translateText("player_panel.flag")}
                       </div>
                       <div
-                        class="px-4 h-8 lg:h-10 flex items-center justify-center gap-4
-                        bg-opacity-50 bg-gray-700 text-opacity-90 text-white
-                        rounded text-sm lg:text-xl w-full"
+                        class="player-panel__value rounded p-2 flex items-center gap-3"
+                        translate="no"
                       >
                         ${flagName}
                         <img
                           src="/flags/${flagCode}.svg"
-                          width="60"
-                          height="60"
+                          width="32"
+                          height="32"
                         />
                       </div>
                     </div>
