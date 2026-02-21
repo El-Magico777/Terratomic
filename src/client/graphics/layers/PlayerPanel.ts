@@ -236,7 +236,7 @@ export class PlayerPanel extends LitElement implements Layer {
     const canEmbargo = this.actions?.interaction?.canEmbargo;
 
     //flag icon in the playerPanel
-    const flagCode = other.cosmetics.flag;
+    const flagCode = other.flag();
     const country =
       typeof flagCode === "string"
         ? Countries.find((c) => c.code === flagCode)
