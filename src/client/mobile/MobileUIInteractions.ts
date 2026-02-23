@@ -59,14 +59,7 @@ export function handleAttackAction(params: {
       break;
 
     case "attack:naval":
-      eventBus.emit(
-        new SendBoatAttackIntentEvent(
-          owner && owner.isPlayer() ? owner.id() : null,
-          selectedTile,
-          troops,
-          null,
-        ),
-      );
+      eventBus.emit(new SendBoatAttackIntentEvent(selectedTile, troops));
       HapticFeedback.success();
       break;
 
