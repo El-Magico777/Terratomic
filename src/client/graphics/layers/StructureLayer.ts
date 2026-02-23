@@ -26,7 +26,11 @@ import {
   playerMaxStructureLevel,
   playerMaxStructureTechLevel,
 } from "../../../core/game/Upgradeables";
-import { ToggleUpgradeModeEvent } from "../../events/ToggleUpgradeModeEvent";
+import { RefreshMobileStackLabelsEvent } from "../../events/RefreshMobileStackLabelsEvent";
+import {
+  ToggleBomberUpgradeModeEvent,
+  ToggleUpgradeModeEvent,
+} from "../../events/ToggleUpgradeModeEvent";
 import { UnitCooldownEndedEvent } from "../../events/UnitCooldownEndedEvent";
 import { MouseMoveEvent, MouseUpEvent } from "../../InputHandler";
 import { SendUpgradeStructureIntentEvent } from "../../Transport";
@@ -99,6 +103,7 @@ export class StructureLayer implements Layer {
   private previouslySelected: UnitView | null = null;
   private hoveredStructure: UnitView | null = null;
   private upgradeMode: boolean = false; // When true, clicking own cities/ports sends upgrade intent
+  private bomberUpgradeMode: boolean = false;
   // Track affordability per structure type to refresh highlights correctly
   private lastAffordableForUpgrade: Map<UnitType, boolean> = new Map();
   // Client-side level tracking for structures (temporary)
@@ -208,6 +213,27 @@ export class StructureLayer implements Layer {
       // Rebuild price labels when toggling upgrade mode
       this.updateLabels();
       if (this.renderer) this.renderer.render(this.stage);
+    });
+    this.eventBus.on(ToggleBomberUpgradeModeEvent, (e) => {
+      this.bomberUpgradeMode = e.enabled;
+      // Rebuild textures for airfields so border tint updates immediately.
+      for (const r of this.renders) {
+        if (r.unit.type() === UnitType.Airfield) {
+          r.pixiSprite.texture = this.createTexture(r.unit);
+        }
+      }
+      // Force redraw so highlight state applies instantly.
+      this.shouldRedraw = true;
+      this.updateHighlights();
+      // Rebuild price labels when toggling bomber upgrade mode
+      this.updateLabels();
+      if (this.renderer) this.renderer.render(this.stage);
+    });
+    this.eventBus.on(RefreshMobileStackLabelsEvent, () => {
+      if (!this.isMobileUIEnabled() || !this.upgradeMode) {
+        return;
+      }
+      this.updateLabels();
     });
   }
 
