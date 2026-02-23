@@ -174,7 +174,7 @@ body.mobile-main-lobby main .scale-container > .container::after {
       rgba(0, 0, 0, 0) 20px
     ),
     /* Diagonal faint scratches */
-      repeating-linear-gradient(
+    repeating-linear-gradient(
         115deg,
         transparent 0,
         transparent 8px,
@@ -191,7 +191,7 @@ body.mobile-main-lobby main .scale-container > .container::after {
       rgba(0, 0, 0, 0) 16px
     ),
     /* General noise/dirt */
-      radial-gradient(
+    radial-gradient(
         circle at 50% 50%,
         transparent 48%,
         rgba(0, 0, 0, 0.22) 100%
@@ -312,7 +312,7 @@ body.mobile-main-lobby public-lobby button::before {
       rgba(0, 0, 0, 0.52) calc(100% - 1px)
     ),
     /* Subtle vertical scratching/brushed metal effect */
-      repeating-linear-gradient(
+    repeating-linear-gradient(
         90deg,
         rgba(255, 255, 255, 0.03) 0,
         rgba(255, 255, 255, 0.03) 1px,
@@ -328,7 +328,7 @@ body.mobile-main-lobby public-lobby button::before {
       rgba(0, 0, 0, 0) 14px
     ),
     /* Grime/shadow gradient from bottom and top */
-      linear-gradient(
+    linear-gradient(
         180deg,
         rgba(0, 0, 0, 0.24) 0%,
         transparent 20%,
@@ -448,7 +448,7 @@ body.mobile-main-lobby o-button .c-button {
       rgba(0, 0, 0, 0) 11px
     ),
     /* Brushed metal texture */
-      repeating-linear-gradient(
+    repeating-linear-gradient(
         90deg,
         rgba(255, 255, 255, 0.03) 0,
         rgba(255, 255, 255, 0.03) 1px,

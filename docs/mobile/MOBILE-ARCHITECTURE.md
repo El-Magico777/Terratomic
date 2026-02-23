@@ -70,7 +70,7 @@ Key lifecycle calls:
 | ------------------------------ | ------------------ | ------------------------------------------- |
 | `setActive(true/false)`        | `Main.ts`          | Attach/detach components, toggle CSS class  |
 | `initializeGestureDetection()` | `ClientGameRunner` | Bind gesture detector to canvas             |
-| `setTransformHandler()`        | `ClientGameRunner` | Screen↔world coordinate conversion         |
+| `setTransformHandler()`        | `ClientGameRunner` | Screen↔world coordinate conversion          |
 | `updateGameState(game)`        | `ClientGameRunner` | Propagate live `GameView` to all components |
 
 When active, `body.mobile-ui-enabled` hides all desktop HUD elements (radial menu, control panels, desktop top bar, etc.).
