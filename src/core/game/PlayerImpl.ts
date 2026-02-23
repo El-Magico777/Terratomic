@@ -306,11 +306,50 @@ export class PlayerImpl implements Player {
   }
 
   units(...types: UnitType[]): Unit[] {
-    if (types.length === 0) {
+    const len = types.length;
+    if (len === 0) {
       return this._units;
     }
+
+    // Fast paths for common small-arity calls to avoid Set allocation.
+    if (len === 1) {
+      const t0 = types[0]!;
+      const out: Unit[] = [];
+      for (const u of this._units) {
+        if (u.type() === t0) out.push(u);
+      }
+      return out;
+    }
+
+    if (len === 2) {
+      const t0 = types[0]!;
+      const t1 = types[1]!;
+      const out: Unit[] = [];
+      for (const u of this._units) {
+        const t = u.type();
+        if (t === t0 || t === t1) out.push(u);
+      }
+      return out;
+    }
+
+    if (len === 3) {
+      const t0 = types[0]!;
+      const t1 = types[1]!;
+      const t2 = types[2]!;
+      const out: Unit[] = [];
+      for (const u of this._units) {
+        const t = u.type();
+        if (t === t0 || t === t1 || t === t2) out.push(u);
+      }
+      return out;
+    }
+
     const ts = new Set(types);
-    return this._units.filter((u) => ts.has(u.type()));
+    const out: Unit[] = [];
+    for (const u of this._units) {
+      if (ts.has(u.type())) out.push(u);
+    }
+    return out;
   }
 
   private numUnitsConstructed: Partial<Record<UnitType, number>> = {};
@@ -1191,7 +1230,7 @@ export class PlayerImpl implements Player {
     return this._gold;
   }
 
-  addGold(toAdd: Gold): void {
+  addGold(toAdd: Gold, _tile?: TileRef): void {
     this._gold += toAdd;
   }
 
@@ -1503,7 +1542,10 @@ export class PlayerImpl implements Player {
     }
 
     const cost = this.mg.unitInfo(unitType).cost(this);
-    if (!this.isAlive() || this.gold() < cost) {
+    if (
+      unitType !== UnitType.MIRVWarhead &&
+      (!this.isAlive() || this.gold() < cost)
+    ) {
       return false;
     }
     switch (unitType) {
@@ -1872,7 +1914,7 @@ export class PlayerImpl implements Player {
   }
 
   bestTransportShipSpawn(targetTile: TileRef): TileRef | false {
-    return bestShoreDeploymentSource(this.mg, this, targetTile);
+    return bestShoreDeploymentSource(this.mg, this, targetTile) ?? false;
   }
 
   // It's a probability list, so if an element appears twice it's because it's

@@ -1,4 +1,6 @@
 import { Config } from "../configuration/Config";
+import { AbstractGraph } from "../pathfinding/algorithms/AbstractGraph";
+import { PathFinder } from "../pathfinding/types";
 import { AllPlayersStats, ClientID } from "../Schemas";
 import { Category } from "../tech/ResearchTree";
 import { Cell, GameMap, MapPos, TerrainType, TileRef } from "./GameMap";
@@ -283,7 +285,9 @@ export interface UnitParamsMap {
 
   [UnitType.City]: Record<string, never>;
 
-  [UnitType.MIRV]: Record<string, never>;
+  [UnitType.MIRV]: {
+    targetTile?: number;
+  };
 
   [UnitType.Hospital]: Record<string, never>;
 
@@ -621,7 +625,7 @@ export interface Player {
   // Research: investment ratio (0..1) of per-tick income allocated to research (cost only)
   researchInvestmentRate(): number;
   setResearchInvestmentRate(rate: number): void;
-  addGold(toAdd: Gold): void;
+  addGold(toAdd: Gold, tile?: TileRef): void;
   removeGold(toRemove: Gold): Gold;
   addWorkers(toAdd: number): void;
   removeWorkers(toRemove: number): void;
@@ -879,6 +883,12 @@ export interface Game extends GameMap {
   ): void;
   doomsdayExplosion(tile: TileRef, radius: number, owner: Player): void;
   conquer(newOwner: Player, tile: TileRef): void;
+
+  addUpdate(update: GameUpdate): void;
+  miniWaterHPA(): PathFinder<number> | null;
+  miniWaterGraph(): AbstractGraph | null;
+  getWaterComponent(tile: TileRef): number | null;
+  hasWaterComponent(tile: TileRef, component: number): boolean;
 }
 
 export interface PlayerActions {

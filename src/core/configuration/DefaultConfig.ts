@@ -207,6 +207,7 @@ export abstract class DefaultServerConfig implements ServerConfig {
 export class DefaultConfig implements Config {
   private pastelTheme: PastelTheme = new PastelTheme();
   private pastelThemeDark: PastelThemeDark = new PastelThemeDark();
+  private unitInfoCache = new Map<UnitType, UnitInfo>();
   constructor(
     private _serverConfig: ServerConfig,
     private _gameConfig: GameConfig,
@@ -346,6 +347,9 @@ export class DefaultConfig implements Config {
   instantBuild(): boolean {
     return this._gameConfig.instantBuild;
   }
+  disableNavMesh(): boolean {
+    return this._gameConfig.disableNavMesh ?? false;
+  }
   infiniteGold(): boolean {
     return this._gameConfig.infiniteGold;
   }
@@ -355,8 +359,18 @@ export class DefaultConfig implements Config {
   startingGold(): number {
     return this._gameConfig.startingGold ?? 0;
   }
-  tradeShipGold(dist: number): Gold {
-    return BigInt(Math.floor(10000 + 150 * Math.pow(dist, 1.1)));
+  tradeShipShortRangeDebuff(): number {
+    return 300;
+  }
+  tradeShipGold(dist: number, numPorts: number = 1): Gold {
+    // Sigmoid: concave start, sharp S-curve middle, linear end
+    const debuff = this.tradeShipShortRangeDebuff();
+    const baseGold =
+      100_000 / (1 + Math.exp(-0.03 * (dist - debuff))) + 100 * dist;
+    const numPortBonus = numPorts - 1;
+    // Hyperbolic decay, midpoint at 5 ports, 3x bonus max.
+    const bonus = 1 + 2 * (numPortBonus / (numPortBonus + 5));
+    return BigInt(Math.floor(baseGold * bonus));
   }
   tradeShipSpawnRate(numberOfPorts: number): number {
     return Math.round(10 * Math.pow(numberOfPorts, 0.37));
@@ -587,6 +601,14 @@ export class DefaultConfig implements Config {
   }
 
   unitInfo(type: UnitType): UnitInfo {
+    const cached = this.unitInfoCache.get(type);
+    if (cached !== undefined) return cached;
+    const info = this.computeUnitInfo(type);
+    this.unitInfoCache.set(type, info);
+    return info;
+  }
+
+  private computeUnitInfo(type: UnitType): UnitInfo {
     switch (type) {
       case UnitType.TransportShip:
         return {

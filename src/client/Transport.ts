@@ -19,6 +19,7 @@ import {
   ClientMessage,
   ClientPingMessage,
   ClientSendWinnerMessage,
+  GameConfig,
   Intent,
   ServerMessage,
   ServerMessageSchema,
@@ -97,10 +98,8 @@ export class SendAttackIntentEvent implements GameEvent {
 
 export class SendBoatAttackIntentEvent implements GameEvent {
   constructor(
-    public readonly targetID: PlayerID | null,
     public readonly dst: TileRef,
     public readonly troops: number,
-    public readonly src: TileRef | null = null,
   ) {}
 }
 
@@ -258,6 +257,10 @@ export class SendKickPlayerIntentEvent implements GameEvent {
   constructor(public readonly target: string) {}
 }
 
+export class SendUpdateGameConfigIntentEvent implements GameEvent {
+  constructor(public readonly config: Partial<GameConfig>) {}
+}
+
 export class SendLobbyNotificationEvent implements GameEvent {
   constructor(
     public readonly currentPlayers: number,
@@ -392,6 +395,10 @@ export class Transport {
     });
     this.eventBus.on(SendKickPlayerIntentEvent, (e) =>
       this.onSendKickPlayerIntent(e),
+    );
+
+    this.eventBus.on(SendUpdateGameConfigIntentEvent, (e) =>
+      this.onSendUpdateGameConfigIntent(e),
     );
     // unit upgrade intent removed
   }
@@ -651,10 +658,8 @@ export class Transport {
     this.sendIntent({
       type: "boat",
       clientID: this.lobbyConfig.clientID,
-      targetID: event.targetID,
       troops: event.troops,
       dst: event.dst,
-      src: event.src,
     });
   }
 
@@ -681,7 +686,7 @@ export class Transport {
       type: "donate_gold",
       clientID: this.lobbyConfig.clientID,
       recipient: event.recipient.id(),
-      gold: event.gold,
+      gold: event.gold !== null ? Number(event.gold) : null,
     });
   }
 
@@ -853,7 +858,7 @@ export class Transport {
     } else {
       console.log(
         "WebSocket is not open. Current state:",
-        this.socket!.readyState,
+        this.socket?.readyState,
       );
       console.log("attempting reconnect");
     }
@@ -941,6 +946,14 @@ export class Transport {
       type: "kick_player",
       clientID: this.lobbyConfig.clientID,
       target: event.target,
+    });
+  }
+
+  private onSendUpdateGameConfigIntent(event: SendUpdateGameConfigIntentEvent) {
+    this.sendIntent({
+      type: "update_game_config",
+      clientID: this.lobbyConfig.clientID,
+      config: event.config,
     });
   }
 

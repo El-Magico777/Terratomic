@@ -26,7 +26,6 @@ import { GameEnv, ServerConfig } from "../core/configuration/Config";
 import { GameType } from "../core/game/Game";
 import { archive } from "./Archive";
 import { Client } from "./Client";
-import { gatekeeper } from "./Gatekeeper";
 import { rankingService } from "./RankingService";
 
 const profanityFilter = new Filter();
@@ -50,6 +49,7 @@ export class GameServer {
   private allClients: Map<ClientID, Client> = new Map();
   private clientsDisconnectedStatus: Map<ClientID, boolean> = new Map();
   private _hasStarted = false;
+  private _hasEnded = false;
   private _startTime: number | null = null;
 
   private endTurnIntervalID: ReturnType<typeof setInterval> | undefined;
@@ -262,139 +262,182 @@ export class GameServer {
     this.allClients.set(client.clientID, client);
 
     client.ws.removeAllListeners("message");
-    client.ws.on(
-      "message",
-      gatekeeper.wsHandler(client.ip, async (message: string) => {
-        try {
-          const parsed = ClientMessageSchema.safeParse(JSON.parse(message));
-          if (!parsed.success) {
-            const error = z.prettifyError(parsed.error);
-            this.log.error("Failed to parse client message", error, {
-              clientID: client.clientID,
-            });
-            client.ws.send(
-              JSON.stringify({
-                type: "error",
-                error,
-                message,
-              } satisfies ServerErrorMessage),
-            );
-            client.ws.close(1002, "ClientMessageSchema");
-            return;
-          }
-          const clientMsg = parsed.data;
-          switch (clientMsg.type) {
-            case "intent": {
-              if (clientMsg.intent.clientID !== client.clientID) {
+    client.ws.on("message", async (message: string) => {
+      try {
+        const parsed = ClientMessageSchema.safeParse(JSON.parse(message));
+        if (!parsed.success) {
+          const error = z.prettifyError(parsed.error);
+          this.log.error("Failed to parse client message", error, {
+            clientID: client.clientID,
+          });
+          client.ws.send(
+            JSON.stringify({
+              type: "error",
+              error,
+              message,
+            } satisfies ServerErrorMessage),
+          );
+          client.ws.close(1002, "ClientMessageSchema");
+          return;
+        }
+        const clientMsg = parsed.data;
+        switch (clientMsg.type) {
+          case "intent": {
+            if (clientMsg.intent.clientID !== client.clientID) {
+              this.log.warn(
+                `client id mismatch, client: ${client.clientID}, intent: ${clientMsg.intent.clientID}`,
+              );
+              return;
+            }
+            switch (clientMsg.intent.type) {
+              case "mark_disconnected": {
                 this.log.warn(
-                  `client id mismatch, client: ${client.clientID}, intent: ${clientMsg.intent.clientID}`,
+                  `Should not receive mark_disconnected intent from client`,
                 );
                 return;
               }
-              switch (clientMsg.intent.type) {
-                case "mark_disconnected": {
+
+              // Handle kick_player intent via WebSocket
+              case "kick_player": {
+                const authenticatedClientID = client.clientID;
+
+                // Check if the authenticated client is the lobby creator
+                if (authenticatedClientID !== this.LobbyCreatorID) {
+                  this.log.warn(`Only lobby creator can kick players`, {
+                    clientID: authenticatedClientID,
+                    creatorID: this.LobbyCreatorID,
+                    target: clientMsg.intent.target,
+                    gameID: this.id,
+                  });
+                  return;
+                }
+
+                // Don't allow lobby creator to kick themselves
+                if (authenticatedClientID === clientMsg.intent.target) {
+                  this.log.warn(`Cannot kick yourself`, {
+                    clientID: authenticatedClientID,
+                  });
+                  return;
+                }
+
+                // Log and execute the kick
+                this.log.info(`Lobby creator initiated kick of player`, {
+                  creatorID: authenticatedClientID,
+                  target: clientMsg.intent.target,
+                  gameID: this.id,
+                  kickMethod: "websocket",
+                });
+
+                this.kickClient(clientMsg.intent.target);
+                return;
+              }
+              case "update_game_config": {
+                // Only lobby creator can update config
+                if (client.clientID !== this.LobbyCreatorID) {
+                  this.log.warn(`Only lobby creator can update game config`, {
+                    clientID: client.clientID,
+                    creatorID: this.LobbyCreatorID,
+                    gameID: this.id,
+                  });
+                  return;
+                }
+
+                if (this.isPublic()) {
+                  this.log.warn(`Cannot update public game via WebSocket`, {
+                    gameID: this.id,
+                    clientID: client.clientID,
+                  });
+                  return;
+                }
+
+                if (this.hasStarted()) {
                   this.log.warn(
-                    `Should not receive mark_disconnected intent from client`,
+                    `Cannot update game config after it has started`,
+                    {
+                      gameID: this.id,
+                      clientID: client.clientID,
+                    },
                   );
                   return;
                 }
 
-                // Handle kick_player intent via WebSocket
-                case "kick_player": {
-                  const authenticatedClientID = client.clientID;
-
-                  // Check if the authenticated client is the lobby creator
-                  if (authenticatedClientID !== this.LobbyCreatorID) {
-                    this.log.warn(`Only lobby creator can kick players`, {
-                      clientID: authenticatedClientID,
-                      creatorID: this.LobbyCreatorID,
-                      target: clientMsg.intent.target,
-                      gameID: this.id,
-                    });
-                    return;
-                  }
-
-                  // Don't allow lobby creator to kick themselves
-                  if (authenticatedClientID === clientMsg.intent.target) {
-                    this.log.warn(`Cannot kick yourself`, {
-                      clientID: authenticatedClientID,
-                    });
-                    return;
-                  }
-
-                  // Log and execute the kick
-                  this.log.info(`Lobby creator initiated kick of player`, {
-                    creatorID: authenticatedClientID,
-                    target: clientMsg.intent.target,
+                if (clientMsg.intent.config.gameType === GameType.Public) {
+                  this.log.warn(`Cannot update game to public via WebSocket`, {
                     gameID: this.id,
-                    kickMethod: "websocket",
+                    clientID: client.clientID,
                   });
-
-                  this.kickClient(clientMsg.intent.target);
                   return;
                 }
-                default: {
-                  this.addIntent(clientMsg.intent);
-                  break;
-                }
-              }
-              break;
-            }
-            case "ping": {
-              this.lastPingUpdate = Date.now();
-              client.lastPing = Date.now();
-              client.ws.send(JSON.stringify({ type: "ping" }));
-              break;
-            }
-            case "hash": {
-              client.hashes.set(clientMsg.turnNumber, clientMsg.hash);
-              break;
-            }
-            case "join": {
-              this.log.info(
-                "Client requested re-join/sync via existing connection",
-                {
-                  clientID: client.clientID,
-                  lastTurn: clientMsg.lastTurn,
-                },
-              );
-              this.sendStartGameMsg(client.ws, clientMsg.lastTurn);
-              break;
-            }
-            case "winner": {
-              if (
-                this.outOfSyncClients.has(client.clientID) ||
-                this.kickedClients.has(client.clientID) ||
-                this.winner !== null
-              ) {
+
+                this.log.info(
+                  `Lobby creator updated game config via WebSocket`,
+                  {
+                    creatorID: client.clientID,
+                    gameID: this.id,
+                  },
+                );
+
+                this.updateGameConfig(clientMsg.intent.config);
                 return;
               }
-              this.winner = clientMsg;
-              this.archiveGame().catch((err) =>
-                this.log.error("Failed to archive game", { error: err }),
-              );
-              break;
+              default: {
+                this.addIntent(clientMsg.intent);
+                break;
+              }
             }
-            default: {
-              this.log.warn(
-                `Unknown message type: ${(clientMsg as any).type}`,
-                {
-                  clientID: client.clientID,
-                },
-              );
-              break;
-            }
+            break;
           }
-        } catch (error) {
-          this.log.info(
-            `error handline websocket request in game server: ${error}`,
-            {
+          case "ping": {
+            this.lastPingUpdate = Date.now();
+            client.lastPing = Date.now();
+            client.ws.send(JSON.stringify({ type: "ping" }));
+            break;
+          }
+          case "hash": {
+            client.hashes.set(clientMsg.turnNumber, clientMsg.hash);
+            break;
+          }
+          case "join": {
+            this.log.info(
+              "Client requested re-join/sync via existing connection",
+              {
+                clientID: client.clientID,
+                lastTurn: clientMsg.lastTurn,
+              },
+            );
+            this.sendStartGameMsg(client.ws, clientMsg.lastTurn);
+            break;
+          }
+          case "winner": {
+            if (
+              this.outOfSyncClients.has(client.clientID) ||
+              this.kickedClients.has(client.clientID) ||
+              this.winner !== null
+            ) {
+              return;
+            }
+            this.winner = clientMsg;
+            this.archiveGame().catch((err) =>
+              this.log.error("Failed to archive game", { error: err }),
+            );
+            break;
+          }
+          default: {
+            this.log.warn(`Unknown message type: ${(clientMsg as any).type}`, {
               clientID: client.clientID,
-            },
-          );
+            });
+            break;
+          }
         }
-      }),
-    );
+      } catch (error) {
+        this.log.info(
+          `error handline websocket request in game server: ${error}`,
+          {
+            clientID: client.clientID,
+          },
+        );
+      }
+    });
     client.ws.on("close", () => {
       this.log.info("client disconnected", {
         clientID: client.clientID,
@@ -461,7 +504,7 @@ export class GameServer {
   }
 
   public start() {
-    if (this._hasStarted) {
+    if (this._hasStarted || this._hasEnded) {
       return;
     }
     this._hasStarted = true;
@@ -543,8 +586,10 @@ export class GameServer {
   }
 
   async end() {
+    this._hasEnded = true;
     // Close all WebSocket connections
     clearInterval(this.endTurnIntervalID);
+    this.endTurnIntervalID = undefined;
     this.websockets.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.close(1000, "game has ended");

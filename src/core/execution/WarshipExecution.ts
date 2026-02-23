@@ -9,10 +9,9 @@ import {
   UnitType,
   UpgradeType,
 } from "../game/Game";
-import { GameImpl } from "../game/GameImpl";
 import { TileRef } from "../game/GameMap";
-import { PathFindResultType } from "../pathfinding/AStar";
-import { PathFinder } from "../pathfinding/PathFinding";
+import { PathFinding } from "../pathfinding/PathFinder";
+import { PathStatus, SteppingPathFinder } from "../pathfinding/types";
 import { PseudoRandom } from "../PseudoRandom";
 import { SAMMissileExecution } from "./SAMMissileExecution";
 import { ShellExecution } from "./ShellExecution";
@@ -21,8 +20,8 @@ export class WarshipExecution implements Execution {
   executionName = "WarshipExecution";
   private random: PseudoRandom;
   private warship: Unit;
-  private mg: GameImpl;
-  private pathfinder: PathFinder;
+  private mg: Game;
+  private pathfinder: SteppingPathFinder<TileRef>;
   private lastShellAttack = 0;
   private alreadySentShell = new Set<Unit>();
   private nextAAScanTick = 0;
@@ -40,8 +39,8 @@ export class WarshipExecution implements Execution {
   ) {}
 
   init(mg: Game, ticks: number): void {
-    this.mg = mg as GameImpl;
-    this.pathfinder = PathFinder.Mini(mg, 10_000, true, 100);
+    this.mg = mg;
+    this.pathfinder = PathFinding.Water(mg);
     this.random = new PseudoRandom(mg.ticks());
     if (isUnit(this.input)) {
       this.warship = this.input;
@@ -363,64 +362,27 @@ export class WarshipExecution implements Execution {
 
     for (let i = 0; i < 2; i++) {
       // target is trade ship so capture it.
-      const result = this.pathfinder.nextTile(
+      const result = this.pathfinder.next(
         this.warship.tile(),
         this.warship.targetUnit()!.tile(),
         5,
       );
-      switch (result.type) {
-        case PathFindResultType.Completed: {
-          const targetShip = this.warship.targetUnit()!;
-          const myOwner = this.warship.owner();
-          const shipOwner = targetShip.owner();
-          if (myOwner.isAtWarWith(shipOwner)) {
-            // Enemy trade ship -> capture
-            this.warship.owner().captureUnit(targetShip);
-            // Clear any trade route metadata on the captured ship
-            targetShip.setTradeRouteOwners(null, null);
-            // Send captured ship back to a home port of the new owner; cargo will be awarded on arrival
-            this.mg.addExecution(
-              new CapturedTradeShipReturnExecution(targetShip),
-            );
-            this.warship.setTargetUnit(undefined);
-            this.warship.move(this.warship.tile());
-            return;
-          }
-          // Neutral trade ship headed to/from my enemy -> turn around upon contact
-          const startOwner = targetShip.tradeRouteStartOwner();
-          const endOwner = targetShip.tradeRouteEndOwner();
-          const atWarWithAnyEndpoint = [startOwner, endOwner]
-            .filter((p): p is Player => !!p)
-            .some((p) => myOwner.isAtWarWith(p));
-          const embargoAgainstAnyEndpoint = [startOwner, endOwner]
-            .filter((p): p is Player => !!p)
-            .some(
-              (p) =>
-                myOwner.hasEmbargoAgainst(p) || p.hasEmbargoAgainst(myOwner),
-            );
-          if (
-            (atWarWithAnyEndpoint || embargoAgainstAnyEndpoint) &&
-            !myOwner.isFriendly(shipOwner)
-          ) {
-            targetShip.setReturning(true);
-            this.warship.setTargetUnit(undefined);
-            this.warship.move(this.warship.tile());
-            return;
-          }
-          // Otherwise, disengage
+      switch (result.status) {
+        case PathStatus.COMPLETE:
+          this.warship.owner().captureUnit(this.warship.targetUnit()!);
           this.warship.setTargetUnit(undefined);
           this.warship.move(this.warship.tile());
           return;
-        }
-        case PathFindResultType.NextTile:
+        case PathStatus.NEXT:
           this.warship.move(result.node);
           break;
-        case PathFindResultType.Pending:
+        case PathStatus.PENDING:
           this.warship.touch();
           break;
-        case PathFindResultType.PathNotFound:
+        case PathStatus.NOT_FOUND: {
           console.log(`path not found to target`);
           break;
+        }
       }
     }
   }
@@ -433,25 +395,25 @@ export class WarshipExecution implements Execution {
       }
     }
 
-    const result = this.pathfinder.nextTile(
+    const result = this.pathfinder.next(
       this.warship.tile(),
       this.warship.targetTile()!,
     );
-    switch (result.type) {
-      case PathFindResultType.Completed:
+    switch (result.status) {
+      case PathStatus.COMPLETE:
         this.warship.setTargetTile(undefined);
         this.warship.move(result.node);
         break;
-      case PathFindResultType.NextTile:
+      case PathStatus.NEXT:
         this.warship.move(result.node);
         break;
-      case PathFindResultType.Pending:
+      case PathStatus.PENDING:
         this.warship.touch();
         return;
-      case PathFindResultType.PathNotFound:
-        console.warn(`path not found to target tile`);
-        this.warship.setTargetTile(undefined);
+      case PathStatus.NOT_FOUND: {
+        console.log(`path not found to target`);
         break;
+      }
     }
   }
 
@@ -468,6 +430,10 @@ export class WarshipExecution implements Execution {
     const maxAttemptBeforeExpand: number = 500;
     let attempts: number = 0;
     let expandCount: number = 0;
+
+    // Get warship's water component for connectivity check
+    const warshipComponent = this.mg.getWaterComponent(this.warship.tile());
+
     while (expandCount < 3) {
       const x =
         this.mg.x(this.warship.patrolTile()!) +
@@ -482,6 +448,20 @@ export class WarshipExecution implements Execution {
       if (
         !this.mg.isOcean(tile) ||
         (!allowShoreline && this.mg.isShoreline(tile))
+      ) {
+        attempts++;
+        if (attempts === maxAttemptBeforeExpand) {
+          expandCount++;
+          attempts = 0;
+          warshipPatrolRange =
+            warshipPatrolRange + Math.floor(warshipPatrolRange / 2);
+        }
+        continue;
+      }
+      // Check water component connectivity
+      if (
+        warshipComponent !== null &&
+        !this.mg.hasWaterComponent(tile, warshipComponent)
       ) {
         attempts++;
         if (attempts === maxAttemptBeforeExpand) {
@@ -606,149 +586,5 @@ export class WarshipExecution implements Execution {
     }
 
     return this.mg.owner(targetTile) === this.warship.owner();
-  }
-}
-
-class CapturedTradeShipReturnExecution implements Execution {
-  executionName = "CapturedTradeShipReturnExecution";
-  private mg!: Game;
-  private pathfinder!: PathFinder;
-  private active = true;
-  private lastMoveTick = 0;
-  private destPort: Unit | null = null;
-
-  constructor(private ship: Unit) {}
-
-  init(mg: Game, ticks: number): void {
-    this.mg = mg;
-    this.pathfinder = PathFinder.Mini(mg, 2500);
-    this.lastMoveTick = ticks;
-    // Pick nearest active port owned by the ship's owner
-    this.destPort = this.selectNearestPort(this.ship.owner());
-    if (this.destPort) {
-      this.ship.setTargetUnit(this.destPort);
-    } else {
-      // No port to return to; cancel
-      this.active = false;
-    }
-  }
-
-  isActive(): boolean {
-    return this.active;
-  }
-
-  activeDuringSpawnPhase(): boolean {
-    return false;
-  }
-
-  tick(ticks: number): void {
-    if (!this.active) return;
-    if (!this.ship.isActive()) {
-      this.active = false;
-      return;
-    }
-    if (!this.destPort || !this.destPort.isActive()) {
-      // Destination no longer valid; try to pick another
-      this.destPort = this.selectNearestPort(this.ship.owner());
-      if (!this.destPort) {
-        this.active = false;
-        return;
-      }
-      this.ship.setTargetUnit(this.destPort);
-    }
-
-    if (ticks - this.lastMoveTick < 1) return;
-    this.lastMoveTick = ticks;
-
-    const targetTile = this.destPort.tile();
-    if (this.mg.manhattanDist(this.ship.tile(), targetTile) === 1) {
-      // Dock
-      this.ship.move(targetTile);
-      const cargo = this.ship.cargoGold();
-      if (cargo > 0n) {
-        this.ship.owner().addGold(cargo);
-        this.ship.setCargoGold(0n);
-      }
-      this.ship.setTargetUnit(undefined);
-      this.active = false;
-      return;
-    }
-
-    const navTarget = this.navTargetForPort(targetTile);
-    if (navTarget === null) {
-      this.active = false;
-      return;
-    }
-
-    // If on land (port tile), step into adjacent ocean first
-    if (!this.mg.isOcean(this.ship.tile())) {
-      const step = this.stepIntoOceanTowards(navTarget);
-      if (step !== null) {
-        this.ship.move(step);
-        return;
-      }
-      this.active = false;
-      return;
-    }
-
-    const res = this.pathfinder.nextTile(this.ship.tile(), navTarget);
-    switch (res.type) {
-      case PathFindResultType.Completed:
-        this.ship.move(navTarget);
-        break;
-      case PathFindResultType.NextTile:
-        this.ship.move(res.node);
-        break;
-      case PathFindResultType.Pending:
-        this.ship.touch();
-        break;
-      case PathFindResultType.PathNotFound:
-        this.active = false;
-        break;
-    }
-  }
-
-  private selectNearestPort(owner: Player): Unit | null {
-    const ports = this.mg
-      .units(UnitType.Port)
-      .filter((p) => p.owner() === owner && p.isActive());
-    if (ports.length === 0) return null;
-    let best: Unit | null = null;
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (const p of ports) {
-      const d = this.mg.euclideanDistSquared(this.ship.tile(), p.tile());
-      if (d < bestDist) {
-        bestDist = d;
-        best = p;
-      }
-    }
-    return best;
-  }
-
-  private navTargetForPort(portTile: TileRef): TileRef | null {
-    if (this.mg.isOcean(portTile)) return portTile;
-    const candidates = this.mg
-      .neighbors(portTile)
-      .filter((t) => this.mg.isOcean(t));
-    if (candidates.length === 0) return null;
-    candidates.sort(
-      (a, b) =>
-        this.mg.manhattanDist(this.ship.tile(), a) -
-        this.mg.manhattanDist(this.ship.tile(), b),
-    );
-    return candidates[0];
-  }
-
-  private stepIntoOceanTowards(navTarget: TileRef): TileRef | null {
-    const oceanNeighbors = this.mg
-      .neighbors(this.ship.tile())
-      .filter((t) => this.mg.isOcean(t));
-    if (oceanNeighbors.length === 0) return null;
-    oceanNeighbors.sort(
-      (a, b) =>
-        this.mg.manhattanDist(a, navTarget) -
-        this.mg.manhattanDist(b, navTarget),
-    );
-    return oceanNeighbors[0];
   }
 }

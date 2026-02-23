@@ -24,7 +24,10 @@ import { PublicLobby } from "./PublicLobby";
 import { RankingsModal } from "./RankingsModal";
 import { SinglePlayerModal } from "./SinglePlayerModal";
 import "./SoundButton";
-import { SendKickPlayerIntentEvent } from "./Transport";
+import {
+  SendKickPlayerIntentEvent,
+  SendUpdateGameConfigIntentEvent,
+} from "./Transport";
 import { UserSettingModal } from "./UserSettingModal";
 import "./UsernameInput";
 import { UsernameInput } from "./UsernameInput";
@@ -67,6 +70,7 @@ declare global {
   interface DocumentEventMap {
     "join-lobby": CustomEvent<JoinLobbyEvent>;
     "kick-player": CustomEvent;
+    "update-game-config": CustomEvent;
   }
 }
 
@@ -266,6 +270,10 @@ class Client {
     document.addEventListener("join-lobby", this.handleJoinLobby.bind(this));
     document.addEventListener("leave-lobby", this.handleLeaveLobby.bind(this));
     document.addEventListener("kick-player", this.handleKickPlayer.bind(this));
+    document.addEventListener(
+      "update-game-config",
+      this.handleUpdateGameConfig.bind(this),
+    );
 
     const spModal = document.querySelector(
       "single-player-modal",
@@ -278,12 +286,6 @@ class Client {
         spModal.open();
       }
     });
-
-    // const ctModal = document.querySelector("chat-modal") as ChatModal;
-    // ctModal instanceof ChatModal;
-    // document.getElementById("chat-button").addEventListener("click", () => {
-    //   ctModal.open();
-    // });
 
     const hlpModal = document.querySelector("help-modal") as HelpModal;
     hlpModal instanceof HelpModal;
@@ -568,7 +570,7 @@ class Client {
           };
           if (modal?.close) {
             modal.close();
-          } else if ("isModalOpen" in modal) {
+          } else if (modal && "isModalOpen" in modal) {
             modal.isModalOpen = false;
           }
         });
@@ -630,6 +632,15 @@ class Client {
     // Forward to eventBus if available
     if (this.eventBus) {
       this.eventBus.emit(new SendKickPlayerIntentEvent(target));
+    }
+  }
+
+  private handleUpdateGameConfig(event: CustomEvent) {
+    const { config } = event.detail;
+
+    // Forward to eventBus if available
+    if (this.eventBus) {
+      this.eventBus.emit(new SendUpdateGameConfigIntentEvent(config));
     }
   }
 }
